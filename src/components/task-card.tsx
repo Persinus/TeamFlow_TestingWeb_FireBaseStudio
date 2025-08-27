@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -6,6 +7,8 @@ import { MessageSquare } from 'lucide-react';
 import type { Task, TaskStatus } from '@/types';
 import { useDraggable } from '@dnd-kit/core';
 import { cn } from '@/lib/utils';
+import { motion } from 'framer-motion';
+
 
 interface TaskCardProps {
   task: Task;
@@ -34,7 +37,15 @@ export default function TaskCard({ task, onSelectTask, isDragging }: TaskCardPro
   } : undefined;
 
   return (
-    <div ref={setNodeRef} style={style} {...listeners} {...attributes}>
+    <motion.div 
+        ref={setNodeRef} 
+        style={style} 
+        {...listeners} 
+        {...attributes}
+        layoutId={task.id}
+        whileHover={{ scale: 1.03 }}
+        className={cn(isDragging && "z-50")}
+    >
         <Card 
             className={cn(
                 "hover:shadow-lg transition-shadow duration-300 bg-card cursor-pointer",
@@ -66,6 +77,6 @@ export default function TaskCard({ task, onSelectTask, isDragging }: TaskCardPro
             </div>
         </CardFooter>
         </Card>
-    </div>
+    </motion.div>
   );
 }

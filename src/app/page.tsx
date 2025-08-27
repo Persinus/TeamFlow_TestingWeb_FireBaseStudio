@@ -17,6 +17,7 @@ import { DndContext, DragEndEvent, DragOverEvent, DragOverlay, DragStartEvent, P
 import { createPortal } from 'react-dom';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { motion } from 'framer-motion';
 
 
 const columns: { id: TaskStatus; title: string }[] = [
@@ -30,7 +31,7 @@ const columns: { id: TaskStatus; title: string }[] = [
 function DroppableColumn({ id, title, children, isDragOver }: { id: string; title: string; children: React.ReactNode; isDragOver: boolean }) {
   const { setNodeRef } = useDroppable({ id });
   return (
-    <div
+    <motion.div
       ref={setNodeRef}
       className={cn("flex h-full flex-col gap-4 rounded-lg transition-colors", isDragOver ? "bg-accent/20" : "")}
     >
@@ -38,10 +39,13 @@ function DroppableColumn({ id, title, children, isDragOver }: { id: string; titl
         <h2 className="font-semibold text-foreground">{title}</h2>
         <Badge variant="secondary" className="rounded-full">{React.Children.count(children)}</Badge>
       </div>
-      <div className="flex flex-col gap-4">
+      <motion.div 
+        layout
+        className="flex flex-col gap-4"
+      >
         {children}
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }
 
@@ -227,7 +231,12 @@ export default function DashboardPage() {
           onCreateTask={handleCreateTask} 
         />
         <SidebarInset>
-            <main className="flex-1 p-4 sm:p-6 md:p-8 overflow-x-auto">
+            <motion.main 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              className="flex-1 p-4 sm:p-6 md:p-8 overflow-x-auto"
+            >
               {loading ? (
                 <BoardSkeleton />
               ) : (
@@ -259,7 +268,7 @@ export default function DashboardPage() {
                   )}
                 </DndContext>
               )}
-            </main>
+            </motion.main>
         </SidebarInset>
       </div>
       {selectedTask && (

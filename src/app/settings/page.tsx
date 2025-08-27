@@ -1,3 +1,4 @@
+
 "use client"
 
 import React, { useState, useEffect } from 'react';
@@ -9,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { CalendarIcon, Moon, Sun,Smile } from 'lucide-react';
+import { CalendarIcon, Moon, Sun, Smile, Loader2 } from 'lucide-react';
 import type { Task, Team } from '@/types';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
@@ -20,14 +21,19 @@ import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import { SidebarInset } from '@/components/ui/sidebar';
 import { getTeams } from '@/lib/data';
+import { useToast } from '@/hooks/use-toast';
+import { motion } from 'framer-motion';
 
 
 export default function SettingsPage() {
     const { user, loading } = useAuth();
     const router = useRouter();
+    const { toast } = useToast();
 
     const [teams, setTeams] = useState<Team[]>([]);
     const [theme, setTheme] = useState('light');
+    const [language, setLanguage] = useState('en');
+    const [isSwitchingLang, setIsSwitchingLang] = useState(false);
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [phone, setPhone] = useState('');
@@ -51,6 +57,9 @@ export default function SettingsPage() {
         const storedTheme = localStorage.getItem('theme') || 'light';
         setTheme(storedTheme);
         document.documentElement.classList.toggle('dark', storedTheme === 'dark');
+
+        const storedLang = localStorage.getItem('language') || 'en';
+        setLanguage(storedLang);
     }, []);
 
     const toggleTheme = () => {
@@ -59,6 +68,22 @@ export default function SettingsPage() {
         localStorage.setItem('theme', newTheme);
         document.documentElement.classList.toggle('dark', newTheme === 'dark');
     };
+    
+    const handleLanguageChange = (newLang: string) => {
+        setLanguage(newLang);
+        setIsSwitchingLang(true);
+        localStorage.setItem('language', newLang);
+
+        // Simulate applying the language change
+        setTimeout(() => {
+            setIsSwitchingLang(false);
+            toast({
+                title: "Language Updated",
+                description: `Language changed to ${newLang === 'en' ? 'English' : 'Tiếng Việt'}. UI will update on next refresh.`,
+            });
+        }, 700);
+    };
+
 
     // Dummy handlers for filters and task creation for Header component
     const [filters, setFilters] = useState({ assignee: 'all', team: 'all', search: '' });
@@ -74,7 +99,12 @@ export default function SettingsPage() {
             <div className="flex flex-1 flex-col">
                 <Header users={[]} teams={teams} filters={filters} setFilters={setFilters} onCreateTask={handleCreateTask} />
                 <SidebarInset>
-                    <main className="flex-1 p-4 sm:p-6 md:p-8">
+                    <motion.main 
+                         initial={{ opacity: 0, y: 20 }}
+                         animate={{ opacity: 1, y: 0 }}
+                         transition={{ duration: 0.5 }}
+                        className="flex-1 p-4 sm:p-6 md:p-8"
+                    >
                         <div className="max-w-4xl mx-auto space-y-8">
                             <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
                             
@@ -162,22 +192,23 @@ export default function SettingsPage() {
                                     </div>
                                     <div className="space-y-2">
                                         <Label htmlFor="language">Language</Label>
-                                        <Select defaultValue="en">
-                                            <SelectTrigger id="language">
-                                                <SelectValue placeholder="Select language" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="en">English (United States)</SelectItem>
-                                                <SelectItem value="es">Español (España)</SelectItem>
-                                                <SelectItem value="fr">Français (France)</SelectItem>
-                                                <SelectItem value="vi">Tiếng Việt (Việt Nam)</SelectItem>
-                                            </SelectContent>
-                                        </Select>
+                                        <div className="flex items-center gap-2">
+                                            <Select value={language} onValueChange={handleLanguageChange} disabled={isSwitchingLang}>
+                                                <SelectTrigger id="language">
+                                                    <SelectValue placeholder="Select language" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="en">English</SelectItem>
+                                                    <SelectItem value="vi">Tiếng Việt</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                            {isSwitchingLang && <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />}
+                                        </div>
                                     </div>
                                 </CardContent>
                             </Card>
                         </div>
-                    </main>
+                    </motion.main>
                 </SidebarInset>
             </div>
         </div>
