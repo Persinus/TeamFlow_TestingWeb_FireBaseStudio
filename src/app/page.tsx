@@ -19,13 +19,14 @@ const columns: { id: TaskStatus; title: string }[] = [
 export default function DashboardPage() {
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
-  const [filters, setFilters] = useState<{ assignee: string; team: string }>({ assignee: 'all', team: 'all' });
+  const [filters, setFilters] = useState<{ assignee: string; team: string, search: string }>({ assignee: 'all', team: 'all', search: '' });
 
   const filteredTasks = useMemo(() => {
     return tasks.filter(task => {
       const assigneeMatch = filters.assignee === 'all' || task.assignee?.id === filters.assignee;
       const teamMatch = filters.team === 'all' || task.team.id === filters.team;
-      return assigneeMatch && teamMatch;
+      const searchMatch = filters.search === '' || task.title.toLowerCase().includes(filters.search.toLowerCase());
+      return assigneeMatch && teamMatch && searchMatch;
     });
   }, [tasks, filters]);
 
@@ -88,7 +89,7 @@ export default function DashboardPage() {
   }, [filteredTasks]);
 
   return (
-    <div className="flex min-h-screen w-full flex-col lg:flex-row bg-muted/40">
+    <div className="flex min-h-screen w-full flex-col lg:flex-row bg-muted/40 dark:bg-zinc-900/40">
       <Sidebar />
       <div className="flex flex-1 flex-col">
         <Header filters={filters} setFilters={setFilters} onCreateTask={handleCreateTask} />

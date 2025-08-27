@@ -1,7 +1,7 @@
 "use client";
 
-import React from 'react';
-import { Menu, Search } from 'lucide-react';
+import React, { useState } from 'react';
+import { Menu, Search, Moon, Sun } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -21,12 +21,24 @@ import type { Task } from '@/types';
 import Sidebar from './sidebar';
 
 interface HeaderProps {
-  filters: { assignee: string, team: string };
-  setFilters: React.Dispatch<React.SetStateAction<{ assignee: string, team: string }>>;
+  filters: { assignee: string; team: string; search: string };
+  setFilters: React.Dispatch<React.SetStateAction<{ assignee: string; team: string; search: string }>>;
   onCreateTask: (newTaskData: Omit<Task, 'id' | 'comments'>) => void;
 }
 
 export default function Header({ filters, setFilters, onCreateTask }: HeaderProps) {
+  const [theme, setTheme] = useState('light');
+
+  const toggleTheme = () => {
+    const newTheme = theme === 'light' ? 'dark' : 'light';
+    setTheme(newTheme);
+    document.documentElement.classList.toggle('dark', newTheme === 'dark');
+  };
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFilters(f => ({ ...f, search: e.target.value }));
+  };
+
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6">
       <div className="flex w-full items-center gap-4">
@@ -46,8 +58,10 @@ export default function Header({ filters, setFilters, onCreateTask }: HeaderProp
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             type="search"
-            placeholder="Search tasks..."
+            placeholder="Search tasks by title..."
             className="w-full rounded-lg bg-muted pl-8 md:w-[200px] lg:w-[320px]"
+            value={filters.search}
+            onChange={handleSearchChange}
           />
         </div>
         
@@ -94,6 +108,10 @@ export default function Header({ filters, setFilters, onCreateTask }: HeaderProp
             <DropdownMenuSeparator />
             <DropdownMenuItem>Profile</DropdownMenuItem>
             <DropdownMenuItem>Settings</DropdownMenuItem>
+            <DropdownMenuItem onClick={toggleTheme} className="gap-2">
+              {theme === 'light' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
+              <span>{theme === 'light' ? 'Dark' : 'Light'} Mode</span>
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem>Logout</DropdownMenuItem>
           </DropdownMenuContent>
