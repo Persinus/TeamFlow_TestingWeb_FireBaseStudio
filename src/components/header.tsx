@@ -15,7 +15,6 @@ import {
 import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Select, SelectContent, SelectItem, SelectSeparator, SelectTrigger, SelectValue } from '@/components/ui/select';
 import CreateTaskSheet from '@/components/create-task-sheet';
 import type { Task, User, Team } from '@/types';
 import { MobileSidebar } from './sidebar';
@@ -27,19 +26,19 @@ import { cn } from '@/lib/utils';
 import { Logo } from './icons';
 
 interface HeaderProps {
-  users: User[];
-  teams: Team[];
-  filters: { assignee: string; team: string; search: string };
-  setFilters: React.Dispatch<React.SetStateAction<{ assignee: string; team: string; search: string }>>;
-  onCreateTask: (newTaskData: Omit<Task, 'id' | 'nhom' | 'nguoiThucHien' | 'ngayTao'>) => Promise<void>;
+  onCreateTask: (newTaskData: Omit<Task, 'id' | 'nhom' | 'nguoiThucHien' | 'ngayTao' > & { users: User[], teams: Team[] }) => Promise<void>;
 }
 
-export default function Header({ users, teams, filters, setFilters, onCreateTask }: HeaderProps) {
+export default function Header({ onCreateTask }: HeaderProps) {
   const [theme, setTheme] = useState('light');
   const { user, logout } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
   const pathname = usePathname();
+
+  // State for CreateTaskSheet's dependencies
+  const [users, setUsers] = useState<User[]>([]);
+  const [teams, setTeams] = useState<Team[]>([]);
 
 
   useEffect(() => {
@@ -47,6 +46,20 @@ export default function Header({ users, teams, filters, setFilters, onCreateTask
     setTheme(storedTheme);
     document.documentElement.classList.toggle('dark', storedTheme === 'dark');
   }, []);
+
+  // Fetch users and teams for the CreateTaskSheet
+  useEffect(() => {
+    const fetchDataForSheet = async () => {
+        // In a real app, you might want a more efficient way to get this data
+        // but for now, this ensures the sheet has what it needs.
+        const { getUsers, getTeams } = await import('@/app/actions');
+        const [usersData, teamsData] = await Promise.all([getUsers(), getTeams()]);
+        setUsers(usersData);
+        setTeams(teamsData);
+    }
+    fetchDataForSheet();
+  }, []);
+
 
   const toggleTheme = () => {
     const newTheme = theme === 'light' ? 'dark' : 'light';
@@ -61,9 +74,6 @@ export default function Header({ users, teams, filters, setFilters, onCreateTask
     root.style.colorScheme = theme;
   }, [theme]);
 
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFilters(f => ({ ...f, search: e.target.value }));
-  };
 
   const handleLogout = async () => {
     try {
@@ -95,54 +105,13 @@ export default function Header({ users, teams, filters, setFilters, onCreateTask
                     <SheetTitle className="sr-only">Menu Điều hướng</SheetTitle>
                 </SheetHeader>
                 <MobileSidebar teams={teams} onTeamChange={() => {
-                  // This is a dummy handler for mobile, page reload will fetch new teams.
+                   const { getTeams } = require('@/app/actions');
+                   getTeams().then(setTeams);
                 }} onShowTour={() => {}}/>
             </SheetContent>
         </Sheet>
         
-        {isBoardPage && (
-          <div className="relative flex-1">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder="Tìm kiếm công việc theo tiêu đề hoặc thẻ..."
-              className="w-full rounded-lg bg-secondary pl-8 md:w-[200px] lg:w-[320px]"
-              value={filters.search}
-              onChange={handleSearchChange}
-            />
-          </div>
-        )}
-        
-        <div className={cn("flex items-center gap-2", !isBoardPage && "flex-1")}>
-            {isBoardPage && (
-              <>
-                <Select value={filters.assignee} onValueChange={(value) => setFilters(f => ({...f, assignee: value}))}>
-                    <SelectTrigger className={cn("w-[150px] hidden md:flex", filters.assignee !== 'all' && 'text-primary border-primary')}>
-                        <SelectValue placeholder="Lọc theo người được giao" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="all">Tất cả người được giao</SelectItem>
-                        <SelectItem value="unassigned">Chưa được giao</SelectItem>
-                        <SelectSeparator />
-                        {users.map(user => (
-                            <SelectItem key={user.id} value={user.id}>{user.hoTen}</SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
-                <Select value={filters.team} onValueChange={(value) => setFilters(f => ({...f, team: value}))}>
-                    <SelectTrigger className={cn("w-[150px] hidden md:flex", filters.team !== 'all' && 'text-primary border-primary')}>
-                        <SelectValue placeholder="Lọc theo đội" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="all">Tất cả các đội</SelectItem>
-                        {teams.map(team => (
-                            <SelectItem key={team.id} value={team.id}>{team.tenNhom}</SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
-              </>
-            )}
-        </div>
+        <div className="flex-1" />
 
         <div className="flex items-center gap-2 ml-auto">
             <CreateTaskSheet onCreateTask={onCreateTask} users={users} teams={teams}>

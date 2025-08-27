@@ -3,7 +3,7 @@
 
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import { notFound, useRouter, useParams } from 'next/navigation';
-import { getTeam, getUsers, getTasksByTeam, addTeamMember, removeTeamMember, updateTeamMemberRole, getTeams, updateTask, deleteTask, createTeam, updateTeam as apiUpdateTeam, deleteTeam as apiDeleteTeam } from '@/app/actions';
+import { getTeam, getUsers, getTasksByTeam, addTeamMember, removeTeamMember, updateTeamMemberRole, getTeams, updateTask, deleteTask, createTeam, updateTeam as apiUpdateTeam, deleteTeam as apiDeleteTeam, addTask } from '@/app/actions';
 import type { Task, TrangThaiCongViec as TaskStatus, User, Team, VaiTroThanhVien as TeamMemberRole } from '@/types';
 import Sidebar from '@/components/sidebar';
 import Header from '@/components/header';
@@ -216,10 +216,9 @@ export default function TeamDetailPage() {
     setSelectedTask(null);
   }
 
-  // Dummy handlers for Header
-  const [filters, setFilters] = React.useState({ assignee: 'all', team: 'all', search: '' });
   const handleCreateTask = async (newTaskData: Omit<Task, 'id' | 'nhom' | 'nguoiThucHien' | 'ngayTao'>) => {
-      await getTasksByTeam(teamId);
+      await addTask(newTaskData);
+      fetchData();
   };
   const handleTeamCreated = async () => {
     const teams = await getTeams();
@@ -231,7 +230,7 @@ export default function TeamDetailPage() {
         <div className="flex min-h-screen w-full flex-col lg:flex-row bg-background">
             <Sidebar teams={[]} onTeamChange={() => {}} onShowTour={() => {}}/>
             <div className="flex flex-1 flex-col">
-                <Header users={[]} teams={[]} filters={filters} setFilters={setFilters} onCreateTask={handleCreateTask as any} />
+                <Header onCreateTask={handleCreateTask as any} />
                 <SidebarInset>
                     <main className="flex-1 p-4 sm:p-6 md:p-8">
                         <Skeleton className="h-8 w-48 mb-8" />
@@ -261,7 +260,7 @@ export default function TeamDetailPage() {
     <div className="flex min-h-screen w-full flex-col lg:flex-row bg-background">
       <Sidebar teams={allTeams} onTeamChange={handleTeamCreated} onShowTour={() => setIsTourOpen(true)} />
       <div className="flex flex-1 flex-col">
-        <Header users={allUsers} teams={allTeams} filters={filters} setFilters={setFilters} onCreateTask={handleCreateTask as any} />
+        <Header onCreateTask={handleCreateTask as any} />
         <SidebarInset>
             <main className="flex-1 p-4 sm:p-6 md:p-8">
               <div className="space-y-8">

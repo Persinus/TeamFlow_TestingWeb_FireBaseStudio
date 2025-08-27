@@ -134,11 +134,8 @@ export default function SettingsPage() {
     }
 
 
-    // Dummy handlers for filters and task creation for Header component
-    const [filters, setFilters] = useState({ assignee: 'all', team: 'all', search: '' });
     const handleCreateTask = async (newTaskData: Omit<Task, 'id' | 'nhom' | 'nguoiThucHien' | 'ngayTao'>) => {
         await addTask(newTaskData);
-        // In a real app, you might want to refetch tasks here or update state optimistically
     };
 
     if (loading || !user) {
@@ -149,7 +146,7 @@ export default function SettingsPage() {
         <div className="flex min-h-screen w-full flex-col lg:flex-row bg-background">
             <Sidebar teams={teams} onTeamChange={fetchData} onShowTour={() => setIsTourOpen(true)} />
             <div className="flex flex-1 flex-col">
-                <Header users={users} teams={teams} filters={filters} setFilters={setFilters} onCreateTask={handleCreateTask as any} />
+                <Header onCreateTask={handleCreateTask as any} />
                 <SidebarInset>
                     <motion.main 
                          initial={{ opacity: 0, y: 20 }}

@@ -81,9 +81,7 @@ export default function ProfilePage() {
             fetchData(user.id);
         }
     }, [user, authLoading, router, fetchData]);
-
-    // Dummy handlers for Header component
-    const [filters, setFilters] = useState({ assignee: 'all', team: 'all', search: '' });
+    
     const handleCreateTask = async (newTaskData: Omit<Task, 'id' | 'nhom' | 'nguoiThucHien' | 'ngayTao'>) => {
         await addTask(newTaskData);
         if(user) fetchData(user.id);
@@ -105,7 +103,7 @@ export default function ProfilePage() {
             <div className="flex min-h-screen w-full flex-col lg:flex-row bg-background">
                 <Sidebar teams={teams} onTeamChange={() => user && fetchData(user.id)} onShowTour={() => setIsTourOpen(true)} />
                 <div className="flex flex-1 flex-col">
-                    <Header users={users} teams={teams} filters={filters} setFilters={setFilters} onCreateTask={handleCreateTask} />
+                    <Header onCreateTask={handleCreateTask} />
                     <SidebarInset>
                         <main className="flex-1 p-4 sm:p-6 md:p-8">
                              <ProfileSkeleton />
@@ -120,7 +118,7 @@ export default function ProfilePage() {
         <div className="flex min-h-screen w-full flex-col lg:flex-row bg-background">
             <Sidebar teams={teams} onTeamChange={() => fetchData(user.id)} onShowTour={() => setIsTourOpen(true)} />
             <div className="flex flex-1 flex-col">
-                <Header users={users} teams={teams} filters={filters} setFilters={setFilters} onCreateTask={handleCreateTask} />
+                <Header onCreateTask={handleCreateTask} />
                 <SidebarInset>
                     <motion.main 
                          initial={{ opacity: 0, y: 20 }}

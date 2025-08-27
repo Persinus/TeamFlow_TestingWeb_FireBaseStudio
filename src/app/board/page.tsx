@@ -22,6 +22,9 @@ import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { LayoutGrid, CalendarDays } from 'lucide-react';
 import CalendarView from '@/components/calendar-view';
+import { Select, SelectContent, SelectItem, SelectSeparator, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { Search } from 'lucide-react';
 
 
 const columns: { id: TaskStatus; title: string }[] = [
@@ -228,10 +231,6 @@ export default function BoardPage() {
       <Sidebar teams={teams} onTeamChange={fetchData} onShowTour={() => setIsTourOpen(true)} />
       <div className="flex flex-1 flex-col">
         <Header 
-          users={users} 
-          teams={teams} 
-          filters={filters} 
-          setFilters={setFilters} 
           onCreateTask={handleCreateTask}
         />
         <SidebarInset>
@@ -241,18 +240,54 @@ export default function BoardPage() {
               transition={{ duration: 0.5 }}
               className="flex-1 p-4 sm:p-6 md:p-8 overflow-x-auto"
             >
-              <div className="mb-6 flex justify-between items-center">
+              <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
                 <div>
                   <h1 className="text-3xl font-bold tracking-tight">Bảng điều khiển dự án</h1>
                   <p className="text-muted-foreground">{viewMode === 'board' ? "Kéo và thả các công việc để thay đổi trạng thái." : "Xem công việc theo ngày hết hạn."}</p>
                 </div>
-                 <div className="flex items-center gap-2 rounded-lg bg-card border p-1 shadow-sm">
-                    <Button variant={viewMode === 'board' ? 'secondary' : 'ghost'} size="icon" onClick={() => setViewMode('board')} aria-label="Chế độ xem bảng">
-                        <LayoutGrid className="h-5 w-5" />
-                    </Button>
-                     <Button variant={viewMode === 'calendar' ? 'secondary' : 'ghost'} size="icon" onClick={() => setViewMode('calendar')} aria-label="Chế độ xem lịch">
-                        <CalendarDays className="h-5 w-5" />
-                    </Button>
+                <div className="flex flex-wrap items-center gap-2">
+                    <div className="relative">
+                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                        <Input
+                        type="search"
+                        placeholder="Tìm kiếm..."
+                        className="w-full rounded-lg bg-secondary pl-8 md:w-[200px]"
+                        value={filters.search}
+                        onChange={(e) => setFilters(f => ({ ...f, search: e.target.value }))}
+                        />
+                    </div>
+                     <Select value={filters.assignee} onValueChange={(value) => setFilters(f => ({...f, assignee: value}))}>
+                        <SelectTrigger className={cn("w-full md:w-[170px]", filters.assignee !== 'all' && 'text-primary border-primary')}>
+                            <SelectValue placeholder="Lọc theo người được giao" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">Tất cả người được giao</SelectItem>
+                            <SelectItem value="unassigned">Chưa được giao</SelectItem>
+                            <SelectSeparator />
+                            {users.map(user => (
+                                <SelectItem key={user.id} value={user.id}>{user.hoTen}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                    <Select value={filters.team} onValueChange={(value) => setFilters(f => ({...f, team: value}))}>
+                        <SelectTrigger className={cn("w-full md:w-[170px]", filters.team !== 'all' && 'text-primary border-primary')}>
+                            <SelectValue placeholder="Lọc theo đội" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">Tất cả các đội</SelectItem>
+                            {teams.map(team => (
+                                <SelectItem key={team.id} value={team.id}>{team.tenNhom}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                    <div className="flex items-center gap-2 rounded-lg bg-card border p-1 shadow-sm">
+                        <Button variant={viewMode === 'board' ? 'secondary' : 'ghost'} size="icon" onClick={() => setViewMode('board')} aria-label="Chế độ xem bảng">
+                            <LayoutGrid className="h-5 w-5" />
+                        </Button>
+                        <Button variant={viewMode === 'calendar' ? 'secondary' : 'ghost'} size="icon" onClick={() => setViewMode('calendar')} aria-label="Chế độ xem lịch">
+                            <CalendarDays className="h-5 w-5" />
+                        </Button>
+                    </div>
                 </div>
               </div>
               {loading ? (

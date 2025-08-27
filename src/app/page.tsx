@@ -4,7 +4,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
-import { getTasks, getTeams } from '@/app/actions';
+import { getTasks, getTeams, getUsers } from '@/app/actions';
 import type { Task, Team, User } from '@/types';
 import Sidebar from '@/components/sidebar';
 import Header from '@/components/header';
@@ -133,7 +133,7 @@ export default function HomePage() {
         <div className="flex min-h-screen w-full flex-col lg:flex-row bg-background">
             <Sidebar teams={teams} onTeamChange={() => getTeams().then(setTeams)} onShowTour={() => setIsTourOpen(true)} />
             <div className="flex flex-1 flex-col">
-                <Header users={[]} teams={[]} filters={{ assignee: '', team: '', search: '' }} setFilters={() => {}} onCreateTask={async () => {}} />
+                <Header onCreateTask={async () => {}} />
                 <SidebarInset>
                     <motion.main
                         initial={{ opacity: 0, y: 20 }}
