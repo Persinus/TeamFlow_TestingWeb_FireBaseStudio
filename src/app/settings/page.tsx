@@ -27,7 +27,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { MOCK_USERS } from '@/lib/mock-data';
 import TourGuide from '@/components/tour-guide';
 
-// Get a list of unique avatar URLs from the mock data
 const availableAvatars = MOCK_USERS.map(u => u.anhDaiDien).filter((v, i, a) => a.indexOf(v) === i);
 
 
@@ -42,7 +41,6 @@ export default function SettingsPage() {
     const [language, setLanguage] = useState('en');
     const [isSwitchingLang, setIsSwitchingLang] = useState(false);
     
-    // Form state
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [phone, setPhone] = useState('');
@@ -75,7 +73,13 @@ export default function SettingsPage() {
     useEffect(() => {
         const storedTheme = localStorage.getItem('theme') || 'light';
         setTheme(storedTheme);
-        document.body.className = `theme-${storedTheme}`;
+        // Apply theme on initial load
+        const root = window.document.documentElement;
+        root.classList.remove('theme-light', 'theme-dark', 'theme-ocean', 'theme-forest', 'theme-high-contrast');
+        if (storedTheme === 'dark') {
+            root.classList.add('dark');
+        }
+        root.classList.add(`theme-${storedTheme}`);
 
         const storedLang = localStorage.getItem('language') || 'en';
         setLanguage(storedLang);
@@ -84,7 +88,17 @@ export default function SettingsPage() {
     const handleThemeChange = (newTheme: string) => {
         setTheme(newTheme);
         localStorage.setItem('theme', newTheme);
-        document.body.className = `theme-${newTheme}`;
+        
+        const root = window.document.documentElement;
+        // Remove all possible theme classes
+        root.classList.remove('dark', 'theme-light', 'theme-dark', 'theme-ocean', 'theme-forest', 'theme-high-contrast');
+        
+        // Add the correct classes
+        if (newTheme === 'dark') {
+            root.classList.add('dark', 'theme-dark');
+        } else {
+            root.classList.add(`theme-${newTheme}`);
+        }
     };
     
     const handleLanguageChange = (newLang: string) => {
@@ -92,7 +106,6 @@ export default function SettingsPage() {
         setIsSwitchingLang(true);
         localStorage.setItem('language', newLang);
 
-        // Simulate applying the language change
         setTimeout(() => {
             setIsSwitchingLang(false);
             toast({
@@ -109,7 +122,6 @@ export default function SettingsPage() {
         setIsUpdating(true);
         try {
             await apiUpdateUser(user.id, { hoTen: name, soDienThoai: phone, ngaySinh: dob?.toISOString() });
-            // Update auth context
             updateUser({ ...user, hoTen: name, soDienThoai: phone, ngaySinh: dob?.toISOString() });
             toast({ title: 'Hồ sơ đã được cập nhật', description: 'Thông tin của bạn đã được lưu.' });
         } catch (error) {
@@ -292,5 +304,3 @@ export default function SettingsPage() {
         </div>
     );
 }
-
-    

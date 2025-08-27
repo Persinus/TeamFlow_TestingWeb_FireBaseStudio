@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Menu, Search, Moon, Sun, User as UserIcon, LogOut, Settings as SettingsIcon, HelpCircle } from 'lucide-react';
+import { Menu, User as UserIcon, LogOut, Settings as SettingsIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -12,7 +12,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import CreateTaskSheet from '@/components/create-task-sheet';
@@ -21,37 +20,23 @@ import { MobileSidebar } from './sidebar';
 import { useAuth } from '@/hooks/use-auth';
 import Link from 'next/link';
 import { useToast } from '../hooks/use-toast';
-import { useRouter, usePathname } from 'next/navigation';
-import { cn } from '@/lib/utils';
-import { Logo } from './icons';
+import { useRouter } from 'next/navigation';
 
 interface HeaderProps {
   onCreateTask: (newTaskData: Omit<Task, 'id' | 'nhom' | 'nguoiThucHien' | 'ngayTao' > & { users: User[], teams: Team[] }) => Promise<void>;
 }
 
 export default function Header({ onCreateTask }: HeaderProps) {
-  const [theme, setTheme] = useState('light');
   const { user, logout } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
-  const pathname = usePathname();
 
-  // State for CreateTaskSheet's dependencies
   const [users, setUsers] = useState<User[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
 
 
   useEffect(() => {
-    const storedTheme = typeof window !== "undefined" ? localStorage.getItem('theme') || 'light' : 'light';
-    setTheme(storedTheme);
-    document.documentElement.classList.toggle('dark', storedTheme === 'dark');
-  }, []);
-
-  // Fetch users and teams for the CreateTaskSheet
-  useEffect(() => {
     const fetchDataForSheet = async () => {
-        // In a real app, you might want a more efficient way to get this data
-        // but for now, this ensures the sheet has what it needs.
         const { getUsers, getTeams } = await import('@/app/actions');
         const [usersData, teamsData] = await Promise.all([getUsers(), getTeams()]);
         setUsers(usersData);
@@ -59,21 +44,6 @@ export default function Header({ onCreateTask }: HeaderProps) {
     }
     fetchDataForSheet();
   }, []);
-
-
-  const toggleTheme = () => {
-    const newTheme = theme === 'light' ? 'dark' : 'light';
-    setTheme(newTheme);
-    localStorage.setItem('theme', newTheme);
-    document.documentElement.classList.toggle('dark', newTheme === 'dark');
-    document.documentElement.style.colorScheme = newTheme;
-  };
-  
-  useEffect(() => {
-    const root = document.documentElement;
-    root.style.colorScheme = theme;
-  }, [theme]);
-
 
   const handleLogout = async () => {
     try {
@@ -86,8 +56,6 @@ export default function Header({ onCreateTask }: HeaderProps) {
 
   const navigateToSettings = () => router.push('/settings');
   const navigateToProfile = () => router.push('/profile');
-
-  const isBoardPage = pathname === '/board';
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background/95 backdrop-blur-sm px-4 md:px-6">
@@ -137,10 +105,6 @@ export default function Header({ onCreateTask }: HeaderProps) {
                 <DropdownMenuItem onClick={navigateToSettings} className="gap-2">
                 <SettingsIcon className="h-4 w-4" />
                 <span>Cài đặt</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={toggleTheme} className="gap-2">
-                {theme === 'light' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
-                <span>Chế độ {theme === 'light' ? 'Tối' : 'Sáng'}</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleLogout} className="gap-2">
