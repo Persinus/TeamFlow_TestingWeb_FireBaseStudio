@@ -3,6 +3,7 @@
 
 import React, { Suspense, useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
+import dynamic from 'next/dynamic';
 
 import Sidebar from '@/components/sidebar';
 import Header from '@/components/header';
@@ -15,7 +16,12 @@ import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import TaskDetailsSheet from '@/components/task-details-sheet';
 import { Card } from '@/components/ui/card';
-import GalleryCanvas from '@/components/gallery-canvas';
+
+const GalleryCanvas = dynamic(() => import('@/components/gallery-canvas'), {
+    ssr: false,
+    loading: () => <GallerySkeleton />
+});
+
 
 function GallerySkeleton() {
     return (
