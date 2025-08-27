@@ -2,12 +2,14 @@
 "use client"
 
 import * as React from "react"
+import Image from "next/image"
 import { parseISO, format, isSameDay } from "date-fns"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import type { Task } from "@/types"
 import { cn } from "@/lib/utils"
 import { Card } from "@/components/ui/card"
+import { CheckCircle } from "lucide-react"
 
 interface CalendarViewProps {
   tasks: Task[]
@@ -65,7 +67,7 @@ export default function CalendarView({ tasks, onSelectTask }: CalendarViewProps)
                 }}
             />
        </div>
-      <div className="p-4 border-t md:border-t-0">
+      <div className="p-4 border-t md:border-t-0 flex flex-col">
           <h3 className="text-lg font-semibold mb-2">
             Công việc cho {date ? format(date, 'PPP') : '...'}
           </h3>
@@ -90,7 +92,19 @@ export default function CalendarView({ tasks, onSelectTask }: CalendarViewProps)
                 ))}
             </div>
           ) : (
-            <p className="text-sm text-muted-foreground">Không có công việc nào đến hạn vào ngày này.</p>
+             <div className="flex flex-col items-center justify-center text-center text-muted-foreground flex-grow py-6">
+                <div className="relative w-48 h-48 mb-4">
+                    <Image 
+                        src="https://picsum.photos/400/400" 
+                        alt="No tasks" 
+                        layout="fill"
+                        className="rounded-full object-cover"
+                        data-ai-hint="peaceful relax"
+                    />
+                </div>
+                <p className="font-semibold text-foreground">Không có gì ở đây cả</p>
+                <p className="text-sm">Không có công việc nào đến hạn vào ngày này. Hãy tận hưởng sự yên bình!</p>
+            </div>
           )}
       </div>
     </Card>
