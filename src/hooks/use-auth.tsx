@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
@@ -52,8 +53,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 if (userSnap.exists()) {
                     setUser({ id: userSnap.id, ...userSnap.data() } as User);
                 } else {
-                    // This case handles a rare situation where an auth user might exist
-                    // without a corresponding Firestore profile. We can try creating one.
                     const name = firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'User';
                     const newUser = await createUserProfile(firebaseUser, name);
                     setUser(newUser);
@@ -79,26 +78,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }, [user, loading, pathname, router]);
 
     const login = async (email: string, pass: string): Promise<void> => {
-        try {
-            await signInWithEmailAndPassword(auth, email, pass);
-        } catch (error: any) {
-            // If the admin user fails to log in, it might be because the account doesn't exist yet.
-            // Let's try to create it.
-            if (email === 'admin@teamflow.com' && error.code === 'auth/invalid-credential') {
-                try {
-                    const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
-                    await createUserProfile(userCredential.user, 'Admin');
-                    // No need to call signIn again, createUserWithEmailAndPassword signs the user in.
-                } catch (registerError) {
-                    // If registration also fails (e.g., password too weak), re-throw the original login error.
+        // Special handling for the admin user to ensure it's created on first login
+        if (email === 'admin@teamflow.com') {
+            try {
+                // Try to create the user first. This will sign them in automatically.
+                const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
+                await createUserProfile(userCredential.user, 'Admin');
+            } catch (error: any) {
+                // If the error is 'email-already-in-use', it means the account exists, so we can proceed to log in.
+                if (error.code === 'auth/email-already-in-use') {
+                    await signInWithEmailAndPassword(auth, email, pass);
+                } else {
+                    // For other errors during creation (e.g., weak password), re-throw them.
                     throw error;
                 }
-            } else {
-                // For any other user or error, just re-throw.
-                throw error;
             }
+        } else {
+            // For all other users, just try to sign in.
+            await signInWithEmailAndPassword(auth, email, pass);
         }
     };
+    
 
     const logout = async () => {
         await firebaseSignOut(auth);
