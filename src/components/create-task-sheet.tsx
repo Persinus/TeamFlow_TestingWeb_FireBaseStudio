@@ -12,13 +12,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
 import { getAssigneeSuggestion } from '@/app/actions';
-import { users, teams } from '@/lib/data';
-import type { Task, TaskStatus } from '@/types';
+import type { Task, TaskStatus, User, Team } from '@/types';
 import { Wand2 } from 'lucide-react';
 
 interface CreateTaskSheetProps {
   children: React.ReactNode;
-  onCreateTask: (newTaskData: Omit<Task, 'id' | 'comments'>) => void;
+  onCreateTask: (newTaskData: Omit<Task, 'id' | 'comments' | 'team' | 'assignee'> & {teamId: string, assigneeId?: string}) => Promise<void>;
+  users: User[];
+  teams: Team[];
 }
 
 const taskSchema = z.object({
@@ -29,7 +30,7 @@ const taskSchema = z.object({
   status: z.enum(['todo', 'in-progress', 'backlog', 'done']),
 });
 
-export default function CreateTaskSheet({ children, onCreateTask }: CreateTaskSheetProps) {
+export default function CreateTaskSheet({ children, onCreateTask, users, teams }: CreateTaskSheetProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isSuggesting, setIsSuggesting] = useState(false);
   const { toast } = useToast();
@@ -76,17 +77,12 @@ export default function CreateTaskSheet({ children, onCreateTask }: CreateTaskSh
     }
   };
 
-  const onSubmit = (values: z.infer<typeof taskSchema>) => {
-    const assignee = users.find(u => u.id === values.assigneeId);
-    const team = teams.find(t => t.id === values.teamId);
-
-    if (!team) return;
-
-    onCreateTask({
+  const onSubmit = async (values: z.infer<typeof taskSchema>) => {
+    await onCreateTask({
       title: values.title,
       description: values.description || '',
-      assignee,
-      team,
+      assigneeId: values.assigneeId,
+      teamId: values.teamId,
       status: values.status
     });
     form.reset();

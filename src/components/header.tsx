@@ -16,22 +16,28 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/co
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import CreateTaskSheet from '@/components/create-task-sheet';
-import { users, teams } from '@/lib/data';
-import type { Task } from '@/types';
+import type { Task, User, Team } from '@/types';
 import Sidebar, { SidebarTrigger } from './sidebar';
 import { useAuth } from '@/hooks/use-auth';
 import { Logo } from './icons';
 import Link from 'next/link';
+import { useToast } from '../hooks/use-toast';
+import { useRouter } from 'next/navigation';
 
 interface HeaderProps {
+  users: User[];
+  teams: Team[];
   filters: { assignee: string; team: string; search: string };
   setFilters: React.Dispatch<React.SetStateAction<{ assignee: string; team: string; search: string }>>;
-  onCreateTask: (newTaskData: Omit<Task, 'id' | 'comments'>) => void;
+  onCreateTask: (newTaskData: Omit<Task, 'id' | 'comments' | 'team' | 'assignee'> & {teamId: string, assigneeId?: string}) => Promise<void>;
 }
 
-export default function Header({ filters, setFilters, onCreateTask }: HeaderProps) {
+export default function Header({ users, teams, filters, setFilters, onCreateTask }: HeaderProps) {
   const [theme, setTheme] = useState('light');
   const { user, logout } = useAuth();
+  const { toast } = useToast();
+  const router = useRouter();
+
 
   useEffect(() => {
     const storedTheme = localStorage.getItem('theme') || 'light';
@@ -49,6 +55,18 @@ export default function Header({ filters, setFilters, onCreateTask }: HeaderProp
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFilters(f => ({ ...f, search: e.target.value }));
   };
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      toast({title: 'Logged out successfully'});
+    } catch(error) {
+      toast({title: 'Logout failed', variant: 'destructive'});
+    }
+  }
+
+  const navigateToSettings = () => router.push('/settings');
+
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6">
@@ -70,7 +88,7 @@ export default function Header({ filters, setFilters, onCreateTask }: HeaderProp
                         </Link>
                     </SheetTitle>
                 </SheetHeader>
-                <Sidebar />
+                <Sidebar teams={teams} />
             </SheetContent>
         </Sheet>
         
@@ -110,7 +128,7 @@ export default function Header({ filters, setFilters, onCreateTask }: HeaderProp
             </Select>
         </div>
 
-        <CreateTaskSheet onCreateTask={onCreateTask}>
+        <CreateTaskSheet onCreateTask={onCreateTask} users={users} teams={teams}>
           <Button className="bg-primary text-primary-foreground hover:bg-primary/90">Create Task</Button>
         </CreateTaskSheet>
         
@@ -126,14 +144,13 @@ export default function Header({ filters, setFilters, onCreateTask }: HeaderProp
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>My Account</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>Profile</DropdownMenuItem>
-            <DropdownMenuItem>Settings</DropdownMenuItem>
+            <DropdownMenuItem onClick={navigateToSettings}>Settings</DropdownMenuItem>
             <DropdownMenuItem onClick={toggleTheme} className="gap-2">
               {theme === 'light' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
               <span>{theme === 'light' ? 'Dark' : 'Light'} Mode</span>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={logout}>Logout</DropdownMenuItem>
+            <DropdownMenuItem onClick={handleLogout}>Logout</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

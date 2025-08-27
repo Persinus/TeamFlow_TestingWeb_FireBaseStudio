@@ -12,31 +12,35 @@ import { useToast } from '@/hooks/use-toast';
 import { Logo } from '@/components/icons';
 
 export default function LoginPage() {
-    const [username, setUsername] = useState('');
-    const [password, setPassword] = useState('');
-    const { user, login } = useAuth();
+    const [email, setEmail] = useState('admin@teamflow.com');
+    const [password, setPassword] = useState('Admin@1234');
+    const { user, login, loading } = useAuth();
     const router = useRouter();
     const { toast } = useToast();
 
     useEffect(() => {
-        if (user) {
+        if (!loading && user) {
             router.push('/');
         }
-    }, [user, router]);
+    }, [user, loading, router]);
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            await login(username, password);
+            await login(email, password);
             router.push('/');
         } catch (error: any) {
             toast({
                 variant: 'destructive',
                 title: 'Login Failed',
-                description: error.message,
+                description: "Invalid email or password.",
             });
         }
     };
+
+    if (loading || user) {
+        return <div className="flex h-screen items-center justify-center">Loading...</div>;
+    }
 
     return (
         <div className="flex items-center justify-center min-h-screen bg-muted/40">
@@ -47,19 +51,19 @@ export default function LoginPage() {
                         <h1 className="text-2xl font-bold">TeamFlow</h1>
                     </div>
                     <CardTitle className="text-2xl">Login</CardTitle>
-                    <CardDescription>Enter your username below to login to your account</CardDescription>
+                    <CardDescription>Enter your email below to login to your account</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <form onSubmit={handleLogin}>
                         <div className="grid gap-4">
                             <div className="grid gap-2">
-                                <Label htmlFor="username">Username</Label>
+                                <Label htmlFor="email">Email</Label>
                                 <Input
-                                    id="username"
-                                    type="text"
-                                    placeholder="admin"
-                                    value={username}
-                                    onChange={(e) => setUsername(e.target.value)}
+                                    id="email"
+                                    type="email"
+                                    placeholder="admin@teamflow.com"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
                                     required
                                 />
                             </div>

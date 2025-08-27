@@ -1,4 +1,3 @@
-
 "use client"
 
 import React, { useState, useEffect } from 'react';
@@ -11,7 +10,6 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { CalendarIcon, Moon, Sun,Smile } from 'lucide-react';
-import { users } from '@/lib/data';
 import type { Task } from '@/types';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
@@ -27,21 +25,21 @@ export default function SettingsPage() {
     const { user, loading } = useAuth();
     const router = useRouter();
 
-    useEffect(() => {
-      if (!loading && !user) {
-        router.push('/login');
-      }
-    }, [user, loading, router]);
-    
-    // Mock user, in a real app, this would come from an auth context
-    const currentUser = user || users[3]; 
-
     const [theme, setTheme] = useState('light');
-    const [name, setName] = useState(currentUser.name);
-    const [email, setEmail] = useState(`${currentUser.username}@example.com`); // Mock email
-    const [phone, setPhone] = useState(currentUser.phone || '');
+    const [name, setName] = useState('');
+    const [email, setEmail] = useState('');
+    const [phone, setPhone] = useState('');
     const [status, setStatus] = useState('Focusing on the main quest!');
-    const [dob, setDob] = useState<Date | undefined>(currentUser.dob ? new Date(currentUser.dob) : undefined);
+    const [dob, setDob] = useState<Date | undefined>(undefined);
+
+    useEffect(() => {
+        if (!loading && user) {
+            setName(user.name);
+            setEmail(user.email);
+            setPhone(user.phone || '');
+            setDob(user.dob ? new Date(user.dob) : undefined);
+        }
+    }, [user, loading]);
 
     useEffect(() => {
         const storedTheme = localStorage.getItem('theme') || 'light';
@@ -58,7 +56,7 @@ export default function SettingsPage() {
 
     // Dummy handlers for filters and task creation for Header component
     const [filters, setFilters] = useState({ assignee: 'all', team: 'all', search: '' });
-    const handleCreateTask = (newTaskData: Omit<Task, 'id' | 'comments'>) => {};
+    const handleCreateTask = async (newTaskData: Omit<Task, 'id' | 'comments'> & {teamId: string, assigneeId?: string}) => {};
 
     if (loading || !user) {
         return <div className="flex h-screen items-center justify-center">Loading...</div>;
@@ -66,9 +64,9 @@ export default function SettingsPage() {
 
     return (
         <div className="flex min-h-screen w-full flex-col lg:flex-row bg-muted/40">
-            <Sidebar />
+            <Sidebar teams={[]} />
             <div className="flex flex-1 flex-col">
-                <Header filters={filters} setFilters={setFilters} onCreateTask={handleCreateTask} />
+                <Header users={[]} teams={[]} filters={filters} setFilters={setFilters} onCreateTask={handleCreateTask} />
                 <SidebarInset>
                     <main className="flex-1 p-4 sm:p-6 md:p-8">
                         <div className="max-w-4xl mx-auto space-y-8">
@@ -82,8 +80,8 @@ export default function SettingsPage() {
                                 <CardContent className="space-y-6">
                                     <div className="flex items-center gap-4">
                                         <Avatar className="h-16 w-16">
-                                            <AvatarImage src={currentUser.avatar} alt={currentUser.name} />
-                                            <AvatarFallback>{currentUser.name.substring(0,2).toUpperCase()}</AvatarFallback>
+                                            <AvatarImage src={user.avatar} alt={user.name} />
+                                            <AvatarFallback>{user.name.substring(0,2).toUpperCase()}</AvatarFallback>
                                         </Avatar>
                                         <Button variant="outline">Change Photo</Button>
                                     </div>
@@ -101,7 +99,7 @@ export default function SettingsPage() {
                                         </div>
                                         <div className="space-y-2">
                                             <Label htmlFor="email">Email</Label>
-                                            <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+                                            <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} disabled />
                                         </div>
                                         <div className="space-y-2">
                                             <Label htmlFor="phone">Phone Number</Label>

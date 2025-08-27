@@ -13,22 +13,22 @@ import { Logo } from '@/components/icons';
 
 export default function RegisterPage() {
     const [name, setName] = useState('');
-    const [username, setUsername] = useState('');
+    const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const { user, register } = useAuth();
+    const { user, register, loading } = useAuth();
     const router = useRouter();
     const { toast } = useToast();
 
     useEffect(() => {
-        if (user) {
+        if (!loading && user) {
             router.push('/');
         }
-    }, [user, router]);
+    }, [user, loading, router]);
     
     const handleRegister = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            await register(name, username, password);
+            await register(name, email, password);
             toast({
                 title: 'Registration Successful',
                 description: 'You can now log in with your new account.',
@@ -42,6 +42,10 @@ export default function RegisterPage() {
             });
         }
     };
+    
+    if (loading || user) {
+        return <div className="flex h-screen items-center justify-center">Loading...</div>;
+    }
 
     return (
         <div className="flex items-center justify-center min-h-screen bg-muted/40">
@@ -68,12 +72,13 @@ export default function RegisterPage() {
                                 />
                             </div>
                             <div className="grid gap-2">
-                                <Label htmlFor="username">Username</Label>
+                                <Label htmlFor="email">Email</Label>
                                 <Input 
-                                    id="username" 
-                                    placeholder="diana" 
-                                    value={username}
-                                    onChange={(e) => setUsername(e.target.value)}
+                                    id="email" 
+                                    type="email"
+                                    placeholder="diana@wonder.com" 
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
                                     required 
                                 />
                             </div>

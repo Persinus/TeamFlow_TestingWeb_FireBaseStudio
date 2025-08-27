@@ -2,13 +2,13 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Home, Settings, Users, ChevronDown, PanelLeft } from 'lucide-react';
+import { Home, Settings, Users, ChevronDown } from 'lucide-react';
 import { Logo } from '@/components/icons';
 import { Badge } from '@/components/ui/badge';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { teams } from '@/lib/data';
-import { Sidebar as RootSidebar, SidebarHeader, SidebarContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarGroup, SidebarGroupLabel, useSidebar } from '@/components/ui/sidebar';
+import type { Team } from '@/types';
+import { Sidebar as RootSidebar, SidebarHeader, SidebarContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarGroup, useSidebar } from '@/components/ui/sidebar';
 
 const NavLink = ({ href, children, icon: Icon, badge, exact = false, tooltip }: { href: string; children: React.ReactNode; icon: React.ElementType; badge?: string | number; exact?: boolean; tooltip?: string; }) => {
   const pathname = usePathname();
@@ -26,8 +26,11 @@ const NavLink = ({ href, children, icon: Icon, badge, exact = false, tooltip }: 
   );
 };
 
+interface SidebarProps {
+  teams: Team[];
+}
 
-export default function Sidebar() {
+export default function Sidebar({ teams }: SidebarProps) {
   const pathname = usePathname();
   const [isTeamsOpen, setIsTeamsOpen] = React.useState(pathname.startsWith('/teams'));
   const { state } = useSidebar();

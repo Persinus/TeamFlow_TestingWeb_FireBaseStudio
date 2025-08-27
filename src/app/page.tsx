@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState, useMemo, useEffect } from 'react';
-import { initialTasks, users, teams, addTask } from '@/lib/data';
-import type { Task, TaskStatus } from '@/types';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import { getTasks, updateTaskStatus, addComment as apiAddComment, addTask as apiAddTask, getUsers, getTeams } from '@/lib/data';
+import type { Task, TaskStatus, User, Team } from '@/types';
 import Sidebar from '@/components/sidebar';
 import Header from '@/components/header';
 import TaskCard from '@/components/task-card';
@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import { SidebarInset } from '@/components/ui/sidebar';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const columns: { id: TaskStatus; title: string }[] = [
   { id: 'backlog', title: 'Backlog' },
@@ -19,20 +20,61 @@ const columns: { id: TaskStatus; title: string }[] = [
   { id: 'done', title: 'Done' },
 ];
 
+function BoardSkeleton() {
+  return (
+    <div className="grid min-w-[1200px] grid-cols-4 gap-6">
+      {columns.map(column => (
+        <div key={column.id} className="flex h-full flex-col gap-4">
+          <div className="flex items-center justify-between rounded-lg bg-background p-3 shadow-sm">
+            <Skeleton className="h-6 w-24" />
+            <Skeleton className="h-6 w-6 rounded-full" />
+          </div>
+          <div className="flex flex-col gap-4">
+            <Skeleton className="h-36 w-full rounded-lg" />
+            <Skeleton className="h-36 w-full rounded-lg" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+
 export default function DashboardPage() {
-  const { user, loading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const router = useRouter();
 
-  useEffect(() => {
-    if (!loading && !user) {
-      router.push('/login');
-    }
-  }, [user, loading, router]);
-
-
-  const [tasks, setTasks] = useState<Task[]>(initialTasks);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [filters, setFilters] = useState<{ assignee: string; team: string, search: string }>({ assignee: 'all', team: 'all', search: '' });
+
+  const fetchData = useCallback(async () => {
+    try {
+      setLoading(true);
+      const [tasksData, usersData, teamsData] = await Promise.all([
+        getTasks(),
+        getUsers(),
+        getTeams()
+      ]);
+      setTasks(tasksData);
+      setUsers(usersData);
+      setTeams(teamsData);
+    } catch (error) {
+      console.error("Failed to fetch data:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!authLoading && user) {
+      fetchData();
+    }
+  }, [authLoading, user, fetchData]);
+
 
   const filteredTasks = useMemo(() => {
     return tasks.filter(task => {
@@ -43,55 +85,45 @@ export default function DashboardPage() {
     });
   }, [tasks, filters]);
 
-  const handleCreateTask = (newTaskData: Omit<Task, 'id' | 'comments'>) => {
-    const newTask: Task = {
-      ...newTaskData,
-      id: `task-${Date.now()}`,
-      comments: [],
-    };
-    const updatedTasks = addTask(newTask); // Add to the global-like source
-    setTasks(updatedTasks); // Update local state to re-render
+  const handleCreateTask = async (newTaskData: Omit<Task, 'id' | 'comments' | 'team' | 'assignee'> & {teamId: string, assigneeId?: string}) => {
+    await apiAddTask(newTaskData);
+    fetchData(); // Refetch all data to get the new task
   };
 
-  const handleUpdateTask = (updatedTask: Task) => {
+  const handleUpdateTask = async (updatedTask: Task) => {
+    // This is a placeholder as we're not editing tasks directly from the board view
+    // In a real app, you would have a function in data.ts like `updateTask`
     setTasks(prevTasks => prevTasks.map(task => task.id === updatedTask.id ? updatedTask : task));
     if (selectedTask?.id === updatedTask.id) {
       setSelectedTask(updatedTask);
     }
   };
   
-  const handleStatusChange = (taskId: string, newStatus: TaskStatus) => {
+  const handleStatusChange = async (taskId: string, newStatus: TaskStatus) => {
     setTasks(prevTasks => prevTasks.map(task => 
       task.id === taskId ? { ...task, status: newStatus } : task
     ));
-    // Also update selected task if it's the one being changed
     setSelectedTask(prev => prev && prev.id === taskId ? {...prev, status: newStatus} : prev);
+    await updateTaskStatus(taskId, newStatus);
   };
 
-  const handleAddComment = (taskId: string, commentContent: string) => {
-    const currentUser = users[3]; // Mock current user as Diana Prince for demo
-    if (!currentUser) return;
-    
-    const newComment = {
-      id: `comment-${Date.now()}`,
-      author: currentUser,
-      content: commentContent,
-      createdAt: new Date().toISOString(),
-    };
-    
-    let targetTask: Task | undefined;
-    const newTasks = tasks.map(t => {
-      if (t.id === taskId) {
-        targetTask = { ...t, comments: [...t.comments, newComment] };
-        return targetTask;
+  const handleAddComment = async (taskId: string, commentContent: string) => {
+    if (!user) return;
+    await apiAddComment(taskId, commentContent, user.id);
+    // Refetch task to show new comment
+    const updatedTask = tasks.find(t => t.id === taskId);
+    if(updatedTask) {
+      const newComment = {
+        id: `comment-${Date.now()}`,
+        author: user,
+        content: commentContent,
+        createdAt: new Date().toISOString(),
+      };
+      const newTask = { ...updatedTask, comments: [...(updatedTask.comments || []), newComment]};
+      setTasks(tasks.map(t => t.id === taskId ? newTask : t));
+      if (selectedTask?.id === taskId) {
+        setSelectedTask(newTask);
       }
-      return t;
-    });
-    
-    setTasks(newTasks);
-
-    if (selectedTask?.id === taskId && targetTask) {
-      setSelectedTask(targetTask);
     }
   };
 
@@ -102,17 +134,26 @@ export default function DashboardPage() {
     }, {} as Record<TaskStatus, Task[]>);
   }, [filteredTasks]);
 
-  if (loading || !user) {
+  if (authLoading || !user) {
     return <div className="flex h-screen items-center justify-center">Loading...</div>;
   }
 
   return (
     <div className="flex min-h-screen w-full flex-col lg:flex-row bg-muted/40 dark:bg-zinc-900/40">
-      <Sidebar />
+      <Sidebar teams={teams} />
       <div className="flex flex-1 flex-col">
-        <Header filters={filters} setFilters={setFilters} onCreateTask={handleCreateTask} />
+        <Header 
+          users={users} 
+          teams={teams} 
+          filters={filters} 
+          setFilters={setFilters} 
+          onCreateTask={handleCreateTask} 
+        />
         <SidebarInset>
             <main className="flex-1 p-4 sm:p-6 md:p-8 overflow-x-auto">
+              {loading ? (
+                <BoardSkeleton />
+              ) : (
                 <div className="grid min-w-[1200px] grid-cols-4 gap-6">
                   {columns.map(column => (
                     <div key={column.id} className="flex h-full flex-col gap-4">
@@ -128,6 +169,7 @@ export default function DashboardPage() {
                     </div>
                   ))}
                 </div>
+              )}
             </main>
         </SidebarInset>
       </div>

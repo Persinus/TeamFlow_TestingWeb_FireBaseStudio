@@ -102,7 +102,7 @@ export default function TaskDetailsSheet({ task, onOpenChange, onUpdateTask, onA
         <div className="flex-1 flex flex-col gap-4 overflow-y-auto pr-4 -mr-4">
             <h3 className="font-semibold flex items-center gap-2"><MessageSquare className="h-5 w-5"/> Comments</h3>
             <div className="space-y-4">
-                {task.comments.map(c => (
+                {task.comments && task.comments.map(c => (
                     <div key={c.id} className="flex items-start gap-3">
                         <Avatar className="h-8 w-8">
                             <AvatarImage src={c.author.avatar} />
@@ -119,7 +119,7 @@ export default function TaskDetailsSheet({ task, onOpenChange, onUpdateTask, onA
                         </div>
                     </div>
                 ))}
-                 {task.comments.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">No comments yet.</p>}
+                 {(!task.comments || task.comments.length === 0) && <p className="text-sm text-muted-foreground text-center py-4">No comments yet.</p>}
             </div>
         </div>
         <div className="mt-auto pt-4 border-t">
