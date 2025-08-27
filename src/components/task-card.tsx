@@ -40,8 +40,10 @@ export default function TaskCard({ task, onSelectTask, isDragging }: TaskCardPro
 
   const getDeadlineInfo = () => {
       if (!task.dueDate) return { text: null, className: '', cardBorderClass: '' };
+      
+      // The dueDate can be either a string (from serialization) or a Date object.
+      const dueDate = typeof task.dueDate === 'string' ? parseISO(task.dueDate) : task.dueDate;
 
-      const dueDate = parseISO(task.dueDate);
       const now = new Date();
       const isOverdue = isBefore(dueDate, now);
       const daysDifference = differenceInDays(dueDate, now);

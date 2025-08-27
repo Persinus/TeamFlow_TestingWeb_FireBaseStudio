@@ -35,8 +35,8 @@ export interface Task {
   assignee?: User; 
   teamId: string; 
   team: Team; 
-  createdAt: string; // ISO string
-  startDate?: string; // ISO string
-  dueDate?: string; // ISO string
+  createdAt: string | Date; // ISO string or Date object
+  startDate?: string | Date; // ISO string or Date object
+  dueDate?: string | Date; // ISO string or Date object
   tags?: string[];
 }
