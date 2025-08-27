@@ -53,7 +53,9 @@ export function MultiSelect({
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (e.key === "Enter" && inputValue) {
-        if (onCreate) {
+      e.preventDefault();
+      e.stopPropagation();
+        if (onCreate && !options.some(opt => opt.value.toLowerCase() === inputValue.toLowerCase()) && !selectedValues.has(inputValue)) {
             onCreate(inputValue);
         }
         setInputValue("");
@@ -68,7 +70,7 @@ export function MultiSelect({
                 variant="outline"
                 role="combobox"
                 aria-expanded={open}
-                className="w-full justify-between h-auto"
+                className="w-full justify-between h-auto min-h-10"
                 onClick={() => setOpen(!open)}
             >
                 <div className="flex gap-1 flex-wrap">
@@ -86,7 +88,7 @@ export function MultiSelect({
                             }}
                             >
                             {option ? option.label : val}
-                            <X className="h-3 w-3 ml-1" />
+                            <X className="h-3 w-3 ml-1 cursor-pointer" />
                             </Badge>
                         );
                     })

@@ -30,7 +30,7 @@ interface TaskDetailsSheetProps {
   users: User[];
   teams: Team[];
   onOpenChange: (isOpen: boolean) => void;
-  onUpdateTask: (updatedTask: Omit<Task, 'nhom' | 'nguoiThucHien'>) => Promise<Task>;
+  onUpdateTask: (updatedTask: Omit<Task, 'nhom' | 'nguoiThucHien'>) => Promise<void>;
   onDeleteTask: (taskId: string) => Promise<void>;
 }
 
@@ -125,7 +125,7 @@ export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onU
   const onSubmit = async (data: TaskFormData) => {
     setIsUpdating(true);
     try {
-      const updatedTaskResult = await onUpdateTask({
+      await onUpdateTask({
         id: task.id,
         ...data,
         nguoiThucHienId: data.nguoiThucHienId === 'unassigned' ? undefined : data.nguoiThucHienId,
@@ -137,7 +137,7 @@ export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onU
       setIsEditing(false);
       toast({
         title: 'Đã cập nhật công việc',
-        description: `"${updatedTaskResult.tieuDe}" đã được lưu thành công.`,
+        description: `"${data.tieuDe}" đã được lưu thành công.`,
       });
     } catch(error) {
       toast({
@@ -267,9 +267,10 @@ export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onU
                                        value={field.value ?? []}
                                        onChange={field.onChange}
                                        onCreate={(value) => {
-                                           const newTag = { value, label: value };
-                                           setAvailableTags(prev => [...prev, value]);
-                                           field.onChange([...(field.value ?? []), newTag.value]);
+                                           if (!availableTags.includes(value)) {
+                                               setAvailableTags(prev => [...prev, value]);
+                                           }
+                                           field.onChange([...(field.value ?? []), value]);
                                        }}
                                        placeholder="Chọn hoặc tạo thẻ..."
                                        
