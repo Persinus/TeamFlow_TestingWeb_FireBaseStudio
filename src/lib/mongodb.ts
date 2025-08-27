@@ -27,83 +27,111 @@ if (!cached) {
 
 // --- Database Seeding ---
 const seedDatabase = async () => {
-    // Using a separate connection for seeding to avoid conflicts
-    const conn = mongoose.createConnection(MONGODB_URI!);
-    const UserSeedModel = conn.model('User', UserModel.schema);
-    const TeamSeedModel = conn.model('Team', TeamModel.schema);
-    const TaskSeedModel = conn.model('Task', TaskModel.schema);
-
     try {
-        const userCount = await UserSeedModel.countDocuments();
+        const userCount = await UserModel.countDocuments();
         if (userCount > 0) {
             console.log('Database already seeded.');
-            await conn.close();
             return;
         }
 
-        console.log('Seeding database...');
+        console.log('Seeding database with IT-oriented Vietnamese data...');
         
         // 1. Insert all mock users with their specific IDs
-        const usersToCreate = MOCK_USERS.map(({ id, ...rest }) => ({ ...rest, _id: id }));
-        await UserSeedModel.insertMany(usersToCreate);
+        const usersToCreate = MOCK_USERS.map(({ id, name, avatar, expertise, email, phone, dob, currentWorkload }) => ({
+             _id: id,
+             hoTen: name,
+             email: email,
+             anhDaiDien: avatar,
+             chuyenMon: expertise,
+             taiCongViecHienTai: currentWorkload,
+             soDienThoai: phone,
+             ngaySinh: dob,
+        }));
+        await UserModel.insertMany(usersToCreate);
         console.log(`${MOCK_USERS.length} users created.`);
 
-        // 2. Create a default team
-        const justiceLeagueTeam = new TeamSeedModel({
-            _id: 'team-justice-league-1',
-            name: 'Justice League',
-            description: 'The world\'s premier superhero team.',
-            members: [
-                { user: 'user-bruce', role: 'leader' },
-                { user: 'user-clark', role: 'member' },
-                { user: 'user-diana', role: 'member' },
+        // 2. Create default teams
+        const coreTeam = new TeamModel({
+            _id: 'team-core-backend-1',
+            tenNhom: 'Core Backend',
+            moTa: 'Phát triển và bảo trì các dịch vụ lõi của hệ thống.',
+            thanhVien: [
+                { thanhVienId: 'user-clark', vaiTro: 'Trưởng nhóm' },
+                { thanhVienId: 'user-victor', vaiTro: 'Thành viên' },
+                { thanhVienId: 'user-barry', vaiTro: 'Thành viên' },
             ],
         });
-        await justiceLeagueTeam.save();
-        console.log('Justice League team created.');
+        await coreTeam.save();
+
+        const frontendTeam = new TeamModel({
+            _id: 'team-frontend-ui-1',
+            tenNhom: 'Frontend UI',
+            moTa: 'Xây dựng giao diện người dùng và trải nghiệm người dùng.',
+            thanhVien: [
+                { thanhVienId: 'user-bruce', vaiTro: 'Trưởng nhóm' },
+                { thanhVienId: 'user-diana', vaiTro: 'Thành viên' },
+                { thanhVienId: 'user-harley', vaiTro: 'Thành viên' },
+            ],
+        });
+        await frontendTeam.save();
+
+        console.log('2 default teams created.');
         
-        // 3. Create some tasks for the team
+        // 3. Create some tasks for the teams
         const tasksToCreate = [
             {
                 _id: 'task-1',
-                title: 'Design new Batmobile schematics',
-                description: 'Upgrade the Batmobile with the latest tech. Focus on stealth and non-lethal weaponry.',
-                status: 'in-progress',
-                assignee: 'user-bruce',
-                team: justiceLeagueTeam._id,
-                tags: ['design', 'engineering'],
-                dueDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000)
+                tieuDe: 'Xây dựng API xác thực người dùng (JWT)',
+                moTa: 'Thiết kế và triển khai endpoint cho việc đăng nhập, đăng ký và refresh token sử dụng JSON Web Tokens.',
+                trangThai: 'Đang tiến hành',
+                loaiCongViec: 'Tính năng',
+                doUuTien: 'Cao',
+                nguoiThucHienId: 'user-clark',
+                nhomId: coreTeam._id,
+                tags: ['api', 'security', 'jwt'],
+                ngayHetHan: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
             },
             {
                 _id: 'task-2',
-                title: 'Interview Lex Luthor for Daily Planet',
-                description: 'Get an exclusive interview with Lex Luthor about his recent "philanthropic" activities.',
-                status: 'todo',
-                assignee: 'user-clark',
-                team: justiceLeagueTeam._id,
-                tags: ['journalism', 'investigation'],
-                 dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000)
+                tieuDe: 'Fix lỗi hiển thị sai thông tin trên dashboard',
+                moTa: 'Dữ liệu thống kê trên dashboard không được cập nhật real-time. Cần điều tra và sửa lỗi phía client.',
+                trangThai: 'Cần làm',
+                loaiCongViec: 'Lỗi',
+                doUuTien: 'Cao',
+                nguoiThucHienId: 'user-bruce',
+                nhomId: frontendTeam._id,
+                tags: ['bug', 'dashboard', 'ui'],
+                 ngayHetHan: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000)
             },
             {
                 _id: 'task-3',
-                title: 'Translate ancient Amazonian texts',
-                description: 'Translate the scrolls recovered from Themyscira to uncover potential threats.',
-                status: 'todo',
-                assignee: 'user-diana',
-                team: justiceLeagueTeam._id,
-                tags: ['research', 'translation'],
+                tieuDe: 'Thiết kế wireframe và mockup cho trang Profile',
+                moTa: 'Tạo wireframe và mockup chi tiết cho trang quản lý thông tin người dùng mới.',
+                trangThai: 'Cần làm',
+                loaiCongViec: 'Tính năng',
+                doUuTien: 'Trung bình',
+                nguoiThucHienId: 'user-diana',
+                nhomId: frontendTeam._id,
+                tags: ['design', 'figma', 'ux'],
+            },
+            {
+                _id: 'task-4',
+                tieuDe: 'Tối ưu hóa truy vấn cơ sở dữ liệu cho service Products',
+                moTa: 'Một số API của service Products đang có thời gian phản hồi chậm. Cần review và tối ưu lại các câu query MongoDB.',
+                trangThai: 'Tồn đọng',
+                loaiCongViec: 'Công việc',
+                doUuTien: 'Thấp',
+                nhomId: coreTeam._id,
+                tags: ['database', 'performance', 'mongodb'],
             }
         ];
-        await TaskSeedModel.insertMany(tasksToCreate);
+        await TaskModel.insertMany(tasksToCreate);
         console.log(`${tasksToCreate.length} tasks created.`);
         
         console.log('Database seeding completed successfully!');
     } catch (error) {
         console.error('Error seeding database:', error);
         throw new Error('Database seeding failed.');
-    } finally {
-        // Ensure the temporary connection is closed
-        await conn.close();
     }
 };
 

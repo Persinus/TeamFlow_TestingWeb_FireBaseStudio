@@ -1,44 +1,47 @@
 
+
 import mongoose, { Schema, models, model, Document, Model } from 'mongoose';
 
-// --- User Schema ---
+// --- User Schema (NguoiDung) ---
 const UserSchema = new Schema({
   _id: { type: String, required: true },
-  name: { type: String, required: true },
+  hoTen: { type: String, required: true },
   email: { type: String, required: true, unique: true },
-  avatar: { type: String, required: true },
-  expertise: { type: String, required: true },
-  currentWorkload: { type: Number, default: 0 },
-  phone: String,
-  dob: String,
-}, { _id: false });
+  anhDaiDien: { type: String, required: true },
+  chuyenMon: { type: String, required: true },
+  taiCongViecHienTai: { type: Number, default: 0 },
+  soDienThoai: String,
+  ngaySinh: String,
+}, { _id: false, versionKey: false });
 
-// --- Team Schema ---
-const TeamMemberSchema = new Schema({
-  user: { type: String, ref: 'User' },
-  role: { type: String, enum: ['leader', 'member'], required: true },
+// --- Team Schema (Nhom) ---
+const ThanhVienNhomSchema = new Schema({
+  thanhVienId: { type: String, ref: 'User', required: true },
+  vaiTro: { type: String, enum: ['Trưởng nhóm', 'Thành viên'], required: true },
 }, { _id: false });
 
 const TeamSchema = new Schema({
   _id: { type: String, required: true },
-  name: { type: String, required: true },
-  description: String,
-  members: [TeamMemberSchema],
-}, { _id: false });
+  tenNhom: { type: String, required: true },
+  moTa: String,
+  thanhVien: [ThanhVienNhomSchema],
+}, { _id: false, versionKey: false });
 
-// --- Task Schema ---
+// --- Task Schema (CongViec) ---
 const TaskSchema = new Schema({
   _id: { type: String, required: true },
-  title: { type: String, required: true },
-  description: { type: String, default: '' },
-  status: { type: String, enum: ['todo', 'in-progress', 'done', 'backlog'], required: true },
-  assignee: { type: String, ref: 'User', default: null },
-  team: { type: String, ref: 'Team', required: true },
-  createdAt: { type: Date, default: Date.now },
-  startDate: Date,
-  dueDate: Date,
+  tieuDe: { type: String, required: true },
+  moTa: { type: String, default: '' },
+  trangThai: { type: String, enum: ['Cần làm', 'Đang tiến hành', 'Hoàn thành', 'Tồn đọng'], required: true },
+  loaiCongViec: { type: String, enum: ['Tính năng', 'Lỗi', 'Công việc'], default: 'Công việc' },
+  doUuTien: { type: String, enum: ['Cao', 'Trung bình', 'Thấp'], default: 'Trung bình' },
+  nguoiThucHienId: { type: String, ref: 'User', default: null },
+  nhomId: { type: String, ref: 'Team', required: true },
+  ngayTao: { type: Date, default: Date.now },
+  ngayBatDau: Date,
+  ngayHetHan: Date,
   tags: [String],
-}, { _id: false });
+}, { _id: false, versionKey: false });
 
 
 // To prevent model overwrite errors in Next.js hot-reloading environments

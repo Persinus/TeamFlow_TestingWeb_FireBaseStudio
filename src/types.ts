@@ -1,42 +1,53 @@
 
+
 export interface User {
-  id: string; // This will map to MongoDB's _id
-  name: string;
+  id: string; // Map to _id
+  hoTen: string;
   email: string;
-  avatar: string; // URL to avatar image
-  expertise: string;
-  currentWorkload: number;
-  phone?: string;
-  dob?: string; // Date of birth
+  anhDaiDien: string; // URL to avatar image
+  chuyenMon: string; // e.g., "Backend Developer", "Frontend Developer", "DevOps"
+  taiCongViecHienTai: number; // e.g., number of active tasks
+  soDienThoai?: string;
+  ngaySinh?: string; // ISO Date string
 }
 
-export type TeamMemberRole = 'leader' | 'member';
+export type VaiTroThanhVien = 'Trưởng nhóm' | 'Thành viên';
 
-export interface TeamMember {
-  user: User | string; // Can be populated or just the ID
-  role: TeamMemberRole;
+export interface ThanhVienNhom {
+  thanhVienId: string; // Ref to User._id
+  vaiTro: VaiTroThanhVien;
+  user?: User; // Populated field
 }
 
 export interface Team {
-  id: string; // This will map to MongoDB's _id
-  name: string;
-  description?: string;
-  members: TeamMember[];
+  id: string; // Map to _id
+  tenNhom: string;
+  moTa?: string;
+  thanhVien: ThanhVienNhom[];
 }
 
-export type TaskStatus = 'todo' | 'in-progress' | 'done' | 'backlog';
+export type TrangThaiCongViec = 'Cần làm' | 'Đang tiến hành' | 'Hoàn thành' | 'Tồn đọng';
+export type LoaiCongViec = 'Tính năng' | 'Lỗi' | 'Công việc';
+export type DoUuTien = 'Cao' | 'Trung bình' | 'Thấp';
+
 
 export interface Task {
-  id: string; // This will map to MongoDB's _id
-  title: string;
-  description: string;
-  status: TaskStatus;
-  assigneeId?: string; 
-  assignee?: User; 
-  teamId: string; 
-  team: Team; 
-  createdAt: string | Date; // ISO string or Date object
-  startDate?: string | Date; // ISO string or Date object
-  dueDate?: string | Date; // ISO string or Date object
+  id: string; // Map to _id
+  tieuDe: string;
+  moTa: string;
+  trangThai: TrangThaiCongViec;
+  loaiCongViec: LoaiCongViec;
+  doUuTien: DoUuTien;
+
+  nhomId: string; // Ref to Team._id
+  nhom?: Team; // Populated field
+
+  nguoiThucHienId?: string; // Ref to User._id
+  nguoiThucHien?: User; // Populated field
+  
+  ngayTao: string | Date; // ISO string or Date object
+  ngayBatDau?: string | Date; // ISO string or Date object
+  ngayHetHan?: string | Date; // ISO string or Date object
+  
   tags?: string[];
 }
