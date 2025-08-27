@@ -1,9 +1,10 @@
 
+
 "use client";
 
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import { notFound, useRouter, useParams } from 'next/navigation';
-import { getTeam, getUsers, getTasksByTeam, addTeamMember, removeTeamMember, updateTeamMemberRole, getTeams, updateTask } from '@/app/actions';
+import { getTeam, getUsers, getTasksByTeam, addTeamMember, removeTeamMember, updateTeamMemberRole, getTeams, updateTask, deleteTask } from '@/app/actions';
 import type { Task, TaskStatus, User, Team, TeamMemberRole } from '@/types';
 import Sidebar from '@/components/sidebar';
 import Header from '@/components/header';
@@ -171,6 +172,12 @@ export default function TeamDetailPage() {
       description: `"${updatedTaskData.title}" has been successfully updated.`
     });
   };
+
+  const handleDeleteTask = async (taskId: string) => {
+    await deleteTask(taskId);
+    fetchData();
+    setSelectedTask(null);
+  }
 
   // Dummy handlers for Header
   const [filters, setFilters] = React.useState({ assignee: 'all', team: 'all', search: '' });
@@ -386,6 +393,7 @@ export default function TeamDetailPage() {
             teams={allTeams}
             onOpenChange={(isOpen) => !isOpen && setSelectedTask(null)}
             onUpdateTask={handleUpdateTask}
+            onDeleteTask={handleDeleteTask}
         />
        )}
     </div>

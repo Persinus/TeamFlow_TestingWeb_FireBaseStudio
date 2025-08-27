@@ -18,11 +18,13 @@ import { Calendar } from './ui/calendar';
 import { cn } from '@/lib/utils';
 import { Textarea } from './ui/textarea';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from './ui/form';
-import { CalendarIcon, Loader2, Pencil, User as UserIcon, Users, Tag, CheckSquare, X } from 'lucide-react';
+import { CalendarIcon, Loader2, Pencil, User as UserIcon, Users, Tag, CheckSquare, X, Trash2 } from 'lucide-react';
 import { Separator } from './ui/separator';
 import { Badge } from './ui/badge';
 import { MultiSelect } from './ui/multi-select';
-import { getAllTags } from '@/app/actions';
+import { getAllTags, deleteTask as apiDeleteTask } from '@/app/actions';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from './ui/alert-dialog';
+
 
 interface TaskDetailsSheetProps {
   task: Task | null;
@@ -30,6 +32,7 @@ interface TaskDetailsSheetProps {
   teams: Team[];
   onOpenChange: (isOpen: boolean) => void;
   onUpdateTask: (updatedTask: Omit<Task, 'team' | 'assignee'>) => Promise<void>;
+  onDeleteTask: (taskId: string) => Promise<void>;
 }
 
 const taskSchema = z.object({
@@ -75,7 +78,7 @@ const safeParseDate = (date: string | Date | undefined): Date | undefined => {
     }
 };
 
-export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onUpdateTask }: TaskDetailsSheetProps) {
+export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onUpdateTask, onDeleteTask }: TaskDetailsSheetProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const { toast } = useToast();
@@ -138,6 +141,24 @@ export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onU
       setIsUpdating(false);
     }
   };
+
+  const handleDelete = async () => {
+    try {
+        await onDeleteTask(task.id);
+        toast({
+            variant: 'destructive',
+            title: 'Task Deleted',
+            description: `"${task.title}" has been permanently deleted.`,
+        });
+        onOpenChange(false);
+    } catch (error) {
+        toast({
+            variant: 'destructive',
+            title: 'Delete failed',
+            description: 'There was a problem deleting the task.',
+        });
+    }
+  }
 
   const formatDate = (date: string | Date | undefined) => {
     const parsedDate = safeParseDate(date);
@@ -239,12 +260,37 @@ export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onU
                                 </Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0"><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus /></PopoverContent></Popover><FormMessage /></FormItem>
                             )} />
                         </div>
-                         <SheetFooter className="pt-4">
-                            <Button type="button" variant="ghost" onClick={() => setIsEditing(false)}>Cancel</Button>
-                            <Button type="submit" disabled={isUpdating}>
-                                {isUpdating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                Save Changes
-                            </Button>
+                         <SheetFooter className="pt-4 flex justify-between">
+                            <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                     <Button type="button" variant="destructive">
+                                        <Trash2 className="mr-2 h-4 w-4" /> Delete Task
+                                    </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                    This action cannot be undone. This will permanently delete the task
+                                    and remove its data from our servers.
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">
+                                        Yes, delete task
+                                    </AlertDialogAction>
+                                </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
+
+                            <div className="flex gap-2">
+                                <Button type="button" variant="ghost" onClick={() => setIsEditing(false)}>Cancel</Button>
+                                <Button type="submit" disabled={isUpdating}>
+                                    {isUpdating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                    Save Changes
+                                </Button>
+                            </div>
                         </SheetFooter>
                     </form>
                 </Form>

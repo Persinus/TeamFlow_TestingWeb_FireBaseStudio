@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -9,7 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import { SidebarInset } from '@/components/ui/sidebar';
-import { getTeams, getUsers, getTasksByAssignee, addTask, updateTask } from '@/app/actions';
+import { getTeams, getUsers, getTasksByAssignee, addTask, updateTask, deleteTask } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
 import TaskCard from '@/components/task-card';
@@ -92,6 +93,11 @@ export default function ProfilePage() {
          if(user) await fetchData(user.id);
          setSelectedTask(null);
     }
+     const handleDeleteTask = async (taskId: string) => {
+        await deleteTask(taskId);
+        if(user) await fetchData(user.id);
+        setSelectedTask(null);
+    }
     
     if (authLoading || pageLoading || !user) {
         return (
@@ -162,6 +168,7 @@ export default function ProfilePage() {
                     teams={teams}
                     onOpenChange={(isOpen) => !isOpen && setSelectedTask(null)}
                     onUpdateTask={handleUpdateTask}
+                    onDeleteTask={handleDeleteTask}
                 />
             )}
         </div>

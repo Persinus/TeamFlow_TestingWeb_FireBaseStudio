@@ -106,6 +106,20 @@ export const updateTask = async (taskId: string, taskData: Partial<Omit<Task, 'i
     }
 };
 
+export const deleteTask = async (taskId: string): Promise<void> => {
+    await connectToDatabase();
+    const task = await TaskModel.findById(taskId);
+    if (!task) {
+        throw new Error('Task not found');
+    }
+    await TaskModel.findByIdAndDelete(taskId);
+    revalidatePath('/');
+    revalidatePath(`/teams/${task.team}`);
+    if (task.assignee) {
+        revalidatePath(`/profile`);
+    }
+}
+
 export const updateTaskStatus = async (taskId: string, status: TaskStatus): Promise<void> => {
     await connectToDatabase();
     await TaskModel.findByIdAndUpdate(taskId, { status });

@@ -3,7 +3,7 @@
 "use client";
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { getTasks, updateTaskStatus, addTask as apiAddTask, getUsers, getTeams, updateTask } from '@/app/actions';
+import { getTasks, updateTaskStatus, addTask as apiAddTask, getUsers, getTeams, updateTask, deleteTask as apiDeleteTask } from '@/app/actions';
 import type { Task, TaskStatus, User, Team } from '@/types';
 import Sidebar from '@/components/sidebar';
 import Header from '@/components/header';
@@ -156,6 +156,12 @@ export default function DashboardPage() {
     });
   };
 
+  const handleDeleteTask = async (taskId: string) => {
+    await apiDeleteTask(taskId);
+    fetchData();
+    setSelectedTask(null);
+  }
+
   const handleStatusChange = async (taskId: string, newStatus: TaskStatus) => {
     const originalTasks = tasks;
     const updatedTasks = tasks.map(task => 
@@ -290,6 +296,7 @@ export default function DashboardPage() {
             teams={teams}
             onOpenChange={(isOpen) => !isOpen && setSelectedTask(null)}
             onUpdateTask={handleUpdateTask}
+            onDeleteTask={handleDeleteTask}
         />
       )}
     </div>
