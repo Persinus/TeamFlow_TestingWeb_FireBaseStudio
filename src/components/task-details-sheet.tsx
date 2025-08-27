@@ -23,6 +23,8 @@ import { Badge } from './ui/badge';
 import { MultiSelect } from './ui/multi-select';
 import { getAllTags } from '@/app/actions';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from './ui/alert-dialog';
+import { Dialog, DialogClose } from './ui/dialog';
+import { DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from './ui/dialog';
 
 
 interface TaskDetailsSheetProps {
@@ -42,12 +44,12 @@ const taskSchema = z.object({
   nhomId: z.string().min(1, 'Đội là bắt buộc'),
   ngayBatDau: z.date().optional(),
   ngayHetHan: z.date().optional(),
-  tags: z.array(z.string()).optional(),
+  // tags are handled outside the form now
   loaiCongViec: z.enum(['Tính năng', 'Lỗi', 'Công việc']),
   doUuTien: z.enum(['Cao', 'Trung bình', 'Thấp']),
 });
 
-type TaskFormData = z.infer<typeof taskSchema>;
+type TaskFormData = Omit<z.infer<typeof taskSchema>, 'tags'>;
 
 const getTagColor = (tagName: string) => {
     let hash = 0;
@@ -84,9 +86,12 @@ export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onU
   const [isUpdating, setIsUpdating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const { toast } = useToast();
-  const [availableTags, setAvailableTags] = useState<string[]>([]);
-  const [selectedTags, setSelectedTags] = useState<string[]>(task?.tags || []);
   
+  // State for tag management
+  const [isTagDialogOpen, setTagDialogOpen] = useState(false);
+  const [availableTags, setAvailableTags] = useState<string[]>([]);
+  const [pendingTags, setPendingTags] = useState<string[]>([]);
+
   const form = useForm<TaskFormData>({
     resolver: zodResolver(taskSchema),
   });
@@ -109,38 +114,40 @@ export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onU
         nhomId: task.nhomId,
         ngayBatDau: safeParseDate(task.ngayBatDau),
         ngayHetHan: safeParseDate(task.ngayHetHan),
-        tags: task.tags || [],
         loaiCongViec: task.loaiCongViec,
         doUuTien: task.doUuTien,
       });
-      setSelectedTags(task.tags || []);
+      // Initialize pendingTags when task changes
+      setPendingTags(task.tags || []);
     }
-  }, [task, form]);
+  }, [task, form, isEditing]); // Rerun when editing starts to have fresh data
   
   const assignee = useMemo(() => users.find(u => u.id === task?.nguoiThucHienId), [task, users]);
   const team = useMemo(() => teams.find(t => t.id === task?.nhomId), [task, teams]);
-
 
   if (!task) return null;
 
   const onSubmit = async (data: TaskFormData) => {
     setIsUpdating(true);
     try {
-      const finalData = { ...data, tags: selectedTags };
-      await onUpdateTask({
+      // Use the pendingTags state as the source of truth for tags
+      const finalTaskData = {
         id: task.id,
-        ...finalData,
+        ...data,
+        tags: pendingTags,
         nguoiThucHienId: data.nguoiThucHienId === 'unassigned' ? undefined : data.nguoiThucHienId,
-        ngayBatDau: data.ngayBatDau,
-        ngayHetHan: data.ngayHetHan,
         ngayTao: task.ngayTao,
-      });
+      };
+      
+      await onUpdateTask(finalTaskData);
+      
       setIsEditing(false);
       toast({
         title: 'Đã cập nhật công việc',
         description: `"${data.tieuDe}" đã được lưu thành công.`,
       });
     } catch(error) {
+      console.error("Update failed:", error);
       toast({
         variant: 'destructive',
         title: 'Cập nhật thất bại',
@@ -176,7 +183,9 @@ export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onU
     const newTag = value.trim();
     if (newTag && !availableTags.includes(newTag)) {
         setAvailableTags(prev => [...prev, newTag]);
-        setSelectedTags(prev => [...prev, newTag]);
+        setPendingTags(prev => [...prev, newTag]);
+    } else if (newTag && !pendingTags.includes(newTag)) {
+        setPendingTags(prev => [...prev, newTag]);
     }
   }
 
@@ -191,7 +200,6 @@ export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onU
     'Đang tiến hành': 'Đang tiến hành',
     'Hoàn thành': 'Hoàn thành'
   }
-
 
   return (
     <Sheet open={!!task} onOpenChange={(isOpen) => { if(!isOpen) setIsEditing(false); onOpenChange(isOpen);}}>
@@ -267,19 +275,41 @@ export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onU
                                 </SelectContent></Select><FormMessage /></FormItem>
                             )} />
                         </div>
-                        <FormItem>
-                            <FormLabel>Thẻ</FormLabel>
-                            <FormControl>
-                                <MultiSelect
-                                    options={availableTags.map(tag => ({ value: tag, label: tag }))}
-                                    value={selectedTags}
-                                    onChange={setSelectedTags}
-                                    onCreate={handleCreateTag}
-                                    placeholder="Chọn hoặc tạo thẻ..."
-                                />
-                            </FormControl>
-                             <FormMessage />
-                        </FormItem>
+
+                         <FormItem>
+                             <FormLabel>Thẻ</FormLabel>
+                             <div className="flex items-center gap-2">
+                                <div className="flex-1 p-2 border rounded-md min-h-10 flex flex-wrap gap-1 items-center">
+                                    {pendingTags.length > 0 ? (
+                                        pendingTags.map(tag => <Badge key={tag} variant="secondary">{tag}</Badge>)
+                                    ) : (
+                                        <span className="text-sm text-muted-foreground">Không có thẻ nào được chọn.</span>
+                                    )}
+                                </div>
+                                <Dialog open={isTagDialogOpen} onOpenChange={setTagDialogOpen}>
+                                    <Button type="button" variant="outline" onClick={() => setTagDialogOpen(true)}>Chỉnh sửa thẻ</Button>
+                                    <DialogContent>
+                                        <DialogHeader>
+                                            <DialogTitle>Chỉnh sửa thẻ cho công việc</DialogTitle>
+                                            <DialogDescription>Chọn, bỏ chọn hoặc tạo thẻ mới.</DialogDescription>
+                                        </DialogHeader>
+                                        <div className="py-4">
+                                            <MultiSelect
+                                                options={availableTags.map(tag => ({ value: tag, label: tag }))}
+                                                value={pendingTags}
+                                                onChange={setPendingTags}
+                                                onCreate={handleCreateTag}
+                                                placeholder="Chọn hoặc tạo thẻ..."
+                                            />
+                                        </div>
+                                        <DialogFooter>
+                                            <Button onClick={() => setTagDialogOpen(false)}>Xong</Button>
+                                        </DialogFooter>
+                                    </DialogContent>
+                                </Dialog>
+                             </div>
+                         </FormItem>
+                         
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <FormField control={form.control} name="ngayBatDau" render={({ field }) => (
                                 <FormItem className="flex flex-col"><FormLabel>Ngày bắt đầu</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant="outline" className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
@@ -334,4 +364,3 @@ export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onU
     </Sheet>
   );
 }
-
