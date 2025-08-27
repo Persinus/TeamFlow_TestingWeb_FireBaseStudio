@@ -2,12 +2,13 @@
 import React from 'react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Badge, type BadgeProps } from '@/components/ui/badge';
-import { MessageSquare } from 'lucide-react';
-import type { Task, TaskStatus } from '@/types';
+import { Badge } from '@/components/ui/badge';
+import { MessageSquare, Calendar as CalendarIcon, AlertCircle } from 'lucide-react';
+import type { Task } from '@/types';
 import { useDraggable } from '@dnd-kit/core';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
+import { format, isBefore, differenceInDays, parseISO } from 'date-fns';
 
 
 interface TaskCardProps {
@@ -16,12 +17,6 @@ interface TaskCardProps {
   isDragging?: boolean;
 }
 
-const statusDisplay: Record<TaskStatus, { variant: BadgeProps['variant'], text: string }> = {
-    backlog: { variant: "secondary", text: "Backlog" },
-    todo: { variant: "outline", text: "To Do" },
-    "in-progress": { variant: "default", text: "In Progress" },
-    done: { variant: "destructive", text: "Done" },
-}
 
 export default function TaskCard({ task, onSelectTask, isDragging }: TaskCardProps) {
   const {attributes, listeners, setNodeRef, transform} = useDraggable({
@@ -30,11 +25,28 @@ export default function TaskCard({ task, onSelectTask, isDragging }: TaskCardPro
     disabled: !onSelectTask, // Disable dragging for overlay/preview cards
   });
   
-  const display = statusDisplay[task.status];
-  
   const style = transform ? {
     transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
   } : undefined;
+
+  const getDeadlineInfo = () => {
+      if (!task.dueDate) return { text: null, className: '' };
+
+      const dueDate = parseISO(task.dueDate);
+      const now = new Date();
+      const isOverdue = isBefore(dueDate, now);
+      const daysDifference = differenceInDays(dueDate, now);
+
+      if (isOverdue) {
+          return { text: `Overdue by ${Math.abs(daysDifference)} day(s)`, className: 'text-destructive', cardBorderClass: 'border-l-4 border-destructive' };
+      }
+      if (daysDifference <= 3) {
+          return { text: `Due in ${daysDifference + 1} day(s)`, className: 'text-accent-foreground', cardBorderClass: 'border-l-4 border-accent' };
+      }
+      return { text: `Due ${format(dueDate, 'MMM d')}`, className: 'text-muted-foreground', cardBorderClass: '' };
+  };
+
+  const deadlineInfo = getDeadlineInfo();
 
   return (
     <motion.div 
@@ -48,14 +60,15 @@ export default function TaskCard({ task, onSelectTask, isDragging }: TaskCardPro
     >
         <Card 
             className={cn(
-                "hover:shadow-lg transition-shadow duration-300 bg-card cursor-pointer",
-                isDragging && "ring-2 ring-primary shadow-2xl opacity-80"
+                "hover:shadow-lg transition-all duration-300 bg-card cursor-pointer",
+                isDragging && "ring-2 ring-primary shadow-2xl opacity-80",
+                deadlineInfo.cardBorderClass
             )}
             onClick={() => onSelectTask?.(task)}
         >
         <CardHeader className="pb-4">
             <div className="flex justify-between items-start mb-2">
-                <Badge variant={display.variant} className="capitalize">{task.status.replace('-', ' ')}</Badge>
+                <Badge variant="secondary" className="capitalize">{task.status.replace('-', ' ')}</Badge>
                 {task.assignee ? (
                     <Avatar className="h-8 w-8">
                         <AvatarImage src={task.assignee.avatar} alt={task.assignee.name} />
@@ -70,11 +83,17 @@ export default function TaskCard({ task, onSelectTask, isDragging }: TaskCardPro
         <CardContent className="pb-4 pt-0">
             <p className="line-clamp-2 text-sm text-muted-foreground">{task.description}</p>
         </CardContent>
-        <CardFooter className="text-sm text-muted-foreground">
+        <CardFooter className="flex justify-between text-sm text-muted-foreground">
             <div className="flex items-center gap-2">
                 <MessageSquare className="h-4 w-4" />
-                <span>{task.comments.length} Comment{task.comments.length !== 1 ? 's' : ''}</span>
+                <span>{task.comments.length}</span>
             </div>
+            {deadlineInfo.text && (
+                <div className={cn("flex items-center gap-1.5", deadlineInfo.className)}>
+                    {deadlineInfo.cardBorderClass.includes('destructive') ? <AlertCircle className="h-4 w-4" /> : <CalendarIcon className="h-4 w-4" />}
+                    <span>{deadlineInfo.text}</span>
+                </div>
+            )}
         </CardFooter>
         </Card>
     </motion.div>

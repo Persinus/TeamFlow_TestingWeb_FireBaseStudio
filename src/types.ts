@@ -20,6 +20,7 @@ export interface TeamMember {
 export interface Team {
   id:string;
   name: string;
+  description?: string;
   members: TeamMember[];
 }
 
@@ -43,4 +44,6 @@ export interface Task {
   team: Team; 
   comments: Comment[];
   createdAt: string; // ISO string
+  startDate?: string; // ISO string
+  dueDate?: string; // ISO string
 }

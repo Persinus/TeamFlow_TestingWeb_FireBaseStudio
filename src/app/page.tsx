@@ -126,7 +126,7 @@ export default function DashboardPage() {
     });
   }, [tasks, filters]);
 
-  const handleCreateTask = async (newTaskData: Omit<Task, 'id' | 'comments' | 'team' | 'assignee'> & {teamId: string, assigneeId?: string}) => {
+  const handleCreateTask = async (newTaskData: Omit<Task, 'id' | 'comments' | 'team' | 'assignee' | 'createdAt'>) => {
     await apiAddTask(newTaskData);
     fetchData(); 
   };
@@ -221,7 +221,7 @@ export default function DashboardPage() {
 
   return (
     <div className="flex min-h-screen w-full flex-col lg:flex-row bg-muted/40 dark:bg-zinc-900/40">
-      <Sidebar teams={teams} />
+      <Sidebar teams={teams} onTeamCreated={fetchData} />
       <div className="flex flex-1 flex-col">
         <Header 
           users={users} 

@@ -1,8 +1,9 @@
+
 "use client";
 
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import { notFound, useRouter, useParams } from 'next/navigation';
-import { getTeam, getUsers, getTasksByTeam, addTeamMember, removeTeamMember, updateTeamMemberRole, getTeams } from '@/lib/data';
+import { getTeam, getUsers, getTasksByTeam, addTeamMember, removeTeamMember, updateTeamMemberRole, getTeams, createTeam } from '@/lib/data';
 import type { Task, TaskStatus, User, Team, TeamMemberRole } from '@/types';
 import Sidebar from '@/components/sidebar';
 import Header from '@/components/header';
@@ -163,12 +164,17 @@ export default function TeamDetailPage() {
 
   // Dummy handlers for Header
   const [filters, setFilters] = React.useState({ assignee: 'all', team: 'all', search: '' });
-  const handleCreateTask = async (newTaskData: Omit<Task, 'id' | 'comments'>) => {};
+  const handleCreateTask = async (newTaskData: Omit<Task, 'id' | 'comments' | 'team' | 'assignee' | 'createdAt'>) => {};
+  const handleTeamCreated = async () => {
+    // This will just refetch all teams, and the sidebar will update.
+    const teams = await getTeams();
+    setAllTeams(teams);
+  }
 
   if (authLoading || loading || !user) {
     return (
         <div className="flex min-h-screen w-full flex-col lg:flex-row bg-muted/40">
-            <Sidebar teams={[]} />
+            <Sidebar teams={[]} onTeamCreated={() => {}}/>
             <div className="flex flex-1 flex-col">
                 <Header users={[]} teams={[]} filters={filters} setFilters={setFilters} onCreateTask={handleCreateTask as any} />
                 <SidebarInset>
@@ -198,14 +204,17 @@ export default function TeamDetailPage() {
   
   return (
     <div className="flex min-h-screen w-full flex-col lg:flex-row bg-muted/40">
-      <Sidebar teams={allTeams} />
+      <Sidebar teams={allTeams} onTeamCreated={handleTeamCreated} />
       <div className="flex flex-1 flex-col">
         <Header users={allUsers} teams={allTeams} filters={filters} setFilters={setFilters} onCreateTask={handleCreateTask as any} />
         <SidebarInset>
             <main className="flex-1 p-4 sm:p-6 md:p-8">
               <div className="space-y-8">
                 <div className="flex items-center justify-between">
-                  <h1 className="text-3xl font-bold tracking-tight">{team.name}</h1>
+                  <div>
+                    <h1 className="text-3xl font-bold tracking-tight">{team.name}</h1>
+                    <p className="text-muted-foreground">{team.description}</p>
+                  </div>
                   <div className="flex -space-x-2 overflow-hidden">
                     {teamMembers.map(member => (
                       <Avatar key={member.id} className="inline-block h-8 w-8 rounded-full ring-2 ring-background">

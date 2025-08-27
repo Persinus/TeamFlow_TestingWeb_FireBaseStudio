@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState } from 'react';
@@ -12,12 +13,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
 import { getAssigneeSuggestion } from '@/app/actions';
-import type { Task, TaskStatus, User, Team } from '@/types';
-import { Wand2 } from 'lucide-react';
+import type { Task, User, Team } from '@/types';
+import { Wand2, Calendar as CalendarIcon } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
+import { Calendar } from './ui/calendar';
+import { cn } from '@/lib/utils';
+import { format } from 'date-fns';
 
 interface CreateTaskSheetProps {
   children: React.ReactNode;
-  onCreateTask: (newTaskData: Omit<Task, 'id' | 'comments' | 'team' | 'assignee'> & {teamId: string, assigneeId?: string}) => Promise<void>;
+  onCreateTask: (newTaskData: Omit<Task, 'id' | 'comments' | 'team' | 'assignee' | 'createdAt'>) => Promise<void>;
   users: User[];
   teams: Team[];
 }
@@ -28,6 +33,8 @@ const taskSchema = z.object({
   assigneeId: z.string().optional(),
   teamId: z.string().min(1, 'Team is required'),
   status: z.enum(['todo', 'in-progress', 'backlog', 'done']),
+  startDate: z.date().optional(),
+  dueDate: z.date().optional(),
 });
 
 export default function CreateTaskSheet({ children, onCreateTask, users, teams }: CreateTaskSheetProps) {
@@ -79,11 +86,9 @@ export default function CreateTaskSheet({ children, onCreateTask, users, teams }
 
   const onSubmit = async (values: z.infer<typeof taskSchema>) => {
     await onCreateTask({
-      title: values.title,
-      description: values.description || '',
-      assigneeId: values.assigneeId,
-      teamId: values.teamId,
-      status: values.status
+      ...values,
+      startDate: values.startDate?.toISOString(),
+      dueDate: values.dueDate?.toISOString(),
     });
     form.reset();
     setIsOpen(false);
@@ -131,51 +136,131 @@ export default function CreateTaskSheet({ children, onCreateTask, users, teams }
                 </FormItem>
               )}
             />
-             <FormField
+             <div className="grid grid-cols-2 gap-4">
+                <FormField
+                    control={form.control}
+                    name="status"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Status</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                            <SelectTrigger>
+                            <SelectValue placeholder="Select a status" />
+                            </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                            <SelectItem value="backlog">Backlog</SelectItem>
+                            <SelectItem value="todo">To Do</SelectItem>
+                            <SelectItem value="in-progress">In Progress</SelectItem>
+                            <SelectItem value="done">Done</SelectItem>
+                        </SelectContent>
+                        </Select>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+                <FormField
+                    control={form.control}
+                    name="teamId"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Team</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                            <SelectTrigger>
+                            <SelectValue placeholder="Assign to a team" />
+                            </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                            {teams.map(team => (
+                                <SelectItem key={team.id} value={team.id}>{team.name}</SelectItem>
+                            ))}
+                        </SelectContent>
+                        </Select>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+                <FormField
                 control={form.control}
-                name="status"
+                name="startDate"
                 render={({ field }) => (
-                <FormItem>
-                    <FormLabel>Status</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                        <SelectTrigger>
-                        <SelectValue placeholder="Select a status" />
-                        </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                        <SelectItem value="backlog">Backlog</SelectItem>
-                        <SelectItem value="todo">To Do</SelectItem>
-                        <SelectItem value="in-progress">In Progress</SelectItem>
-                        <SelectItem value="done">Done</SelectItem>
-                    </SelectContent>
-                    </Select>
+                    <FormItem className="flex flex-col">
+                    <FormLabel>Start Date</FormLabel>
+                    <Popover>
+                        <PopoverTrigger asChild>
+                        <FormControl>
+                            <Button
+                            variant={"outline"}
+                            className={cn(
+                                "w-full pl-3 text-left font-normal",
+                                !field.value && "text-muted-foreground"
+                            )}
+                            >
+                            {field.value ? (
+                                format(field.value, "PPP")
+                            ) : (
+                                <span>Pick a date</span>
+                            )}
+                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                            </Button>
+                        </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                            mode="single"
+                            selected={field.value}
+                            onSelect={field.onChange}
+                            initialFocus
+                        />
+                        </PopoverContent>
+                    </Popover>
                     <FormMessage />
-                </FormItem>
+                    </FormItem>
                 )}
-            />
-            <FormField
+                />
+                <FormField
                 control={form.control}
-                name="teamId"
+                name="dueDate"
                 render={({ field }) => (
-                <FormItem>
-                    <FormLabel>Team</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                        <SelectTrigger>
-                        <SelectValue placeholder="Assign to a team" />
-                        </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                        {teams.map(team => (
-                            <SelectItem key={team.id} value={team.id}>{team.name}</SelectItem>
-                        ))}
-                    </SelectContent>
-                    </Select>
+                    <FormItem className="flex flex-col">
+                    <FormLabel>Due Date</FormLabel>
+                    <Popover>
+                        <PopoverTrigger asChild>
+                        <FormControl>
+                            <Button
+                            variant={"outline"}
+                            className={cn(
+                                "w-full pl-3 text-left font-normal",
+                                !field.value && "text-muted-foreground"
+                            )}
+                            >
+                            {field.value ? (
+                                format(field.value, "PPP")
+                            ) : (
+                                <span>Pick a date</span>
+                            )}
+                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                            </Button>
+                        </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                            mode="single"
+                            selected={field.value}
+                            onSelect={field.onChange}
+                            initialFocus
+                        />
+                        </PopoverContent>
+                    </Popover>
                     <FormMessage />
-                </FormItem>
+                    </FormItem>
                 )}
-            />
+                />
+            </div>
             <FormField
               control={form.control}
               name="assigneeId"

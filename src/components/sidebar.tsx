@@ -1,14 +1,17 @@
+
 "use client";
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
-import { Home, Settings, Users, ChevronDown } from 'lucide-react';
+import { Home, Settings, Users, ChevronDown, PlusCircle } from 'lucide-react';
 import { Logo } from '@/components/icons';
 import { Badge } from '@/components/ui/badge';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import type { Team } from '@/types';
-import { Sidebar as RootSidebar, SidebarHeader, SidebarContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarGroup, useSidebar } from '@/components/ui/sidebar';
+import { Sidebar as RootSidebar, SidebarHeader, SidebarContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarGroup, useSidebar, SidebarFooter } from '@/components/ui/sidebar';
+import CreateTeamDialog from './create-team-dialog'; // We will create this
+import { useAuth } from '@/hooks/use-auth';
 
 const NavLink = ({ href, children, icon: Icon, badge, exact = false, tooltip }: { href: string; children: React.ReactNode; icon: React.ElementType; badge?: string | number; exact?: boolean; tooltip?: string; }) => {
   const pathname = usePathname();
@@ -28,12 +31,15 @@ const NavLink = ({ href, children, icon: Icon, badge, exact = false, tooltip }: 
 
 interface SidebarProps {
   teams: Team[];
+  onTeamCreated: () => void;
 }
 
 
-export function MobileSidebar({ teams }: SidebarProps) {
+export function MobileSidebar({ teams, onTeamCreated }: SidebarProps) {
   const pathname = usePathname();
+  const { user } = useAuth();
   const [isTeamsOpen, setIsTeamsOpen] = React.useState(pathname.startsWith('/teams'));
+  const [isCreateTeamOpen, setCreateTeamOpen] = useState(false);
 
   return (
     <div className="flex h-full w-full flex-col">
@@ -54,18 +60,24 @@ export function MobileSidebar({ teams }: SidebarProps) {
                 </SidebarMenuButton>
                 {isTeamsOpen && (
                     <div className="grid gap-1 pl-7 py-2">
-                    {teams.map(team => (
-                        <Link
-                        key={team.id}
-                        href={`/teams/${team.id}`}
-                        className={cn(
-                            "block rounded-md px-3 py-1.5 text-muted-foreground hover:bg-muted hover:text-primary",
-                            pathname === `/teams/${team.id}` && "bg-muted text-primary font-semibold"
-                            )}
-                        >
-                        {team.name}
-                        </Link>
-                    ))}
+                        {teams.map(team => (
+                            <Link
+                            key={team.id}
+                            href={`/teams/${team.id}`}
+                            className={cn(
+                                "block rounded-md px-3 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-primary",
+                                pathname === `/teams/${team.id}` && "bg-muted text-primary font-semibold"
+                                )}
+                            >
+                            {team.name}
+                            </Link>
+                        ))}
+                         <CreateTeamDialog open={isCreateTeamOpen} onOpenChange={setCreateTeamOpen} onTeamCreated={onTeamCreated}>
+                            <button onClick={() => setCreateTeamOpen(true)} className="flex items-center gap-2 rounded-md px-3 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-primary">
+                                <PlusCircle className="h-4 w-4" />
+                                Create Team
+                            </button>
+                        </CreateTeamDialog>
                     </div>
                 )}
             </SidebarGroup>
@@ -77,10 +89,11 @@ export function MobileSidebar({ teams }: SidebarProps) {
 }
 
 
-export default function Sidebar({ teams }: SidebarProps) {
+export default function Sidebar({ teams, onTeamCreated }: SidebarProps) {
   const pathname = usePathname();
   const [isTeamsOpen, setIsTeamsOpen] = React.useState(pathname.startsWith('/teams'));
   const { state } = useSidebar();
+  const [isCreateTeamOpen, setCreateTeamOpen] = useState(false);
 
 
   return (
@@ -101,25 +114,33 @@ export default function Sidebar({ teams }: SidebarProps) {
                         <ChevronDown className={cn("ml-auto h-4 w-4 transition-transform", isTeamsOpen && "rotate-180")} />
                     </SidebarMenuButton>
                     {isTeamsOpen && state === 'expanded' && (
-                        <div className="grid gap-1 px-8 py-2">
-                        {teams.map(team => (
-                            <Link
-                            key={team.id}
-                            href={`/teams/${team.id}`}
-                            className={cn(
-                                "block rounded-md px-3 py-1.5 text-muted-foreground hover:bg-muted hover:text-primary",
-                                pathname === `/teams/${team.id}` && "bg-muted text-primary font-semibold"
-                                )}
-                            >
-                            {team.name}
-                            </Link>
-                        ))}
+                        <div className="grid gap-1 pl-8 py-2">
+                            {teams.map(team => (
+                                <Link
+                                key={team.id}
+                                href={`/teams/${team.id}`}
+                                className={cn(
+                                    "block rounded-md px-3 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-primary",
+                                    pathname === `/teams/${team.id}` && "bg-muted text-primary font-semibold"
+                                    )}
+                                >
+                                {team.name}
+                                </Link>
+                            ))}
                         </div>
                     )}
                 </SidebarGroup>
                 <NavLink href="/settings" icon={Settings} tooltip="Settings">Settings</NavLink>
             </SidebarMenu>
         </SidebarContent>
+        <SidebarFooter>
+            <CreateTeamDialog open={isCreateTeamOpen} onOpenChange={setCreateTeamOpen} onTeamCreated={onTeamCreated}>
+                 <SidebarMenuButton onClick={() => setCreateTeamOpen(true)} tooltip="Create new team">
+                    <PlusCircle />
+                    <span>Create Team</span>
+                </SidebarMenuButton>
+            </CreateTeamDialog>
+        </SidebarFooter>
     </RootSidebar>
   );
 }

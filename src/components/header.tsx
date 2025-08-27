@@ -30,7 +30,7 @@ interface HeaderProps {
   teams: Team[];
   filters: { assignee: string; team: string; search: string };
   setFilters: React.Dispatch<React.SetStateAction<{ assignee: string; team: string; search: string }>>;
-  onCreateTask: (newTaskData: Omit<Task, 'id' | 'comments' | 'team' | 'assignee'> & {teamId: string, assigneeId?: string}) => Promise<void>;
+  onCreateTask: (newTaskData: Omit<Task, 'id' | 'comments' | 'team' | 'assignee' | 'createdAt'>) => Promise<void>;
 }
 
 export default function Header({ users, teams, filters, setFilters, onCreateTask }: HeaderProps) {
@@ -84,7 +84,9 @@ export default function Header({ users, teams, filters, setFilters, onCreateTask
                 <SheetHeader>
                     <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
                 </SheetHeader>
-                <MobileSidebar teams={teams} />
+                <MobileSidebar teams={teams} onTeamCreated={() => {
+                  // This is a dummy handler for mobile, page reload will fetch new teams.
+                }}/>
             </SheetContent>
         </Sheet>
         

@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, FormEvent } from 'react';
@@ -7,11 +8,14 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { MessageSquare, Send, Tag, User, Users } from 'lucide-react';
+import { MessageSquare, Send, Tag, User, Users, Calendar as CalendarIcon } from 'lucide-react';
 import type { Task, TaskStatus } from '@/types';
 import { format, parseISO } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from './ui/badge';
+import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
+import { Calendar } from './ui/calendar';
+import { cn } from '@/lib/utils';
 
 interface TaskDetailsSheetProps {
   task: Task | null;
@@ -63,43 +67,43 @@ export default function TaskDetailsSheet({ task, onOpenChange, onUpdateTask, onA
           <SheetTitle className="text-2xl">{task.title}</SheetTitle>
           <SheetDescription>{task.description}</SheetDescription>
         </SheetHeader>
-        <div className="grid gap-4 py-4 text-sm">
-            <div className="flex items-center gap-4">
-                <Tag className="h-5 w-5 text-muted-foreground" />
-                <span className="font-semibold text-muted-foreground w-24">Status</span>
-                 <Select value={task.status} onValueChange={handleStatusChange}>
-                    <SelectTrigger className="w-40 h-8">
-                        <SelectValue/>
-                    </SelectTrigger>
-                    <SelectContent>
-                        {statusOptions.map(({value, label}) => (
-                            <SelectItem key={value} value={value}>{label}</SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
+        <div className="grid grid-cols-[auto,1fr] gap-x-4 gap-y-4 py-4 text-sm">
+            <span className="font-semibold text-muted-foreground flex items-center gap-2"><Tag className="h-4 w-4" /> Status</span>
+            <Select value={task.status} onValueChange={handleStatusChange}>
+                <SelectTrigger className="w-40 h-8">
+                    <SelectValue/>
+                </SelectTrigger>
+                <SelectContent>
+                    {statusOptions.map(({value, label}) => (
+                        <SelectItem key={value} value={value}>{label}</SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
+
+            <span className="font-semibold text-muted-foreground flex items-center gap-2"><User className="h-4 w-4" /> Assignee</span>
+            <div className="flex items-center gap-2">
+                {task.assignee ? (
+                    <>
+                        <Avatar className="h-6 w-6">
+                            <AvatarImage src={task.assignee.avatar} />
+                            <AvatarFallback>{task.assignee.name.charAt(0)}</AvatarFallback>
+                        </Avatar>
+                        <span>{task.assignee.name}</span>
+                    </>
+                ) : (
+                    <span className="text-muted-foreground">Unassigned</span>
+                )}
             </div>
-            <div className="flex items-center gap-4">
-                <User className="h-5 w-5 text-muted-foreground" />
-                <span className="font-semibold text-muted-foreground w-24">Assignee</span>
-                <div className="flex items-center gap-2">
-                    {task.assignee ? (
-                        <>
-                            <Avatar className="h-6 w-6">
-                                <AvatarImage src={task.assignee.avatar} />
-                                <AvatarFallback>{task.assignee.name.charAt(0)}</AvatarFallback>
-                            </Avatar>
-                            <span>{task.assignee.name}</span>
-                        </>
-                    ) : (
-                        <span className="text-muted-foreground">Unassigned</span>
-                    )}
-                </div>
-            </div>
-            <div className="flex items-center gap-4">
-                <Users className="h-5 w-5 text-muted-foreground" />
-                <span className="font-semibold text-muted-foreground w-24">Team</span>
-                <Badge variant="outline">{task.team.name}</Badge>
-            </div>
+
+            <span className="font-semibold text-muted-foreground flex items-center gap-2"><Users className="h-4 w-4" /> Team</span>
+            <Badge variant="outline">{task.team.name}</Badge>
+
+            <span className="font-semibold text-muted-foreground flex items-center gap-2"><CalendarIcon className="h-4 w-4" /> Start Date</span>
+            <div>{task.startDate ? format(parseISO(task.startDate), 'PPP') : <span className="text-muted-foreground">Not set</span>}</div>
+
+            <span className="font-semibold text-muted-foreground flex items-center gap-2"><CalendarIcon className="h-4 w-4" /> Due Date</span>
+            <div>{task.dueDate ? format(parseISO(task.dueDate), 'PPP') : <span className="text-muted-foreground">Not set</span>}</div>
+
         </div>
         <Separator />
         <div className="flex-1 flex flex-col gap-4 overflow-y-auto pr-4 -mr-4">

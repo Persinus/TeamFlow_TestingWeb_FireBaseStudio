@@ -1,7 +1,7 @@
 
 "use client"
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Sidebar from '@/components/sidebar';
 import Header from '@/components/header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { CalendarIcon, Moon, Sun, Smile, Loader2 } from 'lucide-react';
-import type { Task, Team } from '@/types';
+import type { Task, Team, User } from '@/types';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
@@ -20,7 +20,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import { SidebarInset } from '@/components/ui/sidebar';
-import { getTeams } from '@/lib/data';
+import { getTeams, getUsers, getTasks, addTask } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
 
@@ -31,6 +31,7 @@ export default function SettingsPage() {
     const { toast } = useToast();
 
     const [teams, setTeams] = useState<Team[]>([]);
+    const [users, setUsers] = useState<User[]>([]);
     const [theme, setTheme] = useState('light');
     const [language, setLanguage] = useState('en');
     const [isSwitchingLang, setIsSwitchingLang] = useState(false);
@@ -39,6 +40,12 @@ export default function SettingsPage() {
     const [phone, setPhone] = useState('');
     const [status, setStatus] = useState('Focusing on the main quest!');
     const [dob, setDob] = useState<Date | undefined>(undefined);
+    
+    const fetchData = useCallback(async () => {
+        const [teamsData, usersData] = await Promise.all([getTeams(), getUsers()]);
+        setTeams(teamsData);
+        setUsers(usersData);
+    }, []);
 
     useEffect(() => {
         if (!loading && !user) {
@@ -49,9 +56,9 @@ export default function SettingsPage() {
             setEmail(user.email);
             setPhone(user.phone || '');
             setDob(user.dob ? new Date(user.dob) : undefined);
-            getTeams().then(setTeams);
+            fetchData();
         }
-    }, [user, loading, router]);
+    }, [user, loading, router, fetchData]);
 
     useEffect(() => {
         const storedTheme = localStorage.getItem('theme') || 'light';
@@ -87,7 +94,10 @@ export default function SettingsPage() {
 
     // Dummy handlers for filters and task creation for Header component
     const [filters, setFilters] = useState({ assignee: 'all', team: 'all', search: '' });
-    const handleCreateTask = async (newTaskData: Omit<Task, 'id' | 'comments'> & {teamId: string, assigneeId?: string}) => {};
+    const handleCreateTask = async (newTaskData: Omit<Task, 'id' | 'comments' | 'team' | 'assignee' | 'createdAt'>) => {
+        await addTask(newTaskData);
+        // In a real app, you might want to refetch tasks here or update state optimistically
+    };
 
     if (loading || !user) {
         return <div className="flex h-screen items-center justify-center">Loading...</div>;
@@ -95,9 +105,9 @@ export default function SettingsPage() {
 
     return (
         <div className="flex min-h-screen w-full flex-col lg:flex-row bg-muted/40">
-            <Sidebar teams={teams} />
+            <Sidebar teams={teams} onTeamCreated={fetchData} />
             <div className="flex flex-1 flex-col">
-                <Header users={[]} teams={teams} filters={filters} setFilters={setFilters} onCreateTask={handleCreateTask} />
+                <Header users={users} teams={teams} filters={filters} setFilters={setFilters} onCreateTask={handleCreateTask} />
                 <SidebarInset>
                     <motion.main 
                          initial={{ opacity: 0, y: 20 }}
