@@ -30,7 +30,7 @@ const createUserProfile = async (firebaseUser: FirebaseUser, name: string): Prom
             ...userProfileData,
             createdAt: serverTimestamp(),
         });
-        return { id: firebaseUser.uid, ...userProfileData } as User;
+        return { id: firebaseUser.uid, ...userProfileData, createdAt: new Date() } as User;
     }
     
     const userData = userSnap.data();
@@ -153,6 +153,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 if (userSnap.exists()) {
                     setUser({ id: userSnap.id, ...userSnap.data() } as User);
                 } else {
+                    // This case should ideally happen only on registration
                     const name = firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'New User';
                     const newUserProfile = await createUserProfile(firebaseUser, name);
                     setUser(newUserProfile);

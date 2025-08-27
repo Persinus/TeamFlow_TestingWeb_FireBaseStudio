@@ -25,9 +25,14 @@ if (typeof window !== 'undefined') {
         auth = getAuth(app);
         try {
             // Use initializeFirestore to enable persistence, but only once.
-            db = initializeFirestore(app, {
-                localCache: enableIndexedDbPersistence()
-            });
+            db = getFirestore(app);
+   enableIndexedDbPersistence(db).catch((err) => {
+  if (err.code === 'failed-precondition') {
+    console.warn("Persistence failed-precondition:", err);
+  } else if (err.code === 'unimplemented') {
+    console.warn("Persistence unimplemented:", err);
+  }
+});
         } catch (error) {
             // Firestore with persistence might already be initialized in a race condition
             // If so, we can ignore the error and get the existing instance.
