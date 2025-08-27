@@ -18,15 +18,26 @@ import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Textarea } from '@/components/ui/textarea';
+import { useAuth } from '@/hooks/use-auth';
+import { useRouter } from 'next/navigation';
 
 
 export default function SettingsPage() {
+    const { user, loading } = useAuth();
+    const router = useRouter();
+
+    useEffect(() => {
+      if (!loading && !user) {
+        router.push('/login');
+      }
+    }, [user, loading, router]);
+    
     // Mock user, in a real app, this would come from an auth context
-    const currentUser = users[3]; 
+    const currentUser = user || users[3]; 
 
     const [theme, setTheme] = useState('light');
     const [name, setName] = useState(currentUser.name);
-    const [email, setEmail] = useState('diana.prince@example.com'); // Mock email
+    const [email, setEmail] = useState(`${currentUser.username}@example.com`); // Mock email
     const [phone, setPhone] = useState(currentUser.phone || '');
     const [status, setStatus] = useState('Focusing on the main quest!');
     const [dob, setDob] = useState<Date | undefined>(currentUser.dob ? new Date(currentUser.dob) : undefined);
@@ -48,6 +59,9 @@ export default function SettingsPage() {
     const [filters, setFilters] = useState({ assignee: 'all', team: 'all', search: '' });
     const handleCreateTask = (newTaskData: Omit<Task, 'id' | 'comments'>) => {};
 
+    if (loading || !user) {
+        return <div className="flex h-screen items-center justify-center">Loading...</div>;
+    }
 
     return (
         <div className="flex min-h-screen w-full flex-col lg:flex-row bg-muted/40">
@@ -125,7 +139,7 @@ export default function SettingsPage() {
                             <CardHeader>
                                 <CardTitle>Appearance</CardTitle>
                                 <CardDescription>Customize the look and feel of the application.</CardDescription>
-                            </CardHeader>
+                            </Header>
                             <CardContent className="space-y-4">
                                 <div className="space-y-2">
                                     <Label>Theme</Label>

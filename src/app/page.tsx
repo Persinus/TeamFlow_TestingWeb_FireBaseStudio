@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { initialTasks, users, teams, addTask } from '@/lib/data';
 import type { Task, TaskStatus } from '@/types';
 import Sidebar from '@/components/sidebar';
@@ -8,6 +8,8 @@ import Header from '@/components/header';
 import TaskCard from '@/components/task-card';
 import TaskDetailsSheet from '@/components/task-details-sheet';
 import { Badge } from '@/components/ui/badge';
+import { useAuth } from '@/hooks/use-auth';
+import { useRouter } from 'next/navigation';
 
 const columns: { id: TaskStatus; title: string }[] = [
   { id: 'backlog', title: 'Backlog' },
@@ -17,6 +19,16 @@ const columns: { id: TaskStatus; title: string }[] = [
 ];
 
 export default function DashboardPage() {
+  const { user, loading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push('/login');
+    }
+  }, [user, loading, router]);
+
+
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [filters, setFilters] = useState<{ assignee: string; team: string, search: string }>({ assignee: 'all', team: 'all', search: '' });
@@ -36,8 +48,8 @@ export default function DashboardPage() {
       id: `task-${Date.now()}`,
       comments: [],
     };
-    addTask(newTask); // Add to the global-like source
-    setTasks(prevTasks => [newTask, ...prevTasks]); // Update local state to re-render
+    const updatedTasks = addTask(newTask); // Add to the global-like source
+    setTasks(updatedTasks); // Update local state to re-render
   };
 
   const handleUpdateTask = (updatedTask: Task) => {
@@ -88,6 +100,10 @@ export default function DashboardPage() {
       return acc;
     }, {} as Record<TaskStatus, Task[]>);
   }, [filteredTasks]);
+
+  if (loading || !user) {
+    return <div className="flex h-screen items-center justify-center">Loading...</div>;
+  }
 
   return (
     <div className="flex min-h-screen w-full flex-col lg:flex-row bg-muted/40 dark:bg-zinc-900/40">

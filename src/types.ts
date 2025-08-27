@@ -7,6 +7,8 @@ export interface User {
   currentWorkload: number;
   phone?: string;
   dob?: string; // Date of birth
+  username?: string;
+  password?: string; // In a real app, you'd never store this in the frontend
 }
 
 export interface Team {

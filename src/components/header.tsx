@@ -19,6 +19,7 @@ import CreateTaskSheet from '@/components/create-task-sheet';
 import { users, teams } from '@/lib/data';
 import type { Task } from '@/types';
 import Sidebar from './sidebar';
+import { useAuth } from '@/hooks/use-auth';
 
 interface HeaderProps {
   filters: { assignee: string; team: string; search: string };
@@ -28,6 +29,7 @@ interface HeaderProps {
 
 export default function Header({ filters, setFilters, onCreateTask }: HeaderProps) {
   const [theme, setTheme] = useState('light');
+  const { user, logout } = useAuth();
 
   useEffect(() => {
     const storedTheme = localStorage.getItem('theme') || 'light';
@@ -108,8 +110,8 @@ export default function Header({ filters, setFilters, onCreateTask }: HeaderProp
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="rounded-full">
               <Avatar className="h-8 w-8">
-                <AvatarImage src="https://picsum.photos/seed/diana/40/40" alt="@diana" data-ai-hint="woman face" />
-                <AvatarFallback>DP</AvatarFallback>
+                <AvatarImage src={user?.avatar} alt={user?.name} data-ai-hint="woman face" />
+                <AvatarFallback>{user?.name?.substring(0,2).toUpperCase() || 'U'}</AvatarFallback>
               </Avatar>
             </Button>
           </DropdownMenuTrigger>
@@ -123,7 +125,7 @@ export default function Header({ filters, setFilters, onCreateTask }: HeaderProp
               <span>{theme === 'light' ? 'Dark' : 'Light'} Mode</span>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>Logout</DropdownMenuItem>
+            <DropdownMenuItem onClick={logout}>Logout</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

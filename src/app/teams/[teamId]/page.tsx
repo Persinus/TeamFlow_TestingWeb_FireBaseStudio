@@ -1,8 +1,8 @@
 
 "use client";
 
-import React, { useMemo, use } from 'react';
-import { notFound } from 'next/navigation';
+import React, { useMemo, use, useEffect } from 'react';
+import { notFound, useRouter } from 'next/navigation';
 import { initialTasks, users, teams } from '@/lib/data';
 import type { Task, TaskStatus } from '@/types';
 import Sidebar from '@/components/sidebar';
@@ -14,6 +14,7 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/
 import { PieChart, Pie, Cell, Tooltip } from 'recharts';
 import { Badge } from '@/components/ui/badge';
 import TaskCard from '@/components/task-card';
+import { useAuth } from '@/hooks/use-auth';
 
 
 const statusColors = {
@@ -24,7 +25,16 @@ const statusColors = {
 };
 
 export default function TeamDetailPage({ params: paramsProp }: { params: { teamId: string } }) {
-  const params = use(paramsProp);
+  const { user, loading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push('/login');
+    }
+  }, [user, loading, router]);
+  
+  const params = use(Promise.resolve(paramsProp));
   const { teamId } = params;
 
   const team = useMemo(() => teams.find(t => t.id === teamId), [teamId]);
@@ -71,6 +81,10 @@ export default function TeamDetailPage({ params: paramsProp }: { params: { teamI
       .map(([name, value]) => ({ name, value, fill: statusColors[name as TaskStatus] }))
       .filter(item => item.value > 0);
   }, [teamTasks]);
+  
+  if (loading || !user) {
+    return <div className="flex h-screen items-center justify-center">Loading...</div>;
+  }
   
   if (!team) {
     return notFound();
