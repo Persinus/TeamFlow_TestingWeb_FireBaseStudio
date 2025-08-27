@@ -101,3 +101,110 @@ Các API nên được bảo vệ và yêu cầu token xác thực (ví dụ: JW
 ### Tags API (`/api/tags`)
 - `GET /`: Lấy danh sách tất cả các thẻ (tags) duy nhất đã được sử dụng trong toàn bộ hệ thống để gợi ý cho người dùng.
 
+---
+
+## 3. Ví dụ triển khai với Express & Mongoose (MongoDB)
+
+Với MongoDB, chúng ta không dùng "bảng trung gian" như cơ sở dữ liệu quan hệ. Thay vào đó, chúng ta sẽ sử dụng **tham chiếu (references)** giữa các collections. Thư viện `Mongoose` cho Node.js làm việc này rất tốt.
+
+### Định nghĩa Schema với Mongoose
+
+```javascript
+const mongoose = require('mongoose');
+const { Schema } = mongoose;
+
+// User Schema
+const userSchema = new Schema({
+    name: { type: String, required: true },
+    email: { type: String, required: true, unique: true },
+    password: { type: String, required: true },
+    avatar: String,
+    expertise: String,
+}, { timestamps: true });
+
+// Team Schema
+const teamSchema = new Schema({
+    name: { type: String, required: true },
+    description: String,
+    members: [{
+        user: { type: Schema.Types.ObjectId, ref: 'User' }, // Tham chiếu tới collection 'User'
+        role: { type: String, enum: ['leader', 'member'], default: 'member' }
+    }]
+}, { timestamps: true });
+
+// Task Schema
+const taskSchema = new Schema({
+    title: { type: String, required: true },
+    description: String,
+    status: {
+        type: String,
+        enum: ['backlog', 'todo', 'in-progress', 'done'],
+        default: 'todo'
+    },
+    teamId: { type: Schema.Types.ObjectId, ref: 'Team', required: true }, // Tham chiếu tới 'Team'
+    assigneeId: { type: Schema.Types.ObjectId, ref: 'User' }, // Tham chiếu tới 'User'
+    tags: [String],
+    startDate: Date,
+    dueDate: Date,
+}, { timestamps: true });
+
+const User = mongoose.model('User', userSchema);
+const Team = mongoose.model('Team', teamSchema);
+const Task = mongoose.model('Task', taskSchema);
+```
+
+### Sử dụng `.populate()` để lấy dữ liệu liên kết
+
+`populate()` là một tính năng cực kỳ mạnh mẽ của Mongoose, nó giống như một câu lệnh `JOIN` trong SQL.
+
+**Ví dụ: Lấy chi tiết một công việc và thông tin của người thực hiện và nhóm**
+
+```javascript
+// Trong file controller của bạn (ví dụ: taskController.js)
+
+// GET /api/tasks/{taskId}
+exports.getTaskDetails = async (req, res) => {
+    try {
+        const taskId = req.params.taskId;
+        
+        // Tìm task bằng ID và sử dụng populate để lấy dữ liệu từ các collection khác
+        const task = await Task.findById(taskId)
+            .populate('assigneeId', 'name avatar email') // Lấy trường name, avatar, email từ collection User
+            .populate('teamId', 'name description'); // Lấy trường name, description từ collection Team
+
+        if (!task) {
+            return res.status(404).json({ message: 'Task not found' });
+        }
+
+        res.status(200).json(task);
+    } catch (error) {
+        res.status(500).json({ message: 'Server error', error });
+    }
+};
+```
+
+**Kết quả trả về của API sẽ có dạng:**
+
+```json
+{
+    "_id": "60c72b2f9b1d8c001f8e4d2a",
+    "title": "Implement user authentication API",
+    "status": "in-progress",
+    "tags": ["backend", "security"],
+    "teamId": {
+        "_id": "60c72a8f9b1d8c001f8e4d28",
+        "name": "Backend Brigade",
+        "description": "Building the powerful engines that drive our applications."
+    },
+    "assigneeId": {
+        "_id": "60c72a0f9b1d8c001f8e4d26",
+        "name": "Clark Kent",
+        "avatar": "https://.../clark.jpg",
+        "email": "clark@teamflow.com"
+    },
+    "createdAt": "...",
+    "updatedAt": "..."
+}
+```
+
+Cách tiếp cận này giúp bạn giữ cho dữ liệu được tổ chức tốt và giảm thiểu việc lặp lại thông tin, đồng thời vẫn dễ dàng truy vấn dữ liệu liên quan khi cần.
