@@ -2,11 +2,11 @@
 
 import React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Home, Settings, Users, ChevronDown } from 'lucide-react';
 import { Logo } from '@/components/icons';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import {
   Collapsible,
   CollapsibleContent,
@@ -78,20 +78,14 @@ export default function Sidebar() {
           </nav>
         </div>
         <div className="mt-auto p-4">
-          <Card>
-            <CardHeader className="p-4">
-              <CardTitle>Upgrade to Pro</CardTitle>
-              <CardDescription>
-                Unlock all features and get unlimited access to our support
-                team.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-4 pt-0">
-              <Button size="sm" className="w-full bg-primary hover:bg-primary/90">
-                Upgrade
-              </Button>
-            </CardContent>
-          </Card>
+            <Image 
+                src="https://picsum.photos/200/300" 
+                alt="Placeholder image"
+                width={200}
+                height={300}
+                className="rounded-lg"
+                data-ai-hint="abstract art"
+            />
         </div>
       </div>
     </aside>
