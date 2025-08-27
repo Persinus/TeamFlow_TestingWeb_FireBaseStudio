@@ -71,7 +71,7 @@ export default function Header({ users, teams, filters, setFilters, onCreateTask
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6">
       <div className="flex w-full items-center gap-4">
-        <SidebarTrigger className="hidden lg:flex" />
+        <SidebarTrigger className="lg:flex" />
         <Sheet>
             <SheetTrigger asChild>
                 <Button variant="outline" size="icon" className="shrink-0 lg:hidden">

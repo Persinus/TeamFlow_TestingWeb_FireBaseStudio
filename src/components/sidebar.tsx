@@ -37,7 +37,7 @@ export default function Sidebar({ teams }: SidebarProps) {
 
 
   return (
-    <RootSidebar collapsible="icon" className="hidden lg:flex">
+    <RootSidebar collapsible="icon" className="hidden lg:flex flex-col">
       <SidebarHeader>
         <Link href="/" className="flex items-center gap-2 font-semibold">
             <Logo className="h-6 w-6 text-primary" />

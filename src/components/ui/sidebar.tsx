@@ -214,7 +214,7 @@ const Sidebar = React.forwardRef<
       <aside
         ref={ref}
         className={cn(
-            "group hidden md:flex md:flex-col text-sidebar-foreground transition-all duration-300 ease-in-out",
+            "group bg-sidebar text-sidebar-foreground transition-all duration-300 ease-in-out",
             state === 'expanded' ? 'w-[--sidebar-width]' : 'w-[--sidebar-width-icon]',
             variant === 'sidebar' && 'border-r',
             className
@@ -244,7 +244,7 @@ const SidebarTrigger = React.forwardRef<
       data-sidebar="trigger"
       variant="ghost"
       size="icon"
-      className={cn("h-8 w-8", isMobile && 'hidden', className)}
+      className={cn("h-8 w-8 hidden", className)}
       onClick={(event) => {
         onClick?.(event)
         toggleSidebar()
