@@ -120,6 +120,16 @@ const seedInitialData = async (adminUserId: string) => {
     console.log('Initial data seeded successfully!');
 };
 
+// Mock user for bypassing login
+const mockUser: User = {
+    id: 'mock-user-id',
+    name: 'Demo User',
+    email: 'demo@teamflow.com',
+    avatar: 'https://picsum.photos/seed/mock-user/200/200',
+    expertise: 'Full-Stack Developer',
+    currentWorkload: 3,
+};
+
 
 interface AuthContextType {
     user: User | null;
@@ -145,14 +155,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 if (userSnap.exists()) {
                     setUser({ id: userSnap.id, ...userSnap.data() } as User);
                 } else {
-                    // This case handles users who completed auth but not profile creation
-                    // (e.g. first-time registration)
                     const name = firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'User';
                     const newUser = await createUserProfile(firebaseUser, name);
                     setUser(newUser);
                 }
             } else {
-                setUser(null);
+                // --- Start of temporary bypass logic ---
+                console.warn("Authentication bypass is active. Using mock user.");
+                setUser(mockUser);
+                // --- End of temporary bypass logic ---
             }
             setLoading(false);
         });
@@ -161,6 +172,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }, []);
 
     useEffect(() => {
+        // --- Start of temporary bypass logic ---
+        // We disable the redirect logic to allow access to all pages
+        const isAuthPage = pathname === '/login' || pathname === '/register';
+        if (!loading && user && isAuthPage) {
+            router.push('/');
+        }
+        // Original redirect logic is commented out below:
+        /*
         if (!loading) {
             const isAuthPage = pathname === '/login' || pathname === '/register';
             if (!user && !isAuthPage) {
@@ -169,28 +188,32 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 router.push('/');
             }
         }
+        */
+       // --- End of temporary bypass logic ---
     }, [user, loading, pathname, router]);
 
     const login = async (email: string, pass: string): Promise<void> => {
        await signInWithEmailAndPassword(auth, email, pass);
-       // After login, the onAuthStateChanged listener will handle setting the user state
     };
 
     const logout = async () => {
-        await firebaseSignOut(auth);
-        setUser(null); // Clear user state immediately
-        router.push('/login');
+        if (auth.currentUser?.uid === 'mock-user-id') {
+             setUser(null);
+             router.push('/login');
+        } else {
+            await firebaseSignOut(auth);
+            setUser(null);
+            router.push('/login');
+        }
     };
 
     const register = async (name: string, email: string, pass: string): Promise<void> => {
         const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
         const newUser = await createUserProfile(userCredential.user, name);
-        // Special case for the first user (admin) to seed data
         if (email.toLowerCase() === 'admin@teamflow.com') {
             await updateDoc(doc(db, 'users', newUser.id), { expertise: 'Project Overlord' });
             await seedInitialData(newUser.id);
         }
-        // onAuthStateChanged will set the user state and trigger redirect
     };
 
     const value = { user, loading, login, logout, register };
