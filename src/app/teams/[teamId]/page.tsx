@@ -3,7 +3,7 @@
 
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import { notFound, useRouter, useParams } from 'next/navigation';
-import { getTeam, getUsers, getTasksByTeam, addTeamMember, removeTeamMember, updateTeamMemberRole, getTeams, createTeam } from '@/lib/data';
+import { getTeam, getUsers, getTasksByTeam, addTeamMember, removeTeamMember, updateTeamMemberRole, getTeams, updateTask } from '@/lib/data';
 import type { Task, TaskStatus, User, Team, TeamMemberRole } from '@/types';
 import Sidebar from '@/components/sidebar';
 import Header from '@/components/header';
@@ -160,6 +160,16 @@ export default function TeamDetailPage() {
     } catch (error) {
         toast({ variant: 'destructive', title: 'Error', description: 'Failed to update role.' });
     }
+  };
+  
+  const handleUpdateTask = async (updatedTaskData: Omit<Task, 'team' | 'assignee' | 'comments'>) => {
+    await updateTask(updatedTaskData.id, updatedTaskData);
+    await fetchData(); // Refetch all data to ensure consistency
+    setSelectedTask(null); // Close sheet on successful update
+    toast({
+      title: "Task Updated",
+      description: `"${updatedTaskData.title}" has been successfully updated.`
+    });
   };
 
   // Dummy handlers for Header
@@ -370,13 +380,13 @@ export default function TeamDetailPage() {
             </main>
         </SidebarInset>
       </div>
-      {selectedTask && (
+       {selectedTask && (
         <TaskDetailsSheet
             task={selectedTask}
+            users={allUsers}
+            teams={allTeams}
             onOpenChange={(isOpen) => !isOpen && setSelectedTask(null)}
-            onUpdateTask={() => {}}
-            onAddComment={() => {}}
-            onStatusChange={() => {}}
+            onUpdateTask={handleUpdateTask}
         />
        )}
     </div>

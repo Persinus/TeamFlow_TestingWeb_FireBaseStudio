@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { getTasks, updateTaskStatus, addComment as apiAddComment, addTask as apiAddTask, getUsers, getTeams } from '@/lib/data';
+import { getTasks, updateTaskStatus, addComment as apiAddComment, addTask as apiAddTask, getUsers, getTeams, updateTask } from '@/lib/data';
 import type { Task, TaskStatus, User, Team } from '@/types';
 import Sidebar from '@/components/sidebar';
 import Header from '@/components/header';
@@ -119,7 +119,16 @@ export default function DashboardPage() {
   const filteredTasks = useMemo(() => {
     return tasks.filter(task => {
       if (!task) return false;
-      const assigneeMatch = filters.assignee === 'all' || task.assignee?.id === filters.assignee;
+      
+      let assigneeMatch = true;
+      if (filters.assignee === 'all') {
+        assigneeMatch = true;
+      } else if (filters.assignee === 'unassigned') {
+        assigneeMatch = !task.assigneeId;
+      } else {
+        assigneeMatch = task.assignee?.id === filters.assignee;
+      }
+
       const teamMatch = filters.team === 'all' || task.team.id === filters.team;
       const searchMatch = filters.search === '' || task.title.toLowerCase().includes(filters.search.toLowerCase());
       return assigneeMatch && teamMatch && searchMatch;
@@ -130,14 +139,17 @@ export default function DashboardPage() {
     await apiAddTask(newTaskData);
     fetchData(); 
   };
-
-  const handleUpdateTask = async (updatedTask: Task) => {
-    setTasks(prevTasks => prevTasks.map(task => task.id === updatedTask.id ? updatedTask : task));
-    if (selectedTask?.id === updatedTask.id) {
-      setSelectedTask(updatedTask);
-    }
-  };
   
+  const handleUpdateTask = async (updatedTaskData: Omit<Task, 'team' | 'assignee' | 'comments'>) => {
+    await updateTask(updatedTaskData.id, updatedTaskData);
+    await fetchData(); // Refetch all data to ensure consistency
+    setSelectedTask(null); // Close sheet on successful update
+    toast({
+      title: "Task Updated",
+      description: `"${updatedTaskData.title}" has been successfully updated.`
+    });
+  };
+
   const handleStatusChange = async (taskId: string, newStatus: TaskStatus) => {
     const originalTasks = tasks;
     const updatedTasks = tasks.map(task => 
@@ -153,28 +165,6 @@ export default function DashboardPage() {
     } catch(error) {
         setTasks(originalTasks);
         console.error("Failed to update status:", error);
-    }
-  };
-
-  const handleAddComment = async (taskId: string, commentContent: string) => {
-    if (!user) return;
-    await apiAddComment(taskId, commentContent, user.id);
-    
-    // Refetch task to show new comment
-    const taskToUpdate = tasks.find(t => t.id === taskId);
-    if(taskToUpdate) {
-        const newComment = {
-            id: `comment-${Date.now()}`,
-            author: user, 
-            content: commentContent,
-            createdAt: new Date().toISOString(),
-        };
-        const updatedTask = { ...taskToUpdate, comments: [...(taskToUpdate.comments || []), newComment]};
-        
-        setTasks(tasks.map(t => t.id === taskId ? updatedTask : t));
-        if (selectedTask?.id === taskId) {
-            setSelectedTask(updatedTask);
-        }
     }
   };
 
@@ -237,6 +227,10 @@ export default function DashboardPage() {
               transition={{ duration: 0.5 }}
               className="flex-1 p-4 sm:p-6 md:p-8 overflow-x-auto"
             >
+              <div className="mb-6">
+                <h1 className="text-3xl font-bold tracking-tight">Project Dashboard</h1>
+                <p className="text-muted-foreground">Drag and drop tasks to change their status.</p>
+              </div>
               {loading ? (
                 <BoardSkeleton />
               ) : (
@@ -274,10 +268,10 @@ export default function DashboardPage() {
       {selectedTask && (
         <TaskDetailsSheet
             task={selectedTask}
+            users={users}
+            teams={teams}
             onOpenChange={(isOpen) => !isOpen && setSelectedTask(null)}
             onUpdateTask={handleUpdateTask}
-            onAddComment={handleAddComment}
-            onStatusChange={handleStatusChange}
         />
       )}
     </div>

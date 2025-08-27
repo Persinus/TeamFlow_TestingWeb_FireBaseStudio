@@ -15,7 +15,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectSeparator, SelectTrigger, SelectValue } from '@/components/ui/select';
 import CreateTaskSheet from '@/components/create-task-sheet';
 import type { Task, User, Team } from '@/types';
 import { MobileSidebar } from './sidebar';
@@ -108,6 +108,8 @@ export default function Header({ users, teams, filters, setFilters, onCreateTask
                 </SelectTrigger>
                 <SelectContent>
                     <SelectItem value="all">All Assignees</SelectItem>
+                    <SelectItem value="unassigned">Unassigned</SelectItem>
+                    <SelectSeparator />
                     {users.map(user => (
                         <SelectItem key={user.id} value={user.id}>{user.name}</SelectItem>
                     ))}

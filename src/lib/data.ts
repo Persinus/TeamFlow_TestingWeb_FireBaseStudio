@@ -119,7 +119,7 @@ export const updateTeamMemberRole = async (teamId: string, userId: string, role:
 // TASK FUNCTIONS
 export const getTasks = async (): Promise<Task[]> => {
     await simulateDelay(100);
-    return MOCK_TASKS_RAW.map(populateTask).filter(Boolean) as Task[];
+    return MOCK_TASKS_RAW.map(populateTask).filter((t): t is Task => t !== null);
 };
 
 export const getTask = async (id: string): Promise<Task | undefined> => {
@@ -132,7 +132,7 @@ export const getTask = async (id: string): Promise<Task | undefined> => {
 export const getTasksByTeam = async (teamId: string): Promise<Task[]> => {
     await simulateDelay(100);
     const teamTasks = MOCK_TASKS_RAW.filter(t => t.teamId === teamId);
-    return teamTasks.map(populateTask).filter(Boolean) as Task[];
+    return teamTasks.map(populateTask).filter((t): t is Task => t !== null);
 }
 
 export const addTask = async (taskData: Omit<Task, 'id' | 'comments' | 'team' | 'assignee' | 'createdAt'>): Promise<string> => {
@@ -146,6 +146,15 @@ export const addTask = async (taskData: Omit<Task, 'id' | 'comments' | 'team' | 
     MOCK_TASKS_RAW.push(newTaskRaw);
     return newId;
 };
+
+export const updateTask = async (taskId: string, taskData: Partial<Omit<Task, 'id' | 'team' | 'assignee' | 'comments'>>): Promise<void> => {
+    await simulateDelay(100);
+    const taskIndex = MOCK_TASKS_RAW.findIndex(t => t.id === taskId);
+    if (taskIndex !== -1) {
+        MOCK_TASKS_RAW[taskIndex] = { ...MOCK_TASKS_RAW[taskIndex], ...taskData };
+    }
+};
+
 
 export const updateTaskStatus = async (taskId: string, status: TaskStatus): Promise<void> => {
     await simulateDelay(100);
