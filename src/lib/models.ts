@@ -37,7 +37,7 @@ const TaskSchema = new Schema({
   loaiCongViec: { type: String, enum: ['Tính năng', 'Lỗi', 'Công việc'], default: 'Công việc' },
   doUuTien: { type: String, enum: ['Cao', 'Trung bình', 'Thấp'], default: 'Trung bình' },
   nguoiThucHienId: { type: String, ref: 'User', default: null },
-  nhomId: { type: String, ref: 'Team', required: true },
+  nhomId: { type: String, ref: 'Team', required: false, default: null },
   ngayTao: { type: Date, default: Date.now },
   ngayBatDau: Date,
   ngayHetHan: Date,

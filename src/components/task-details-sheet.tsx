@@ -17,11 +17,11 @@ import { Calendar } from './ui/calendar';
 import { cn } from '@/lib/utils';
 import { Textarea } from './ui/textarea';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from './ui/form';
-import { CalendarIcon, Loader2, Pencil, User as UserIcon, Users, Tag, CheckSquare, X, Trash2, Shield, Flag, Package } from 'lucide-react';
+import { CalendarIcon, Loader2, Pencil, User as UserIcon, Users, Tag, CheckSquare, X, Trash2, Shield, Flag, Package, Wand2 } from 'lucide-react';
 import { Separator } from './ui/separator';
 import { Badge } from './ui/badge';
 import { MultiSelect } from './ui/multi-select';
-import { getAllTags } from '@/app/actions';
+import { getAllTags, generateDescriptionFromAI } from '@/app/actions';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from './ui/alert-dialog';
 import { Dialog } from './ui/dialog';
 import { DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from './ui/dialog';
@@ -41,7 +41,7 @@ const taskSchema = z.object({
   moTa: z.string().optional(),
   trangThai: z.enum(['Cần làm', 'Đang tiến hành', 'Hoàn thành', 'Tồn đọng']),
   nguoiThucHienId: z.string().optional(),
-  nhomId: z.string().min(1, 'Đội là bắt buộc'),
+  nhomId: z.string().optional(),
   ngayBatDau: z.date().optional(),
   ngayHetHan: z.date().optional(),
   loaiCongViec: z.enum(['Tính năng', 'Lỗi', 'Công việc']),
@@ -90,6 +90,10 @@ export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onU
   const [availableTags, setAvailableTags] = useState<string[]>([]);
   const [pendingTags, setPendingTags] = useState<string[]>([]);
 
+  const [isAiModalOpen, setAiModalOpen] = useState(false);
+  const [aiPrompt, setAiPrompt] = useState("");
+  const [isGenerating, setIsGenerating] = useState(false);
+
   const form = useForm<TaskFormData>({
     resolver: zodResolver(taskSchema),
   });
@@ -103,13 +107,13 @@ export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onU
   }, []);
 
   useEffect(() => {
-    if (task) {
+    if (task && form) {
       form.reset({
         tieuDe: task.tieuDe,
         moTa: task.moTa || '',
         trangThai: task.trangThai,
         nguoiThucHienId: task.nguoiThucHienId || undefined,
-        nhomId: task.nhomId,
+        nhomId: task.nhomId || undefined,
         ngayBatDau: safeParseDate(task.ngayBatDau),
         ngayHetHan: safeParseDate(task.ngayHetHan),
         loaiCongViec: task.loaiCongViec,
@@ -117,12 +121,29 @@ export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onU
       });
       setPendingTags(task.tags || []);
     }
-  }, [task, form, isEditing]);
+  }, [task, isEditing, form]);
   
   const assignee = useMemo(() => users.find(u => u.id === task?.nguoiThucHienId), [task, users]);
   const team = useMemo(() => teams.find(t => t.id === task?.nhomId), [task, teams]);
 
   if (!task) return null;
+
+  const handleGenerateDescription = async () => {
+    if (!aiPrompt) {
+        toast({ variant: 'destructive', title: 'Cần có prompt', description: 'Vui lòng nhập một vài từ khóa để AI tạo mô tả.' });
+        return;
+    }
+    setIsGenerating(true);
+    const result = await generateDescriptionFromAI({ prompt: aiPrompt });
+    if (result.success && result.data) {
+        form.setValue('moTa', result.data.description);
+        toast({ title: 'Đã tạo mô tả', description: 'Mô tả đã được điền vào form.'});
+        setAiModalOpen(false);
+    } else {
+        toast({ variant: 'destructive', title: 'Tạo mô tả thất bại', description: result.error });
+    }
+    setIsGenerating(false);
+  }
 
   const onSubmit = async (data: TaskFormData) => {
     setIsUpdating(true);
@@ -132,6 +153,7 @@ export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onU
         ...data,
         tags: pendingTags,
         nguoiThucHienId: data.nguoiThucHienId === 'unassigned' ? undefined : data.nguoiThucHienId,
+        nhomId: data.nhomId === 'personal' ? undefined : data.nhomId,
         ngayTao: task.ngayTao,
       };
       
@@ -195,13 +217,14 @@ export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onU
   }
 
   return (
+    <>
     <Sheet open={!!task} onOpenChange={(isOpen) => { if(!isOpen) setIsEditing(false); onOpenChange(isOpen);}}>
       <SheetContent className="sm:max-w-2xl w-[95vw] flex flex-col">
          <SheetHeader className="pr-12">
            <SheetTitle className="truncate">{isEditing ? 'Chỉnh sửa công việc' : task.tieuDe}</SheetTitle>
            {!isEditing && (
             <SheetDescription>
-                Trong đội <span className="font-semibold text-foreground">{team?.tenNhom}</span>. Tạo ngày {formatDate(task.ngayTao)}
+                {team ? `Trong đội ${team.tenNhom}` : 'Công việc cá nhân'}. Tạo ngày {formatDate(task.ngayTao)}
             </SheetDescription>
            )}
         </SheetHeader>
@@ -221,7 +244,7 @@ export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onU
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
                         <DetailRow icon={CheckSquare} label="Trạng thái" value={<Badge variant="outline" className="capitalize">{statusMap[task.trangThai]}</Badge>} />
                         <DetailRow icon={UserIcon} label="Người thực hiện" value={assignee?.hoTen || 'Chưa giao'} />
-                        <DetailRow icon={Users} label="Đội" value={team?.tenNhom || 'Không có'} />
+                        <DetailRow icon={Users} label="Đội" value={team?.tenNhom || 'Cá nhân'} />
                         <DetailRow icon={Package} label="Loại công việc" value={<Badge variant="secondary">{task.loaiCongViec}</Badge>} />
                         <DetailRow icon={Flag} label="Độ ưu tiên" value={<Badge variant={task.doUuTien === 'Cao' ? 'destructive' : task.doUuTien === 'Trung bình' ? 'secondary' : 'outline'}>{task.doUuTien}</Badge>} />
                         <DetailRow icon={Tag} label="Thẻ" value={task.tags && task.tags.length > 0 ? <div className="flex flex-wrap gap-1">{task.tags.map(t => <Badge key={t} variant="secondary" style={{ backgroundColor: getTagColor(t) }} className="text-xs text-black">{t}</Badge>)}</div> : 'Không có thẻ'} />
@@ -236,7 +259,16 @@ export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onU
                             <FormItem><FormLabel>Tiêu đề</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
                          )} />
                          <FormField control={form.control} name="moTa" render={({ field }) => (
-                            <FormItem><FormLabel>Mô tả</FormLabel><FormControl><Textarea className="min-h-[100px]" {...field} /></FormControl><FormMessage /></FormItem>
+                            <FormItem>
+                                 <div className="flex justify-between items-center">
+                                    <FormLabel>Mô tả</FormLabel>
+                                    <Button type="button" variant="ghost" size="sm" onClick={() => setAiModalOpen(true)}>
+                                        <Wand2 className="h-4 w-4 mr-2"/>
+                                        Tạo với AI
+                                    </Button>
+                                  </div>
+                                <FormControl><Textarea className="min-h-[100px]" {...field} /></FormControl><FormMessage />
+                            </FormItem>
                          )} />
                          
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -247,7 +279,8 @@ export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onU
                                 </SelectContent></Select><FormMessage /></FormItem>
                             )} />
                             <FormField control={form.control} name="nhomId" render={({ field }) => (
-                                <FormItem><FormLabel>Đội</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl><SelectContent>
+                                <FormItem><FormLabel>Đội</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value || "personal"}><FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl><SelectContent>
+                                    <SelectItem value="personal">Cá nhân (Không thuộc đội nào)</SelectItem>
                                     {teams.map(t => (<SelectItem key={t.id} value={t.id}>{t.tenNhom}</SelectItem>))}
                                 </SelectContent></Select><FormMessage /></FormItem>
                             )} />
@@ -353,5 +386,28 @@ export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onU
         </div>
       </SheetContent>
     </Sheet>
+    <Dialog open={isAiModalOpen} onOpenChange={setAiModalOpen}>
+        <DialogContent>
+            <DialogHeader>
+                <DialogTitle>Tạo mô tả bằng AI</DialogTitle>
+                <DialogDescription>Nhập một vài từ khóa hoặc một câu ngắn gọn, AI sẽ tạo ra một mô tả công việc chi tiết cho bạn.</DialogDescription>
+            </DialogHeader>
+            <div className="py-4">
+                <Textarea 
+                    placeholder="ví dụ: Tạo trang đích mới cho chiến dịch mùa hè..."
+                    value={aiPrompt}
+                    onChange={e => setAiPrompt(e.target.value)}
+                />
+            </div>
+            <DialogFooter>
+                <Button variant="ghost" onClick={() => setAiModalOpen(false)}>Hủy</Button>
+                <Button onClick={handleGenerateDescription} disabled={isGenerating}>
+                    {isGenerating && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                    Tạo
+                </Button>
+            </DialogFooter>
+        </DialogContent>
+    </Dialog>
+    </>
   );
 }

@@ -12,14 +12,16 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
-import { getAssigneeSuggestion, getAllTags } from '@/app/actions';
-import type { Task, User, Team, DoUuTien, LoaiCongViec, TrangThaiCongViec } from '@/types';
-import { Wand2, Calendar as CalendarIcon } from 'lucide-react';
+import { generateDescriptionFromAI, getAllTags } from '@/app/actions';
+import type { Task, User, Team } from '@/types';
+import { Wand2, Calendar as CalendarIcon, Loader2 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Calendar } from './ui/calendar';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { MultiSelect } from './ui/multi-select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from './ui/dialog';
+
 
 interface CreateTaskSheetProps {
   children: React.ReactNode;
@@ -32,7 +34,7 @@ const taskSchema = z.object({
   tieuDe: z.string().min(1, 'Tiêu đề là bắt buộc'),
   moTa: z.string().optional(),
   nguoiThucHienId: z.string().optional(),
-  nhomId: z.string().min(1, 'Đội là bắt buộc'),
+  nhomId: z.string().optional(),
   trangThai: z.enum(['Cần làm', 'Đang tiến hành', 'Hoàn thành', 'Tồn đọng']),
   loaiCongViec: z.enum(['Tính năng', 'Lỗi', 'Công việc']),
   doUuTien: z.enum(['Cao', 'Trung bình', 'Thấp']),
@@ -47,6 +49,9 @@ export default function CreateTaskSheet({ children, onCreateTask, users, teams }
   const [isSuggesting, setIsSuggesting] = useState(false);
   const { toast } = useToast();
   const [availableTags, setAvailableTags] = React.useState<string[]>([]);
+  const [isAiModalOpen, setAiModalOpen] = useState(false);
+  const [aiPrompt, setAiPrompt] = useState("");
+  const [isGenerating, setIsGenerating] = useState(false);
 
   React.useEffect(() => {
     async function fetchTags() {
@@ -70,65 +75,29 @@ export default function CreateTaskSheet({ children, onCreateTask, users, teams }
     },
   });
   
-  const handleSuggestAssignee = async () => {
-    const taskDescription = form.getValues('moTa');
-    const teamId = form.getValues('nhomId');
-
-    if (!taskDescription) {
-      toast({
-        variant: 'destructive',
-        title: 'Cần có mô tả',
-        description: 'Vui lòng cung cấp mô tả công việc để nhận gợi ý từ AI.',
-      });
-      return;
+  const handleGenerateDescription = async () => {
+    if (!aiPrompt) {
+        toast({ variant: 'destructive', title: 'Cần có prompt', description: 'Vui lòng nhập một vài từ khóa để AI tạo mô tả.' });
+        return;
     }
-     if (!teamId) {
-      toast({
-        variant: 'destructive',
-        title: 'Cần chọn đội',
-        description: 'Vui lòng chọn một đội trước.',
-      });
-      return;
-    }
-
-    const selectedTeam = teams.find(t => t.id === teamId);
-    if (!selectedTeam) return;
-
-    const teamMemberDetails = selectedTeam.thanhVien.map(m => users.find(u => u.id === m.thanhVienId)).filter(Boolean) as User[];
-    
-    const teamMembersForSuggestion = teamMemberDetails.map(u => ({ 
-        name: u.hoTen, 
-        expertise: u.chuyenMon, 
-        currentWorkload: u.taiCongViecHienTai
-    }));
-
-
-    setIsSuggesting(true);
-    const result = await getAssigneeSuggestion({ taskDescription, teamMembers: teamMembersForSuggestion });
-    setIsSuggesting(false);
-
+    setIsGenerating(true);
+    const result = await generateDescriptionFromAI({ prompt: aiPrompt });
     if (result.success && result.data) {
-      const suggestedUser = users.find(u => u.hoTen === result.data.suggestedAssignee);
-      if (suggestedUser) {
-        form.setValue('nguoiThucHienId', suggestedUser.id);
-        toast({
-          title: `Gợi ý: ${result.data.suggestedAssignee}`,
-          description: result.data.reason,
-        });
-      }
+        form.setValue('moTa', result.data.description);
+        toast({ title: 'Đã tạo mô tả', description: 'Mô tả đã được điền vào form.'});
+        setAiModalOpen(false);
     } else {
-      toast({
-        variant: 'destructive',
-        title: 'Gợi ý thất bại',
-        description: result.error,
-      });
+        toast({ variant: 'destructive', title: 'Tạo mô tả thất bại', description: result.error });
     }
-  };
+    setIsGenerating(false);
+  }
 
   const onSubmit = async (values: z.infer<typeof taskSchema>) => {
     await onCreateTask({
       ...values,
       moTa: values.moTa ?? "",
+      nguoiThucHienId: values.nguoiThucHienId === 'unassigned' ? undefined : values.nguoiThucHienId,
+      nhomId: values.nhomId === 'personal' ? undefined : values.nhomId,
       ngayBatDau: values.ngayBatDau,
       ngayHetHan: values.ngayHetHan,
       tags: values.tags || [],
@@ -142,6 +111,7 @@ export default function CreateTaskSheet({ children, onCreateTask, users, teams }
   };
 
   return (
+    <>
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetTrigger asChild>{children}</SheetTrigger>
       <SheetContent className="sm:max-w-lg w-[90vw] overflow-y-auto">
@@ -171,7 +141,13 @@ export default function CreateTaskSheet({ children, onCreateTask, users, teams }
               name="moTa"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Mô tả</FormLabel>
+                  <div className="flex justify-between items-center">
+                    <FormLabel>Mô tả</FormLabel>
+                    <Button type="button" variant="ghost" size="sm" onClick={() => setAiModalOpen(true)}>
+                        <Wand2 className="h-4 w-4 mr-2"/>
+                        AI
+                    </Button>
+                  </div>
                   <FormControl>
                     <Textarea placeholder="Thêm mô tả chi tiết cho công việc..." {...field} />
                   </FormControl>
@@ -212,10 +188,11 @@ export default function CreateTaskSheet({ children, onCreateTask, users, teams }
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Giao cho một đội" />
+                          <SelectValue placeholder="Giao cho đội hoặc cá nhân" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
+                        <SelectItem value="personal">Cá nhân (Không thuộc đội nào)</SelectItem>
                         {teams.map(team => (
                           <SelectItem key={team.id} value={team.id}>
                             {team.tenNhom}
@@ -372,9 +349,6 @@ export default function CreateTaskSheet({ children, onCreateTask, users, teams }
                                 ))}
                             </SelectContent>
                         </Select>
-                        <Button type="button" variant="outline" size="icon" onClick={handleSuggestAssignee} disabled={isSuggesting} aria-label="Gợi ý người thực hiện">
-                            <Wand2 className={`h-4 w-4 ${isSuggesting ? 'animate-spin' : ''}`} />
-                        </Button>
                    </div>
                   <FormMessage />
                 </FormItem>
@@ -411,5 +385,28 @@ export default function CreateTaskSheet({ children, onCreateTask, users, teams }
         </Form>
       </SheetContent>
     </Sheet>
+    <Dialog open={isAiModalOpen} onOpenChange={setAiModalOpen}>
+        <DialogContent>
+            <DialogHeader>
+                <DialogTitle>Tạo mô tả bằng AI</DialogTitle>
+                <DialogDescription>Nhập một vài từ khóa hoặc một câu ngắn gọn, AI sẽ tạo ra một mô tả công việc chi tiết cho bạn.</DialogDescription>
+            </DialogHeader>
+            <div className="py-4">
+                <Textarea 
+                    placeholder="ví dụ: Tạo trang đích mới cho chiến dịch mùa hè..."
+                    value={aiPrompt}
+                    onChange={e => setAiPrompt(e.target.value)}
+                />
+            </div>
+            <DialogFooter>
+                <Button variant="ghost" onClick={() => setAiModalOpen(false)}>Hủy</Button>
+                <Button onClick={handleGenerateDescription} disabled={isGenerating}>
+                    {isGenerating && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                    Tạo
+                </Button>
+            </DialogFooter>
+        </DialogContent>
+    </Dialog>
+    </>
   );
 }

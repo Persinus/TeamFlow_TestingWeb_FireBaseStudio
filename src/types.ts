@@ -40,7 +40,7 @@ export interface Task {
   loaiCongViec: LoaiCongViec;
   doUuTien: DoUuTien;
 
-  nhomId: string; // Ref to Team._id
+  nhomId?: string; // Ref to Team._id
   nhom?: Team; // Populated field
 
   nguoiThucHienId?: string; // Ref to User._id

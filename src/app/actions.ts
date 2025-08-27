@@ -7,6 +7,8 @@ import connectToDatabase from '@/lib/mongodb';
 import { User as UserModel, Team as TeamModel, Task as TaskModel } from '@/lib/models';
 import { suggestTaskAssignee } from "@/ai/flows/suggest-task-assignee";
 import type { SuggestTaskAssigneeInput } from "@/ai/flows/suggest-task-assignee";
+import { generateTaskDescription } from "@/ai/flows/generate-task-description";
+import type { GenerateTaskDescriptionInput } from "@/ai/flows/generate-task-description";
 import { revalidatePath } from 'next/cache';
 
 // --- Auth Functions ---
@@ -41,6 +43,16 @@ export async function getAssigneeSuggestion(input: SuggestTaskAssigneeInput) {
     } catch (error) {
         console.error("AI suggestion failed:", error);
         return { success: false, error: "Failed to get AI suggestion." };
+    }
+}
+
+export async function generateDescriptionFromAI(input: GenerateTaskDescriptionInput) {
+    try {
+        const result = await generateTaskDescription(input);
+        return { success: true, data: result };
+    } catch (error) {
+        console.error("AI description generation failed:", error);
+        return { success: false, error: "Failed to get AI description." };
     }
 }
 
@@ -87,7 +99,7 @@ const populateTask = (task: any): Task => {
         trangThai: taskObj.trangThai,
         loaiCongViec: taskObj.loaiCongViec,
         doUuTien: taskObj.doUuTien,
-        nhomId: taskObj.nhomId ? (typeof taskObj.nhomId === 'object' ? taskObj.nhomId._id.toString() : taskObj.nhomId.toString()) : '',
+        nhomId: taskObj.nhomId ? (typeof taskObj.nhomId === 'object' ? taskObj.nhomId._id.toString() : taskObj.nhomId.toString()) : undefined,
         nguoiThucHienId: taskObj.nguoiThucHienId ? (typeof taskObj.nguoiThucHienId === 'object' ? taskObj.nguoiThucHienId._id.toString() : taskObj.nguoiThucHienId.toString()) : undefined,
         ngayTao: taskObj.ngayTao,
         ngayBatDau: taskObj.ngayBatDau,
@@ -156,13 +168,20 @@ export const getTasksByTeam = async (teamId: string): Promise<Task[]> => {
 
 export const addTask = async (taskData: Omit<Task, 'id' | 'nhom' | 'nguoiThucHien' | 'ngayTao'>): Promise<string> => {
     await connectToDatabase();
+    const newTaskData = { ...taskData };
+    if (!newTaskData.nhomId) {
+        delete newTaskData.nhomId;
+    }
+
     const newTask = new TaskModel({
-        ...taskData,
+        ...newTaskData,
         _id: `task-${Date.now()}`,
     });
     await newTask.save();
     revalidatePath('/board');
-    revalidatePath(`/teams/${taskData.nhomId}`);
+    if (taskData.nhomId) {
+      revalidatePath(`/teams/${taskData.nhomId}`);
+    }
     return newTask._id.toString();
 };
 
@@ -172,14 +191,19 @@ export const updateTask = async (taskId: string, taskData: Partial<Omit<Task, 'i
     if (updateData.nguoiThucHienId === 'unassigned' || updateData.nguoiThucHienId === null) {
       updateData.nguoiThucHienId = null;
     } 
+    if (!updateData.nhomId) {
+        updateData.nhomId = null;
+    }
 
-    const updatedTask = await TaskModel.findByIdAndUpdate(taskId, updateData, { new: true });
+    const updatedTask = await TaskModel.findByIdAndUpdate(taskId, { $set: updateData }, { new: true });
     if (!updatedTask) {
         throw new Error('Task not found');
     }
     revalidatePath('/');
     revalidatePath('/board');
-    revalidatePath(`/teams/${updatedTask.nhomId}`);
+    if (updatedTask.nhomId) {
+      revalidatePath(`/teams/${updatedTask.nhomId}`);
+    }
     if(updatedTask.nguoiThucHienId) {
          revalidatePath(`/profile`);
     }
@@ -195,7 +219,9 @@ export const deleteTask = async (taskId: string): Promise<void> => {
     await TaskModel.findByIdAndDelete(taskId);
     revalidatePath('/');
     revalidatePath('/board');
-    revalidatePath(`/teams/${task.nhomId}`);
+    if (task.nhomId) {
+      revalidatePath(`/teams/${task.nhomId}`);
+    }
     if (task.nguoiThucHienId) {
         revalidatePath(`/profile`);
     }
