@@ -50,8 +50,10 @@ export default function CreateTaskSheet({ children, onCreateTask, users, teams }
       const tags = await getAllTags();
       setAvailableTags(tags);
     }
-    fetchTags();
-  }, []);
+    if (isOpen) {
+      fetchTags();
+    }
+  }, [isOpen]);
 
   const form = useForm<z.infer<typeof taskSchema>>({
     resolver: zodResolver(taskSchema),
@@ -65,6 +67,8 @@ export default function CreateTaskSheet({ children, onCreateTask, users, teams }
 
   const handleSuggestAssignee = async () => {
     const taskDescription = form.getValues('description');
+    const teamId = form.getValues('teamId');
+
     if (!taskDescription) {
       toast({
         variant: 'destructive',
@@ -73,8 +77,22 @@ export default function CreateTaskSheet({ children, onCreateTask, users, teams }
       });
       return;
     }
+     if (!teamId) {
+      toast({
+        variant: 'destructive',
+        title: 'Team needed',
+        description: 'Please select a team first.',
+      });
+      return;
+    }
+
+    const selectedTeam = teams.find(t => t.id === teamId);
+    if (!selectedTeam) return;
+
+    const teamMemberIds = new Set(selectedTeam.members.map(m => m.id));
+    const teamMembers = users.filter(u => teamMemberIds.has(u.id)).map(u => ({ name: u.name, expertise: u.expertise, currentWorkload: u.currentWorkload }));
+
     setIsSuggesting(true);
-    const teamMembers = users.map(u => ({ name: u.name, expertise: u.expertise, currentWorkload: u.currentWorkload }));
     const result = await getAssigneeSuggestion({ taskDescription, teamMembers });
     setIsSuggesting(false);
 
@@ -314,9 +332,10 @@ export default function CreateTaskSheet({ children, onCreateTask, users, teams }
                         value={field.value ?? []}
                         onChange={field.onChange}
                         onCreate={(value) => {
-                            const newTag = { value, label: value };
-                            setAvailableTags(prev => [...prev, value]);
-                            field.onChange([...(field.value ?? []), newTag.value]);
+                            if (!availableTags.includes(value)) {
+                                setAvailableTags(prev => [...prev, value]);
+                            }
+                            field.onChange([...(field.value ?? []), value]);
                         }}
                         placeholder="Select or create tags..."
                     />
