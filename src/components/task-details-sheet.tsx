@@ -45,6 +45,15 @@ const taskSchema = z.object({
 
 type TaskFormData = z.infer<typeof taskSchema>;
 
+const getTagColor = (tagName: string) => {
+    let hash = 0;
+    for (let i = 0; i < tagName.length; i++) {
+        hash = tagName.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const h = hash % 360;
+    return `hsl(${h}, 40%, 85%)`; // Using HSL for better color control: low saturation, high lightness
+};
+
 const DetailRow = ({ icon: Icon, label, value }: { icon: React.ElementType, label: string, value: React.ReactNode }) => (
     <div className="flex items-start gap-3">
         <Icon className="h-5 w-5 text-muted-foreground mt-1 flex-shrink-0" />
@@ -147,7 +156,7 @@ export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onU
                         <DetailRow icon={CheckSquare} label="Status" value={<Badge variant="outline" className="capitalize">{task.status.replace('-', ' ')}</Badge>} />
                         <DetailRow icon={UserIcon} label="Assignee" value={assignee?.name || 'Unassigned'} />
                         <DetailRow icon={Users} label="Team" value={team?.name || 'N/A'} />
-                        <DetailRow icon={Tag} label="Tags" value={task.tags && task.tags.length > 0 ? <div className="flex flex-wrap gap-1">{task.tags.map(t => <Badge key={t} variant="secondary">{t}</Badge>)}</div> : 'No tags'} />
+                        <DetailRow icon={Tag} label="Tags" value={task.tags && task.tags.length > 0 ? <div className="flex flex-wrap gap-1">{task.tags.map(t => <Badge key={t} variant="secondary" style={{ backgroundColor: getTagColor(t) }} className="text-xs text-black">{t}</Badge>)}</div> : 'No tags'} />
                         <DetailRow icon={CalendarIcon} label="Start Date" value={task.startDate ? format(parseISO(task.startDate), 'PPP') : 'Not set'} />
                         <DetailRow icon={CalendarIcon} label="Due Date" value={task.dueDate ? format(parseISO(task.dueDate), 'PPP') : 'Not set'} />
                     </div>
