@@ -17,10 +17,8 @@ import { Calendar } from './ui/calendar';
 import { cn } from '@/lib/utils';
 import { Textarea } from './ui/textarea';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from './ui/form';
-import { CalendarIcon, Loader2, MessageSquare, Pencil, User as UserIcon, Users, Tag, CheckSquare, Plus } from 'lucide-react';
-import { addComment as apiAddComment } from '@/lib/data';
+import { CalendarIcon, Loader2, Pencil, User as UserIcon, Users, Tag, CheckSquare } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
-import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Separator } from './ui/separator';
 
 interface TaskDetailsSheetProps {
@@ -29,7 +27,6 @@ interface TaskDetailsSheetProps {
   teams: Team[];
   onOpenChange: (isOpen: boolean) => void;
   onUpdateTask: (updatedTask: Omit<Task, 'team' | 'assignee' | 'comments'>) => Promise<void>;
-  onCommentAdded: () => void;
 }
 
 const taskSchema = z.object({
@@ -54,12 +51,9 @@ const DetailRow = ({ icon: Icon, label, value }: { icon: React.ElementType, labe
     </div>
 );
 
-export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onUpdateTask, onCommentAdded }: TaskDetailsSheetProps) {
+export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onUpdateTask }: TaskDetailsSheetProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
-  const [newComment, setNewComment] = useState("");
-  const [isAddingComment, setIsAddingComment] = useState(false);
-  const { user: currentUser } = useAuth();
   const { toast } = useToast();
 
   const form = useForm<TaskFormData>({
@@ -110,24 +104,6 @@ export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onU
     }
   };
 
-  const handleAddComment = async () => {
-      if (!newComment.trim() || !currentUser) return;
-      setIsAddingComment(true);
-      try {
-          await apiAddComment(task.id, newComment, currentUser.id);
-          setNewComment("");
-          onCommentAdded();
-           toast({
-                title: "Comment Added",
-                description: "Your comment has been posted.",
-            });
-      } catch (error) {
-          toast({ variant: 'destructive', title: 'Error', description: 'Failed to add comment.'});
-      } finally {
-          setIsAddingComment(false);
-      }
-  }
-
   return (
     <Sheet open={!!task} onOpenChange={onOpenChange}>
       <SheetContent className="sm:max-w-2xl w-[95vw] flex flex-col">
@@ -149,6 +125,7 @@ export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onU
             {!isEditing ? (
                 <div className="space-y-6 py-4">
                     <p className="text-base text-foreground whitespace-pre-wrap">{task.description || 'No description provided.'}</p>
+                    <Separator />
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <DetailRow icon={CheckSquare} label="Status" value={<span className="capitalize">{task.status.replace('-', ' ')}</span>} />
                         <DetailRow icon={UserIcon} label="Assignee" value={assignee?.name || 'Unassigned'} />
@@ -156,47 +133,6 @@ export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onU
                         <DetailRow icon={Tag} label="Task ID" value={task.id} />
                         <DetailRow icon={CalendarIcon} label="Start Date" value={task.startDate ? format(parseISO(task.startDate), 'PPP') : 'Not set'} />
                         <DetailRow icon={CalendarIcon} label="Due Date" value={task.dueDate ? format(parseISO(task.dueDate), 'PPP') : 'Not set'} />
-                    </div>
-                    <Separator />
-                     <div>
-                        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                            <MessageSquare className="h-5 w-5" /> Comments
-                        </h3>
-                        <div className="space-y-4">
-                            {task.comments.map(comment => (
-                                <div key={comment.id} className="flex items-start gap-3">
-                                    <Avatar className="h-8 w-8">
-                                        <AvatarImage src={comment.author.avatar} alt={comment.author.name} />
-                                        <AvatarFallback>{comment.author.name.substring(0,2).toUpperCase()}</AvatarFallback>
-                                    </Avatar>
-                                    <div className="bg-muted/50 rounded-lg p-3 w-full">
-                                        <div className="flex justify-between items-center">
-                                            <p className="font-semibold text-sm">{comment.author.name}</p>
-                                            <p className="text-xs text-muted-foreground">{format(parseISO(comment.createdAt), "MMM d, yyyy 'at' h:mm a")}</p>
-                                        </div>
-                                        <p className="text-sm mt-1">{comment.content}</p>
-                                    </div>
-                                </div>
-                            ))}
-                             {task.comments.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">No comments yet.</p>}
-                        </div>
-                        <div className="mt-6 flex gap-3">
-                            <Avatar className="h-8 w-8">
-                                <AvatarImage src={currentUser?.avatar} alt={currentUser?.name} />
-                                <AvatarFallback>{currentUser?.name.substring(0,2).toUpperCase()}</AvatarFallback>
-                            </Avatar>
-                            <div className="w-full flex items-center gap-2">
-                                <Textarea 
-                                    value={newComment} 
-                                    onChange={(e) => setNewComment(e.target.value)}
-                                    placeholder="Write a comment..." 
-                                    className="min-h-[40px]"
-                                />
-                                <Button onClick={handleAddComment} disabled={!newComment.trim() || isAddingComment}>
-                                    {isAddingComment ? <Loader2 className="h-4 w-4 animate-spin"/> : "Post"}
-                                </Button>
-                            </div>
-                        </div>
                     </div>
                 </div>
             ) : (
@@ -255,3 +191,5 @@ export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onU
     </Sheet>
   );
 }
+
+    
