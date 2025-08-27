@@ -64,6 +64,17 @@ const DetailRow = ({ icon: Icon, label, value }: { icon: React.ElementType, labe
     </div>
 );
 
+// Helper function to safely parse dates
+const safeParseDate = (date: string | Date | undefined): Date | undefined => {
+    if (!date) return undefined;
+    if (date instanceof Date) return date;
+    try {
+        return parseISO(date);
+    } catch (e) {
+        return undefined;
+    }
+};
+
 export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onUpdateTask }: TaskDetailsSheetProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
@@ -91,8 +102,8 @@ export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onU
         status: task.status,
         assigneeId: task.assigneeId || undefined,
         teamId: task.teamId,
-        startDate: task.startDate ? parseISO(task.startDate) : undefined,
-        dueDate: task.dueDate ? parseISO(task.dueDate) : undefined,
+        startDate: safeParseDate(task.startDate),
+        dueDate: safeParseDate(task.dueDate),
         tags: task.tags || [],
       });
       setIsEditing(false); // Reset to view mode whenever a new task is selected
@@ -128,6 +139,12 @@ export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onU
     }
   };
 
+  const formatDate = (date: string | Date | undefined) => {
+    const parsedDate = safeParseDate(date);
+    return parsedDate ? format(parsedDate, 'PPP') : 'Not set';
+  };
+
+
   return (
     <Sheet open={!!task} onOpenChange={onOpenChange}>
       <SheetContent className="sm:max-w-2xl w-[95vw] flex flex-col">
@@ -135,7 +152,7 @@ export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onU
            <SheetTitle className="truncate">{isEditing ? 'Editing Task' : task.title}</SheetTitle>
            {!isEditing && (
             <SheetDescription>
-                In team <span className="font-semibold text-foreground">{team?.name}</span>. Created on {format(parseISO(task.createdAt), 'PPP')}
+                In team <span className="font-semibold text-foreground">{team?.name}</span>. Created on {formatDate(task.createdAt)}
             </SheetDescription>
            )}
         </SheetHeader>
@@ -157,8 +174,8 @@ export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onU
                         <DetailRow icon={UserIcon} label="Assignee" value={assignee?.name || 'Unassigned'} />
                         <DetailRow icon={Users} label="Team" value={team?.name || 'N/A'} />
                         <DetailRow icon={Tag} label="Tags" value={task.tags && task.tags.length > 0 ? <div className="flex flex-wrap gap-1">{task.tags.map(t => <Badge key={t} variant="secondary" style={{ backgroundColor: getTagColor(t) }} className="text-xs text-black">{t}</Badge>)}</div> : 'No tags'} />
-                        <DetailRow icon={CalendarIcon} label="Start Date" value={task.startDate ? format(parseISO(task.startDate), 'PPP') : 'Not set'} />
-                        <DetailRow icon={CalendarIcon} label="Due Date" value={task.dueDate ? format(parseISO(task.dueDate), 'PPP') : 'Not set'} />
+                        <DetailRow icon={CalendarIcon} label="Start Date" value={formatDate(task.startDate)} />
+                        <DetailRow icon={CalendarIcon} label="Due Date" value={formatDate(task.dueDate)} />
                     </div>
                 </div>
             ) : (
