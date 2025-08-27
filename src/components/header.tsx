@@ -12,7 +12,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import CreateTaskSheet from '@/components/create-task-sheet';
@@ -20,6 +20,8 @@ import { users, teams } from '@/lib/data';
 import type { Task } from '@/types';
 import Sidebar, { SidebarTrigger } from './sidebar';
 import { useAuth } from '@/hooks/use-auth';
+import { Logo } from './icons';
+import Link from 'next/link';
 
 interface HeaderProps {
   filters: { assignee: string; team: string; search: string };
@@ -60,6 +62,14 @@ export default function Header({ filters, setFilters, onCreateTask }: HeaderProp
                 </Button>
             </SheetTrigger>
             <SheetContent side="left" className="w-64 p-0">
+                 <SheetHeader className="p-4 border-b">
+                    <SheetTitle asChild>
+                        <Link href="/" className="flex items-center gap-2 font-semibold">
+                            <Logo className="h-6 w-6 text-primary" />
+                            <span className="text-lg">TeamFlow</span>
+                        </Link>
+                    </SheetTitle>
+                </SheetHeader>
                 <Sidebar />
             </SheetContent>
         </Sheet>
