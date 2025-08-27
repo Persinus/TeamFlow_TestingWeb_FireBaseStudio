@@ -27,20 +27,29 @@ if (!cached) {
 
 // --- Database Seeding ---
 const seedDatabase = async () => {
-    const userCount = await UserModel.countDocuments();
-    if (userCount > 0) {
-        console.log('Database already seeded.');
-        return;
-    }
+    // Using a separate connection for seeding to avoid conflicts
+    const conn = mongoose.createConnection(MONGODB_URI!);
+    const UserSeedModel = conn.model('User', UserModel.schema);
+    const TeamSeedModel = conn.model('Team', TeamModel.schema);
+    const TaskSeedModel = conn.model('Task', TaskModel.schema);
 
-    console.log('Seeding database...');
     try {
-        // 1. Insert all mock users
-        await UserModel.create(MOCK_USERS);
+        const userCount = await UserSeedModel.countDocuments();
+        if (userCount > 0) {
+            console.log('Database already seeded.');
+            await conn.close();
+            return;
+        }
+
+        console.log('Seeding database...');
+        
+        // 1. Insert all mock users with their specific IDs
+        const usersToCreate = MOCK_USERS.map(({ id, ...rest }) => ({ ...rest, _id: id }));
+        await UserSeedModel.insertMany(usersToCreate);
         console.log(`${MOCK_USERS.length} users created.`);
 
         // 2. Create a default team
-        const justiceLeagueTeam = await TeamModel.create({
+        const justiceLeagueTeam = new TeamSeedModel({
             _id: 'team-justice-league-1',
             name: 'Justice League',
             description: 'The world\'s premier superhero team.',
@@ -50,6 +59,7 @@ const seedDatabase = async () => {
                 { user: 'user-diana', role: 'member' },
             ],
         });
+        await justiceLeagueTeam.save();
         console.log('Justice League team created.');
         
         // 3. Create some tasks for the team
@@ -62,7 +72,7 @@ const seedDatabase = async () => {
                 assignee: 'user-bruce',
                 team: justiceLeagueTeam._id,
                 tags: ['design', 'engineering'],
-                dueDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString() // 5 days from now
+                dueDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000)
             },
             {
                 _id: 'task-2',
@@ -72,7 +82,7 @@ const seedDatabase = async () => {
                 assignee: 'user-clark',
                 team: justiceLeagueTeam._id,
                 tags: ['journalism', 'investigation'],
-                 dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString() // 3 days from now
+                 dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000)
             },
             {
                 _id: 'task-3',
@@ -84,13 +94,16 @@ const seedDatabase = async () => {
                 tags: ['research', 'translation'],
             }
         ];
-        await TaskModel.create(tasksToCreate);
+        await TaskSeedModel.insertMany(tasksToCreate);
         console.log(`${tasksToCreate.length} tasks created.`);
         
         console.log('Database seeding completed successfully!');
     } catch (error) {
         console.error('Error seeding database:', error);
         throw new Error('Database seeding failed.');
+    } finally {
+        // Ensure the temporary connection is closed
+        await conn.close();
     }
 };
 
