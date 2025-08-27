@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useMemo, useState, useEffect } from 'react';
-import { notFound, useRouter } from 'next/navigation';
+import { notFound, useRouter, useParams } from 'next/navigation';
 import { initialTasks, users, teams as allTeams } from '@/lib/data';
 import type { Task, TaskStatus, User, TeamMemberRole } from '@/types';
 import Sidebar from '@/components/sidebar';
@@ -30,9 +30,10 @@ const statusColors = {
   done: 'hsl(var(--chart-2))',
 };
 
-export default function TeamDetailPage({ params }: { params: { teamId: string } }) {
+export default function TeamDetailPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const params = useParams();
   const { toast } = useToast();
 
   const [teams, setTeams] = useState(allTeams);
@@ -45,7 +46,7 @@ export default function TeamDetailPage({ params }: { params: { teamId: string } 
     }
   }, [user, loading, router]);
   
-  const { teamId } = params;
+  const teamId = params.teamId as string;
 
   const team = useMemo(() => teams.find(t => t.id === teamId), [teamId, teams]);
   
@@ -309,3 +310,5 @@ export default function TeamDetailPage({ params }: { params: { teamId: string } 
     </div>
   );
 }
+
+    
