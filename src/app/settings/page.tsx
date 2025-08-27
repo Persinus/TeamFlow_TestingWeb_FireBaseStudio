@@ -139,7 +139,7 @@ export default function SettingsPage() {
                             <CardHeader>
                                 <CardTitle>Appearance</CardTitle>
                                 <CardDescription>Customize the look and feel of the application.</CardDescription>
-                            </Header>
+                            </CardHeader>
                             <CardContent className="space-y-4">
                                 <div className="space-y-2">
                                     <Label>Theme</Label>
@@ -167,7 +167,7 @@ export default function SettingsPage() {
                                             <SelectItem value="vi">Tiếng Việt (Việt Nam)</SelectItem>
                                         </SelectContent>
                                     </Select>
-                                d>
+                                </div>
                             </CardContent>
                         </Card>
                     </div>
@@ -175,4 +175,3 @@ export default function SettingsPage() {
             </div>
         </div>
     );
-}
