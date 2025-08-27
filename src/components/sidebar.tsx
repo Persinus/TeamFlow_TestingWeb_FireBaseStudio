@@ -44,7 +44,7 @@ export function MobileSidebar({ teams, onTeamChange, onShowTour }: SidebarProps)
        <SidebarHeader>
         <Link href="/" className="flex items-center gap-2 font-semibold">
             <Logo className="h-6 w-6 text-primary" />
-            <span className="text-lg text-sidebar-foreground">TeamFlow</span>
+            <span className="text-lg text-foreground">TeamFlow</span>
           </Link>
       </SidebarHeader>
       <SidebarContent>

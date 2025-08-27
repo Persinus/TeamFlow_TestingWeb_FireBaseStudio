@@ -46,13 +46,13 @@ body {
     --chart-5: 50 95% 55%;  /* Yellow */
 
     /* Sidebar specific */
-    --sidebar-background: 225 15% 15%;
-    --sidebar-foreground: 210 20% 80%;
+    --sidebar-background: 225 15% 98%;
+    --sidebar-foreground: 225 15% 15%;
     --sidebar-primary: 217 91% 60%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 225 15% 25%;
-    --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 225 15% 25%;
+    --sidebar-accent: 210 40% 92%;
+    --sidebar-accent-foreground: 225 15% 15%;
+    --sidebar-border: 214.3 31.8% 91.4%;
     --sidebar-ring: 217 91% 60%;
   }
 

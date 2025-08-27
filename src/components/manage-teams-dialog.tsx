@@ -26,8 +26,8 @@ interface ManageTeamsDialogProps {
 
 const teamSchema = z.object({
   id: z.string(),
-  name: z.string().min(3, { message: "Tên đội phải có ít nhất 3 ký tự." }),
-  description: z.string().optional(),
+  tenNhom: z.string().min(3, { message: "Tên đội phải có ít nhất 3 ký tự." }),
+  moTa: z.string().optional(),
 });
 
 const formSchema = z.object({
@@ -52,12 +52,12 @@ export default function ManageTeamsDialog({ children, open, onOpenChange, teams,
   });
 
   useEffect(() => {
-    form.reset({ teams: teams.map(t => ({...t, description: t.description || ''})) });
+    form.reset({ teams: teams.map(t => ({...t, tenNhom: t.tenNhom || '', moTa: t.moTa || ''})) });
   }, [teams, form, open]);
   
   const handleAddNewTeam = () => {
     if (!user) return;
-    append({ id: `new-${Date.now()}`, name: '', description: '' });
+    append({ id: `new-${Date.now()}`, tenNhom: '', moTa: '' });
   }
 
   const handleDeleteTeam = async (index: number, teamId: string) => {
@@ -82,11 +82,11 @@ export default function ManageTeamsDialog({ children, open, onOpenChange, teams,
     try {
         const createPromises = data.teams
             .filter(team => team.id.startsWith('new-'))
-            .map(team => createTeam({ name: team.name, description: team.description }, user.id));
+            .map(team => createTeam({ tenNhom: team.tenNhom, moTa: team.moTa }, user.id));
 
         const updatePromises = data.teams
             .filter(team => !team.id.startsWith('new-'))
-            .map(team => updateTeam(team.id, { name: team.name, description: team.description }));
+            .map(team => updateTeam(team.id, { tenNhom: team.tenNhom, moTa: team.moTa }));
 
         await Promise.all([...createPromises, ...updatePromises]);
         
@@ -119,7 +119,7 @@ export default function ManageTeamsDialog({ children, open, onOpenChange, teams,
                                 <div className="flex-grow space-y-2">
                                      <FormField
                                         control={form.control}
-                                        name={`teams.${index}.name`}
+                                        name={`teams.${index}.tenNhom`}
                                         render={({ field }) => (
                                             <FormItem>
                                                 <FormControl>
@@ -131,7 +131,7 @@ export default function ManageTeamsDialog({ children, open, onOpenChange, teams,
                                     />
                                     <FormField
                                         control={form.control}
-                                        name={`teams.${index}.description`}
+                                        name={`teams.${index}.moTa`}
                                         render={({ field }) => (
                                             <FormItem>
                                                 <FormControl>
