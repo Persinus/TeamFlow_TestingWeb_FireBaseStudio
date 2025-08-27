@@ -1,215 +1,249 @@
 
-
 import type { User, Team, Task, TaskStatus, TeamMemberRole } from '@/types';
-import { addDays, subDays } from 'date-fns';
+import connectToDatabase from './mongodb';
+import { User as UserModel, Team as TeamModel, Task as TaskModel } from './models';
+import { MOCK_USERS } from './mock-data';
 
-// Mock Data - Expanded to 10 users with 'micah' avatar set
-export let MOCK_USERS: User[] = [
-  { id: 'user-admin', name: 'Admin User', email: 'admin@teamflow.com', avatar: `https://api.dicebear.com/7.x/micah/svg?seed=Admin`, expertise: 'Project Overlord', currentWorkload: 1, phone: '123-456-7890', dob: '1990-01-01' },
-  { id: 'user-bruce', name: 'Bruce Wayne', email: 'bruce@teamflow.com', avatar: `https://api.dicebear.com/7.x/micah/svg?seed=Bruce`, expertise: 'Frontend Development', currentWorkload: 2, phone: '123-456-7891', dob: '1985-05-27' },
-  { id: 'user-clark', name: 'Clark Kent', email: 'clark@teamflow.com', avatar: `https://api.dicebear.com/7.x/micah/svg?seed=Clark`, expertise: 'Backend Development', currentWorkload: 1, phone: '123-456-7892', dob: '1988-06-18' },
-  { id: 'user-diana', name: 'Diana Prince', email: 'diana@teamflow.com', avatar: `https://api.dicebear.com/7.x/micah/svg?seed=Diana`, expertise: 'UI/UX Design', currentWorkload: 3, phone: '123-456-7893', dob: '1992-03-22' },
-  { id: 'user-barry', name: 'Barry Allen', email: 'barry@teamflow.com', avatar: `https://api.dicebear.com/7.x/micah/svg?seed=Barry`, expertise: 'DevOps & Infrastructure', currentWorkload: 1, phone: '123-456-7894', dob: '1995-09-30' },
-  { id: 'user-hal', name: 'Hal Jordan', email: 'hal@teamflow.com', avatar: `https://api.dicebear.com/7.x/micah/svg?seed=Hal`, expertise: 'QA & Testing', currentWorkload: 2 },
-  { id: 'user-arthur', name: 'Arthur Curry', email: 'arthur@teamflow.com', avatar: `https://api.dicebear.com/7.x/micah/svg?seed=Arthur`, expertise: 'Mobile Development (iOS)', currentWorkload: 1 },
-  { id: 'user-victor', name: 'Victor Stone', email: 'victor@teamflow.com', avatar: `https://api.dicebear.com/7.x/micah/svg?seed=Victor`, expertise: 'Data Science & Analytics', currentWorkload: 2 },
-  { id: 'user-selina', name: 'Selina Kyle', email: 'selina@teamflow.com', avatar: `https://api.dicebear.com/7.x/micah/svg?seed=Selina`, expertise: 'Marketing & SEO', currentWorkload: 4 },
-  { id: 'user-harley', name: 'Harleen Quinzel', email: 'harley@teamflow.com', avatar: `https://api.dicebear.com/7.x/micah/svg?seed=Harley`, expertise: 'Graphic Design', currentWorkload: 2 },
-];
-
-
-export let MOCK_TEAMS: Team[] = [
-  { id: 'team-frontend', name: 'Frontend Wizards', description: 'Crafting beautiful and responsive user interfaces.', members: [{ id: 'user-admin', role: 'leader' }, { id: 'user-diana', role: 'member' }, { id: 'user-bruce', role: 'member' }] },
-  { id: 'team-backend', name: 'Backend Brigade', description: 'Building the powerful engines that drive our applications.', members: [{ id: 'user-clark', role: 'leader' }, { id: 'user-bruce', role: 'member' }] },
-  { id: 'team-infra', name: 'Infra Avengers', description: 'Ensuring our services are reliable, scalable, and secure.', members: [{ id: 'user-barry', role: 'leader' }] },
-];
-
-
-let MOCK_TASKS_RAW: Omit<Task, 'team' | 'assignee'>[] = [
-  { id: 'task-1', title: 'Design new dashboard layout', description: 'Create mockups and prototypes for the v2 dashboard.', status: 'todo', teamId: 'team-frontend', assigneeId: 'user-diana', createdAt: new Date().toISOString(), startDate: new Date().toISOString(), dueDate: addDays(new Date(), 7).toISOString(), tags: ['design', 'UI/UX'] },
-  { id: 'task-2', title: 'Implement user authentication API', description: 'Set up JWT-based authentication endpoints.', status: 'in-progress', teamId: 'team-backend', assigneeId: 'user-clark', createdAt: new Date().toISOString(), startDate: subDays(new Date(), 2).toISOString(), dueDate: addDays(new Date(), 5).toISOString(), tags: ['backend', 'security'] },
-  { id: 'task-3', title: 'Set up CI/CD pipeline', description: 'Configure GitHub Actions for automated testing and deployment.', status: 'done', teamId: 'team-infra', assigneeId: 'user-barry', createdAt: new Date().toISOString(), startDate: subDays(new Date(), 10).toISOString(), dueDate: subDays(new Date(), 5).toISOString(), tags: ['devops', 'CI/CD'] },
-  { id: 'task-4', title: 'Develop landing page components', description: 'Build reusable React components for the marketing site.', status: 'in-progress', teamId: 'team-frontend', assigneeId: 'user-admin', createdAt: new Date().toISOString(), startDate: subDays(new Date(), 1).toISOString(), dueDate: addDays(new Date(), 2).toISOString(), tags: ['frontend', 'feature'] }, // Due soon
-  { id: 'task-5', title: 'Refactor database schema', description: 'Optimize Firestore queries and data structures.', status: 'todo', teamId: 'team-backend', assigneeId: 'user-bruce', createdAt: new Date().toISOString(), dueDate: addDays(new Date(), 14).toISOString(), tags: ['backend', 'database', 'refactor'] },
-  { id: 'task-6', title: 'User profile page design', description: 'Design the user settings and profile page.', status: 'backlog', teamId: 'team-frontend', createdAt: new Date().toISOString(), tags: ['design'] },
-  { id: 'task-7', title: 'Fix login button style on mobile', description: 'The login button is not rendering correctly on small screens.', status: 'todo', teamId: 'team-frontend', assigneeId: 'user-bruce', createdAt: new Date().toISOString(), startDate: subDays(new Date(), 4).toISOString(), dueDate: subDays(new Date(), 1).toISOString(), tags: ['bug', 'frontend', 'mobile'] }, // Overdue
-  { id: 'task-8', title: 'Write API documentation', description: 'Create comprehensive documentation for all public API endpoints.', status: 'backlog', teamId: 'team-backend', createdAt: new Date().toISOString(), tags: ['documentation'] },
-  { id: 'task-9', title: 'Conduct user experience testing', description: 'Gather feedback on the new dashboard design from a focus group.', status: 'todo', teamId: 'team-frontend', assigneeId: 'user-diana', createdAt: new Date().toISOString(), dueDate: addDays(new Date(), 10).toISOString(), tags: ['UX', 'research'] },
-  { id: 'task-10', title: 'Integrate a payment gateway', description: 'Add Stripe to handle subscription payments.', status: 'backlog', teamId: 'team-backend', assigneeId: 'user-clark', createdAt: new Date().toISOString(), tags: ['feature', 'billing'] },
-];
-
-let ALL_TAGS = [...new Set(MOCK_TASKS_RAW.flatMap(t => t.tags || []))];
-
-
+// Helper to simulate a delay
 const simulateDelay = (ms: number) => new Promise(res => setTimeout(res, ms));
 
-// Helper to populate a task
-const populateTask = (task: Omit<Task, 'team' | 'assignee'>): Task | null => {
-    const team = MOCK_TEAMS.find(t => t.id === task.teamId);
-    if (!team) {
-        console.warn(`Task ${task.id} has an invalid teamId: ${task.teamId}`);
-        return null;
-    }
-    const assignee = MOCK_USERS.find(u => u.id === task.assigneeId) ?? undefined;
-    return { ...task, team, assignee };
-}
+// --- Database Seeding Function ---
+export const seedDatabase = async () => {
+    await connectToDatabase();
 
-// USER FUNCTIONS
+    // Clear existing data
+    await UserModel.deleteMany({});
+    await TeamModel.deleteMany({});
+    await TaskModel.deleteMany({});
+    
+    console.log("Cleared existing data.");
+
+    // Create users
+    const users = await UserModel.create(MOCK_USERS);
+    console.log(`${users.length} users created.`);
+    
+    const userMap = new Map(users.map(u => [u.id, u._id]));
+
+    // Create teams
+    const teamData = [
+        { _id: 'team-frontend', name: 'Frontend Wizards', description: 'Crafting beautiful and responsive user interfaces.', members: [{ user: userMap.get('user-admin'), role: 'leader' }, { user: userMap.get('user-diana'), role: 'member' }, { user: userMap.get('user-bruce'), role: 'member' }] },
+        { _id: 'team-backend', name: 'Backend Brigade', description: 'Building the powerful engines that drive our applications.', members: [{ user: userMap.get('user-clark'), role: 'leader' }, { user: userMap.get('user-bruce'), role: 'member' }] },
+        { _id: 'team-infra', name: 'Infra Avengers', description: 'Ensuring our services are reliable, scalable, and secure.', members: [{ user: userMap.get('user-barry'), role: 'leader' }] },
+    ];
+    const teams = await TeamModel.create(teamData);
+    console.log(`${teams.length} teams created.`);
+
+    const teamMap = new Map(teams.map(t => [t._id, t._id]));
+
+    // Create tasks
+    const taskData = [
+        { _id: 'task-1', title: 'Design new dashboard layout', description: 'Create mockups and prototypes for the v2 dashboard.', status: 'todo', team: teamMap.get('team-frontend'), assignee: userMap.get('user-diana'), tags: ['design', 'UI/UX'] },
+        { _id: 'task-2', title: 'Implement user authentication API', description: 'Set up JWT-based authentication endpoints.', status: 'in-progress', team: teamMap.get('team-backend'), assignee: userMap.get('user-clark'), tags: ['backend', 'security'] },
+        { _id: 'task-3', title: 'Set up CI/CD pipeline', description: 'Configure GitHub Actions for automated testing and deployment.', status: 'done', team: teamMap.get('team-infra'), assignee: userMap.get('user-barry'), tags: ['devops', 'CI/CD'] },
+        { _id: 'task-4', title: 'Develop landing page components', description: 'Build reusable React components for the marketing site.', status: 'in-progress', team: teamMap.get('team-frontend'), assignee: userMap.get('user-admin'), tags: ['frontend', 'feature'] },
+        { _id: 'task-5', title: 'Refactor database schema', description: 'Optimize Firestore queries and data structures.', status: 'todo', team: teamMap.get('team-backend'), assignee: userMap.get('user-bruce'), tags: ['backend', 'database', 'refactor'] },
+        { _id: 'task-6', title: 'User profile page design', description: 'Design the user settings and profile page.', status: 'backlog', team: teamMap.get('team-frontend'), tags: ['design'] },
+    ];
+    const tasks = await TaskModel.create(taskData);
+    console.log(`${tasks.length} tasks created.`);
+
+    console.log("Database seeded successfully.");
+};
+
+
+// --- User Functions ---
 export const getUsers = async (): Promise<User[]> => {
-    await simulateDelay(50);
-    return MOCK_USERS;
+    await connectToDatabase();
+    // Using lean() for performance and to get plain JS objects
+    const users = await UserModel.find().lean();
+    // Mongoose uses _id, but our app uses id. Let's map it.
+    return users.map(u => ({ ...u, id: u._id.toString() })) as unknown as User[];
 };
 
 export const getUser = async (id: string): Promise<User | undefined> => {
-    await simulateDelay(50);
-    return MOCK_USERS.find(u => u.id === id);
+    await connectToDatabase();
+    const user = await UserModel.findById(id).lean();
+    if (!user) return undefined;
+    return { ...user, id: user._id.toString() } as unknown as User;
 };
 
-export const updateUser = async (userId: string, userData: Partial<Pick<User, 'name' | 'avatar' | 'phone' | 'dob'>>) => {
-    await simulateDelay(100);
-    const userIndex = MOCK_USERS.findIndex(u => u.id === userId);
-    if (userIndex > -1) {
-        MOCK_USERS[userIndex] = { ...MOCK_USERS[userIndex], ...userData };
-        return MOCK_USERS[userIndex];
-    }
-    return undefined;
+export const updateUser = async (userId: string, userData: Partial<Pick<User, 'name' | 'avatar' | 'phone' | 'dob'>>): Promise<User | undefined> => {
+    await connectToDatabase();
+    const updatedUser = await UserModel.findByIdAndUpdate(userId, userData, { new: true }).lean();
+    if (!updatedUser) return undefined;
+    return { ...updatedUser, id: updatedUser._id.toString() } as unknown as User;
 };
 
-
-// TEAM FUNCTIONS
+// --- Team Functions ---
 export const getTeams = async (): Promise<Team[]> => {
-    await simulateDelay(50);
-    return MOCK_TEAMS;
+    await connectToDatabase();
+    const teams = await TeamModel.find().lean();
+    return teams.map(t => ({ ...t, id: t._id.toString() })) as unknown as Team[];
 };
 
 export const getTeam = async (id: string): Promise<Team | undefined> => {
-    await simulateDelay(50);
-    return MOCK_TEAMS.find(t => t.id === id);
+    await connectToDatabase();
+    const team = await TeamModel.findById(id).populate('members.user').lean();
+    if (!team) return undefined;
+    
+    // Manually map user objects to have 'id' property
+    const populatedMembers = team.members.map((m: any) => ({
+        ...m,
+        id: m.user._id.toString(), // The user ID for the team member list
+        user: {
+            ...m.user,
+            id: m.user._id.toString()
+        }
+    }));
+    
+    return { ...team, id: team._id.toString(), members: populatedMembers } as unknown as Team;
 };
 
 export const createTeam = async (teamData: Pick<Team, 'name' | 'description'>, leaderId: string): Promise<string> => {
-    await simulateDelay(200);
-    const newId = `team-${Date.now()}`;
-    const newTeam: Team = {
-        id: newId,
+    await connectToDatabase();
+    const leader = await UserModel.findOne({id: leaderId});
+    if (!leader) throw new Error("Leader not found");
+
+    const newTeam = new TeamModel({
         name: teamData.name,
         description: teamData.description,
-        members: [{ id: leaderId, role: 'leader' }],
-    };
-    MOCK_TEAMS.push(newTeam);
-    return newId;
+        members: [{ user: leader._id, role: 'leader' }],
+    });
+    await newTeam.save();
+    return newTeam._id.toString();
 };
 
 export const updateTeam = async (teamId: string, teamData: Partial<Pick<Team, 'name' | 'description'>>): Promise<void> => {
-    await simulateDelay(100);
-    const teamIndex = MOCK_TEAMS.findIndex(t => t.id === teamId);
-    if (teamIndex !== -1) {
-        MOCK_TEAMS[teamIndex] = { ...MOCK_TEAMS[teamIndex], ...teamData };
-    }
-}
+    await connectToDatabase();
+    await TeamModel.findByIdAndUpdate(teamId, teamData);
+};
 
 export const deleteTeam = async (teamId: string): Promise<void> => {
-    await simulateDelay(200);
-    MOCK_TEAMS = MOCK_TEAMS.filter(t => t.id !== teamId);
-    // Also need to handle tasks associated with the deleted team, e.g., unassign or delete them.
-    // For this mock, we'll just leave them, but they might not render correctly.
-}
+    await connectToDatabase();
+    await TeamModel.findByIdAndDelete(teamId);
+    // Also delete tasks associated with this team
+    await TaskModel.deleteMany({ team: teamId });
+};
 
 export const addTeamMember = async (teamId: string, userId: string): Promise<void> => {
-    await simulateDelay(200);
-    const team = MOCK_TEAMS.find(t => t.id === teamId);
-    if (team && !team.members.some(m => m.id === userId)) {
-        team.members.push({ id: userId, role: 'member' });
-    }
-};
-
-export const removeTeamMember = async (teamId: string, userId: string): Promise<void> => {
-    await simulateDelay(200);
-    const team = MOCK_TEAMS.find(t => t.id === teamId);
+    await connectToDatabase();
+    const team = await TeamModel.findById(teamId);
     if (team) {
-        team.members = team.members.filter(m => m.id !== userId);
-    }
-};
-
-export const updateTeamMemberRole = async (teamId: string, userId: string, role: TeamMemberRole): Promise<void> => {
-    await simulateDelay(200);
-    const team = MOCK_TEAMS.find(t => t.id === teamId);
-    const member = team?.members.find(m => m.id === userId);
-    if (member) {
-        member.role = role;
-    }
-};
-
-// TASK FUNCTIONS
-export const getTasks = async (): Promise<Task[]> => {
-    await simulateDelay(100);
-    return MOCK_TASKS_RAW.map(populateTask).filter((t): t is Task => t !== null);
-};
-
-export const getTasksByAssignee = async (assigneeId: string): Promise<Task[]> => {
-    await simulateDelay(100);
-    const userTasks = MOCK_TASKS_RAW.filter(t => t.assigneeId === assigneeId);
-    return userTasks.map(populateTask).filter((t): t is Task => t !== null);
-}
-
-export const getTask = async (id: string): Promise<Task | undefined> => {
-    await simulateDelay(50);
-    const task = MOCK_TASKS_RAW.find(t => t.id === id);
-    if (!task) return undefined;
-    return populateTask(task) ?? undefined;
-}
-
-export const getTasksByTeam = async (teamId: string): Promise<Task[]> => {
-    await simulateDelay(100);
-    const teamTasks = MOCK_TASKS_RAW.filter(t => t.teamId === teamId);
-    return teamTasks.map(populateTask).filter((t): t is Task => t !== null);
-}
-
-export const addTask = async (taskData: Omit<Task, 'id' | 'team' | 'assignee' | 'createdAt'>): Promise<string> => {
-    await simulateDelay(200);
-    const newId = `task-${Date.now()}`;
-    const newTaskRaw: Omit<Task, 'team' | 'assignee'> = {
-        id: newId,
-        createdAt: new Date().toISOString(),
-        ...taskData
-    };
-    MOCK_TASKS_RAW.unshift(newTaskRaw);
-    if (taskData.tags) {
-        taskData.tags.forEach(tag => {
-            if (!ALL_TAGS.includes(tag)) {
-                ALL_TAGS.push(tag);
-            }
-        });
-    }
-    return newId;
-};
-
-export const updateTask = async (taskId: string, taskData: Partial<Omit<Task, 'id' | 'team' | 'assignee'>>): Promise<void> => {
-    await simulateDelay(100);
-    const taskIndex = MOCK_TASKS_RAW.findIndex(t => t.id === taskId);
-    if (taskIndex !== -1) {
-        MOCK_TASKS_RAW[taskIndex] = { ...MOCK_TASKS_RAW[taskIndex], ...taskData };
-        if (taskData.tags) {
-            taskData.tags.forEach(tag => {
-                if (!ALL_TAGS.includes(tag)) {
-                    ALL_TAGS.push(tag);
-                }
-            });
+        // @ts-ignore
+        if (!team.members.some(m => m.user.equals(userId))) {
+            // @ts-ignore
+            team.members.push({ user: userId, role: 'member' });
+            await team.save();
         }
     }
 };
 
-
-export const updateTaskStatus = async (taskId: string, status: TaskStatus): Promise<void> => {
-    await simulateDelay(100);
-    const task = MOCK_TASKS_RAW.find(t => t.id === taskId);
-    if (task) {
-        task.status = status;
-    }
+export const removeTeamMember = async (teamId: string, userId: string): Promise<void> => {
+    await connectToDatabase();
+    await TeamModel.findByIdAndUpdate(teamId, {
+        $pull: { members: { user: userId } }
+    });
 };
 
-// TAGS FUNCTIONS
-export const getAllTags = async (): Promise<string[]> => {
-    await simulateDelay(20);
-    return ALL_TAGS;
+export const updateTeamMemberRole = async (teamId: string, userId: string, role: TeamMemberRole): Promise<void> => {
+    await connectToDatabase();
+    await TeamModel.updateOne(
+        { _id: teamId, 'members.user': userId },
+        { $set: { 'members.$.role': role } }
+    );
+};
+
+// --- Task Functions ---
+const populateTask = (task: any): Task => {
+    // A helper to ensure the populated task has the correct shape
+    return {
+      ...task,
+      id: task._id.toString(),
+      team: task.team ? { ...task.team, id: task.team._id.toString() } : undefined,
+      assignee: task.assignee ? { ...task.assignee, id: task.assignee._id.toString() } : undefined,
+    } as unknown as Task;
 }
+
+export const getTasks = async (): Promise<Task[]> => {
+    await connectToDatabase();
+    const tasks = await TaskModel.find()
+        .populate('team')
+        .populate('assignee')
+        .lean();
+    return tasks.map(populateTask);
+};
+
+export const getTasksByAssignee = async (assigneeId: string): Promise<Task[]> => {
+    await connectToDatabase();
+    const tasks = await TaskModel.find({ assignee: assigneeId })
+        .populate('team')
+        .populate('assignee')
+        .lean();
+    return tasks.map(populateTask);
+};
+
+export const getTask = async (id: string): Promise<Task | undefined> => {
+    await connectToDatabase();
+    const task = await TaskModel.findById(id)
+        .populate('team')
+        .populate('assignee')
+        .lean();
+    if (!task) return undefined;
+    return populateTask(task);
+};
+
+export const getTasksByTeam = async (teamId: string): Promise<Task[]> => {
+    await connectToDatabase();
+    const tasks = await TaskModel.find({ team: teamId })
+        .populate('team')
+        .populate('assignee')
+        .lean();
+    return tasks.map(populateTask);
+};
+
+export const addTask = async (taskData: Omit<Task, 'id' | 'team' | 'assignee' | 'createdAt'>): Promise<string> => {
+    await connectToDatabase();
+    const newTask = new TaskModel({
+        ...taskData,
+        assignee: taskData.assigneeId || null, // Handle 'unassigned'
+    });
+    await newTask.save();
+    return newTask._id.toString();
+};
+
+export const updateTask = async (taskId: string, taskData: Partial<Omit<Task, 'id' | 'team' | 'assignee'>>): Promise<void> => {
+    await connectToDatabase();
+    // Make sure to handle assigneeId correctly
+    const updateData = { ...taskData };
+    if (updateData.assigneeId === 'unassigned' || updateData.assigneeId === undefined) {
+      // @ts-ignore
+      updateData.assignee = null;
+    } else {
+      // @ts-ignore
+      updateData.assignee = updateData.assigneeId;
+    }
+    // @ts-ignore
+    delete updateData.assigneeId;
+
+    await TaskModel.findByIdAndUpdate(taskId, updateData);
+};
+
+export const updateTaskStatus = async (taskId: string, status: TaskStatus): Promise<void> => {
+    await connectToDatabase();
+    await TaskModel.findByIdAndUpdate(taskId, { status });
+};
+
+// --- Tag Functions ---
+export const getAllTags = async (): Promise<string[]> => {
+    await connectToDatabase();
+    const tags = await TaskModel.distinct('tags');
+    return tags.filter(tag => tag !== null);
+};
+
+// --- Mock Data related function still needed for auth ---
+export const getMockUserByEmail = async (email: string): Promise<User | undefined> => {
+    // This is a temporary function to support the mock auth system.
+    // In a real app, this would query the database.
+    await simulateDelay(50);
+    return MOCK_USERS.find(u => u.email.toLowerCase() === email.toLowerCase());
+};

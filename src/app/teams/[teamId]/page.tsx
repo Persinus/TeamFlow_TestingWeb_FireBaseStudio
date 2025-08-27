@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
@@ -91,14 +90,15 @@ export default function TeamDetailPage() {
   const teamMembers = useMemo(() => {
     if (!team) return [];
     return team.members.map(member => {
-      const userDetails = allUsers.find(u => u.id === member.id);
+        // @ts-ignore
+      const userDetails = allUsers.find(u => u.id === (member.user as User)?.id || u.id === member.user);
       return userDetails ? { ...userDetails, role: member.role } : null;
     }).filter(Boolean) as (User & { role: TeamMemberRole })[];
   }, [team, allUsers]);
   
   const usersNotInTeam = useMemo(() => {
       if (!team) return [];
-      const memberIds = new Set(team.members.map(m => m.id));
+      const memberIds = new Set(team.members.map(m => (m.user as User)?.id || m.user as string));
       return allUsers.filter(u => !memberIds.has(u.id));
   }, [team, allUsers]);
 
@@ -150,7 +150,7 @@ export default function TeamDetailPage() {
 
   const handleChangeRole = async (memberId: string, newRole: TeamMemberRole) => {
     if (!team) return;
-     if (newRole === 'member' && team.members.filter(m => m.role === 'leader').length === 1 && team.members.find(m => m.id === memberId)?.role === 'leader') {
+     if (newRole === 'member' && team.members.filter(m => m.role === 'leader').length === 1 && team.members.find(m => (m.user as User)?.id === memberId)?.role === 'leader') {
         toast({ variant: 'destructive', title: 'Action Denied', description: 'A team must have at least one leader.' });
         return;
     }

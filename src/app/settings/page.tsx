@@ -1,5 +1,4 @@
 
-
 "use client"
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -21,10 +20,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import { SidebarInset } from '@/components/ui/sidebar';
-import { getTeams, getUsers, getTasks, addTask, updateUser as apiUpdateUser, MOCK_USERS } from '@/lib/data';
+import { getTeams, getUsers, addTask, updateUser as apiUpdateUser } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { MOCK_USERS } from '@/lib/mock-data';
 
 // Get a list of unique avatar URLs from the mock data
 const availableAvatars = MOCK_USERS.map(u => u.avatar).filter((v, i, a) => a.indexOf(v) === i);

@@ -1,7 +1,6 @@
 
-
 export interface User {
-  id: string;
+  id: string; // This will map to MongoDB's _id
   name: string;
   email: string;
   avatar: string; // URL to avatar image
@@ -14,12 +13,12 @@ export interface User {
 export type TeamMemberRole = 'leader' | 'member';
 
 export interface TeamMember {
-  id: string; // Corresponds to User ID
+  user: User | string; // Can be populated or just the ID
   role: TeamMemberRole;
 }
 
 export interface Team {
-  id:string;
+  id: string; // This will map to MongoDB's _id
   name: string;
   description?: string;
   members: TeamMember[];
@@ -28,7 +27,7 @@ export interface Team {
 export type TaskStatus = 'todo' | 'in-progress' | 'done' | 'backlog';
 
 export interface Task {
-  id: string;
+  id: string; // This will map to MongoDB's _id
   title: string;
   description: string;
   status: TaskStatus;

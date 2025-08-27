@@ -1,11 +1,11 @@
 
-
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import type { User } from '@/types';
-import { MOCK_USERS, updateUser as apiUpdateUser } from '@/lib/data';
+import { updateUser as apiUpdateUser, getMockUserByEmail } from '@/lib/data';
+import { MOCK_USERS } from '@/lib/mock-data';
 
 const adminUser = MOCK_USERS.find(u => u.email === 'admin@teamflow.com');
 if (!adminUser) {
@@ -58,9 +58,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
        setLoading(true);
        await new Promise(resolve => setTimeout(resolve, 500)); // Simulate network latency
 
-       const foundUser = MOCK_USERS.find(u => u.email.toLowerCase() === email.toLowerCase());
+       // NOTE: This uses mock data for authentication. In a real application,
+       // you would replace this with a call to your database and password hashing.
+       const foundUser = await getMockUserByEmail(email);
 
-       if (foundUser && pass === 'Admin@1234') { // Using a generic password for mock
+       if (foundUser && pass === 'Admin@1234') { // Using a generic password for mock/demo
            setUser(foundUser);
            sessionStorage.setItem('mockUser', JSON.stringify(foundUser));
        } else {
@@ -77,8 +79,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
 
     const register = async (name: string, email: string, pass: string): Promise<void> => {
-        // This is a mock, so we don't actually create a new user.
-        // We just pretend it was successful.
+        // This is a mock. In a real app, this would create a new user in the database.
         console.log(`Mock registration for: ${name}, ${email}`);
         await new Promise(resolve => setTimeout(resolve, 500));
     };
