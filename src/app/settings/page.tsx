@@ -10,13 +10,15 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { CalendarIcon, Moon, Sun } from 'lucide-react';
+import { CalendarIcon, Moon, Sun,Smile } from 'lucide-react';
 import { users } from '@/lib/data';
 import type { Task } from '@/types';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { Textarea } from '@/components/ui/textarea';
+
 
 export default function SettingsPage() {
     // Mock user, in a real app, this would come from an auth context
@@ -26,6 +28,7 @@ export default function SettingsPage() {
     const [name, setName] = useState(currentUser.name);
     const [email, setEmail] = useState('diana.prince@example.com'); // Mock email
     const [phone, setPhone] = useState(currentUser.phone || '');
+    const [status, setStatus] = useState('Focusing on the main quest!');
     const [dob, setDob] = useState<Date | undefined>(currentUser.dob ? new Date(currentUser.dob) : undefined);
 
     useEffect(() => {
@@ -58,7 +61,7 @@ export default function SettingsPage() {
                         <Card>
                             <CardHeader>
                                 <CardTitle>Profile</CardTitle>
-                                <CardDescription>This is how others will see you on the site. This data is not stored in a database.</CardDescription>
+                                <CardDescription>This is how others will see you on the site.</CardDescription>
                             </CardHeader>
                             <CardContent className="space-y-6">
                                 <div className="flex items-center gap-4">
@@ -67,6 +70,13 @@ export default function SettingsPage() {
                                         <AvatarFallback>{currentUser.name.substring(0,2).toUpperCase()}</AvatarFallback>
                                     </Avatar>
                                     <Button variant="outline">Change Photo</Button>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="status" className="flex items-center gap-2">
+                                        <Smile className="h-4 w-4" />
+                                        Status
+                                    </Label>
+                                    <Textarea id="status" value={status} onChange={(e) => setStatus(e.target.value)} placeholder="What's on your mind?" />
                                 </div>
                                 <div className="grid sm:grid-cols-2 gap-4">
                                     <div className="space-y-2">
