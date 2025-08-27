@@ -1,3 +1,4 @@
+
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
 import { getAuth, Auth } from 'firebase/auth';
 import { getFirestore, Firestore, enableIndexedDbPersistence, initializeFirestore } from 'firebase/firestore';
@@ -17,29 +18,35 @@ let app: FirebaseApp;
 let auth: Auth;
 let db: Firestore;
 
-if (typeof window !== 'undefined' && !getApps().length) {
+if (typeof window !== 'undefined') {
     // Client-side execution
-    try {
-        app = initializeApp(firebaseConfig);
+    if (!getApps().length) {
+        try {
+            app = initializeApp(firebaseConfig);
+            auth = getAuth(app);
+            // Use initializeFirestore to enable persistence, but only once.
+            db = initializeFirestore(app, {
+                localCache: enableIndexedDbPersistence()
+            });
+        } catch (error) {
+            console.error("Firebase client initialization failed:", error);
+        }
+    } else {
+        // Re-use existing app instance
+        app = getApp();
         auth = getAuth(app);
-        // Use initializeFirestore to enable persistence, but only once.
-        db = initializeFirestore(app, {
-            localCache: enableIndexedDbPersistence()
-        });
-    } catch (error) {
-        console.error("Firebase client initialization failed:", error);
+        // Get existing Firestore instance without re-initializing persistence
+        db = getFirestore(app);
     }
-} else if (getApps().length) {
-    // Re-use existing app instance (client or server)
-    app = getApp();
-    auth = getAuth(app);
-    db = getFirestore(app);
 } else {
     // Server-side execution
-    app = initializeApp(firebaseConfig);
+    if (!getApps().length) {
+      app = initializeApp(firebaseConfig);
+    } else {
+      app = getApp();
+    }
     auth = getAuth(app);
     db = getFirestore(app);
 }
-
 
 export { app, auth, db };
