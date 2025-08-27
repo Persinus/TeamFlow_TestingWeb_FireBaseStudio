@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { CalendarIcon, Moon, Sun, Smile, Loader2, Image as ImageIcon } from 'lucide-react';
+import { CalendarIcon, Moon, Sun, Smile, Loader2, Image as ImageIcon, Contrast, Droplets, Leaf } from 'lucide-react';
 import type { Task, Team, User } from '@/types';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
@@ -75,17 +75,16 @@ export default function SettingsPage() {
     useEffect(() => {
         const storedTheme = localStorage.getItem('theme') || 'light';
         setTheme(storedTheme);
-        document.documentElement.classList.toggle('dark', storedTheme === 'dark');
+        document.body.className = `theme-${storedTheme}`;
 
         const storedLang = localStorage.getItem('language') || 'en';
         setLanguage(storedLang);
     }, []);
 
-    const toggleTheme = () => {
-        const newTheme = theme === 'light' ? 'dark' : 'light';
+    const handleThemeChange = (newTheme: string) => {
         setTheme(newTheme);
         localStorage.setItem('theme', newTheme);
-        document.documentElement.classList.toggle('dark', newTheme === 'dark');
+        document.body.className = `theme-${newTheme}`;
     };
     
     const handleLanguageChange = (newLang: string) => {
@@ -234,18 +233,20 @@ export default function SettingsPage() {
                                     <CardDescription>Tùy chỉnh giao diện và cảm nhận của ứng dụng.</CardDescription>
                                 </CardHeader>
                                 <CardContent className="space-y-4">
-                                    <div className="space-y-2">
+                                     <div className="space-y-2">
                                         <Label>Giao diện</Label>
-                                        <div className="flex items-center justify-between rounded-lg border p-3">
-                                        <div className="flex items-center gap-2">
-                                            {theme === 'light' ? <Sun className="h-5 w-5"/> : <Moon className="h-5 w-5"/>}
-                                            <span>{theme === 'light' ? 'Chế độ sáng' : 'Chế độ tối'}</span>
-                                        </div>
-                                        <Button variant="outline" size="icon" onClick={toggleTheme}>
-                                                {theme === 'light' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
-                                                <span className="sr-only">Chuyển đổi giao diện</span>
-                                            </Button>
-                                        </div>
+                                        <Select value={theme} onValueChange={handleThemeChange}>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Chọn một giao diện" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="light"><div className="flex items-center gap-2"><Sun className="h-4 w-4"/>Sáng</div></SelectItem>
+                                                <SelectItem value="dark"><div className="flex items-center gap-2"><Moon className="h-4 w-4"/>Tối</div></SelectItem>
+                                                <SelectItem value="ocean"><div className="flex items-center gap-2"><Droplets className="h-4 w-4"/>Đại dương</div></SelectItem>
+                                                <SelectItem value="forest"><div className="flex items-center gap-2"><Leaf className="h-4 w-4"/>Rừng rậm</div></SelectItem>
+                                                <SelectItem value="high-contrast"><div className="flex items-center gap-2"><Contrast className="h-4 w-4"/>Tương phản cao</div></SelectItem>
+                                            </SelectContent>
+                                        </Select>
                                     </div>
                                     <div className="space-y-2">
                                         <Label htmlFor="language">Ngôn ngữ</Label>
@@ -291,3 +292,5 @@ export default function SettingsPage() {
         </div>
     );
 }
+
+    

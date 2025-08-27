@@ -20,8 +20,9 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { LayoutGrid, CalendarDays } from 'lucide-react';
+import { LayoutGrid, CalendarDays, GanttChartSquare } from 'lucide-react';
 import CalendarView from '@/components/calendar-view';
+import TimelineView from '@/components/timeline-view';
 import { Select, SelectContent, SelectItem, SelectSeparator, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Search } from 'lucide-react';
@@ -90,7 +91,7 @@ export default function BoardPage() {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [filters, setFilters] = useState<{ assignee: string; team: string; search: string }>({ assignee: 'all', team: 'all', search: '' });
 
-  const [viewMode, setViewMode] = useState<'board' | 'calendar'>('board');
+  const [viewMode, setViewMode] = useState<'board' | 'calendar' | 'timeline'>('board');
   const [activeId, setActiveId] = useState<string | null>(null);
   const [overId, setOverId] = useState<string | null>(null);
   const sensors = useSensors(useSensor(PointerSensor));
@@ -152,6 +153,7 @@ export default function BoardPage() {
   };
   
   const handleUpdateTask = async (updatedTaskData: Omit<Task, 'id' | 'nhom' | 'nguoiThucHien'>) => {
+    // I moved the line below from the TaskDetailsSheet to here.
     await updateTask(updatedTaskData.id, updatedTaskData);
     await fetchData(); // Refetch all data to ensure consistency
     setSelectedTask(prev => prev ? {...prev, ...updatedTaskData} : null); // Optimistically update selected task
@@ -239,7 +241,7 @@ export default function BoardPage() {
               <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
                 <div>
                   <h1 className="text-3xl font-bold tracking-tight">Bảng điều khiển dự án</h1>
-                  <p className="text-muted-foreground">{viewMode === 'board' ? "Kéo và thả các công việc để thay đổi trạng thái." : "Xem công việc theo ngày hết hạn."}</p>
+                  <p className="text-muted-foreground">{viewMode === 'board' ? "Kéo và thả các công việc để thay đổi trạng thái." : viewMode === 'calendar' ? "Xem công việc theo ngày hết hạn." : "Xem lộ trình công việc theo dòng thời gian."}</p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                     <div className="relative">
@@ -283,6 +285,9 @@ export default function BoardPage() {
                         <Button variant={viewMode === 'calendar' ? 'secondary' : 'ghost'} size="icon" onClick={() => setViewMode('calendar')} aria-label="Chế độ xem lịch">
                             <CalendarDays className="h-5 w-5" />
                         </Button>
+                        <Button variant={viewMode === 'timeline' ? 'secondary' : 'ghost'} size="icon" onClick={() => setViewMode('timeline')} aria-label="Chế độ xem dòng thời gian">
+                            <GanttChartSquare className="h-5 w-5" />
+                        </Button>
                     </div>
                 </div>
               </div>
@@ -316,8 +321,10 @@ export default function BoardPage() {
                      document.body
                   )}
                 </DndContext>
-              ) : (
+              ) : viewMode === 'calendar' ? (
                 <CalendarView tasks={filteredTasks} onSelectTask={setSelectedTask} />
+              ) : (
+                 <TimelineView tasks={filteredTasks} onSelectTask={setSelectedTask} />
               )}
             </motion.main>
         </SidebarInset>
@@ -336,3 +343,5 @@ export default function BoardPage() {
     </div>
   );
 }
+
+    

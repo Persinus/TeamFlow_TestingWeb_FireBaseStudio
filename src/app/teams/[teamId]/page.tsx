@@ -4,14 +4,14 @@
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import { notFound, useRouter, useParams } from 'next/navigation';
 import { getTeam, getUsers, getTasksByTeam, addTeamMember, removeTeamMember, updateTeamMemberRole, getTeams, updateTask, deleteTask, createTeam, updateTeam as apiUpdateTeam, deleteTeam as apiDeleteTeam, addTask } from '@/app/actions';
-import type { Task, TrangThaiCongViec as TaskStatus, User, Team, VaiTroThanhVien as TeamMemberRole } from '@/types';
+import type { Task, TrangThaiCongViec as TaskStatus, User, Team, VaiTroThanhVien as TeamMemberRole, LoaiCongViec } from '@/types';
 import Sidebar from '@/components/sidebar';
 import Header from '@/components/header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Progress } from '@/components/ui/progress';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
-import { PieChart, Pie, Cell, Tooltip } from 'recharts';
+import { PieChart, Pie, Cell, Tooltip, BarChart, XAxis, YAxis, Bar } from 'recharts';
 import { Badge } from '@/components/ui/badge';
 import TaskCard from '@/components/task-card';
 import { useAuth } from '@/hooks/use-auth';
@@ -29,6 +29,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import TaskDetailsSheet from '@/components/task-details-sheet';
 import { motion } from 'framer-motion';
 import TourGuide from '@/components/tour-guide';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 const statusColors: Record<TaskStatus, string> = {
   'Tồn đọng': 'hsl(var(--muted-foreground))',
@@ -124,18 +125,39 @@ export default function TeamDetailPage() {
   }, [teamTasks]);
   
   const taskStatusDistribution = useMemo(() => {
-    const distribution = {
-      'Tồn đọng': 0,
-      'Cần làm': 0,
-      'Đang tiến hành': 0,
-      'Hoàn thành': 0,
+    const distribution: Record<TaskStatus, number> = {
+      'Tồn đọng': 0, 'Cần làm': 0, 'Đang tiến hành': 0, 'Hoàn thành': 0,
     };
     teamTasks.forEach(task => {
-      distribution[task.trangThai as keyof typeof distribution]++;
+      distribution[task.trangThai]++;
     });
     return Object.entries(distribution)
       .map(([name, value]) => ({ name, value, fill: statusColors[name as TaskStatus] }))
       .filter(item => item.value > 0);
+  }, [teamTasks]);
+
+  const memberPerformanceData = useMemo(() => {
+    return teamMembers.map(member => {
+        const memberTasks = teamTasks.filter(t => t.nguoiThucHienId === member.id);
+        return {
+            name: member.hoTen.split(' ').slice(-1).join(' '), // Short name
+            todo: memberTasks.filter(t => t.trangThai === 'Cần làm').length,
+            inProgress: memberTasks.filter(t => t.trangThai === 'Đang tiến hành').length,
+            done: memberTasks.filter(t => t.trangThai === 'Hoàn thành').length,
+        };
+    });
+  }, [teamMembers, teamTasks]);
+
+  const taskTypeDistribution = useMemo(() => {
+    const distribution: Record<LoaiCongViec, number> = { 'Tính năng': 0, 'Lỗi': 0, 'Công việc': 0 };
+    teamTasks.forEach(task => {
+        if (task.loaiCongViec) {
+            distribution[task.loaiCongViec]++;
+        }
+    });
+    return Object.entries(distribution)
+        .map(([name, value], index) => ({ name, value, fill: `hsl(var(--chart-${index + 2}))` }))
+        .filter(item => item.value > 0);
   }, [teamTasks]);
 
   const handleAddMember = async () => {
@@ -318,147 +340,196 @@ export default function TeamDetailPage() {
                   </div>
                 </div>
 
-                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Tiến độ dự án</CardTitle>
-                      <CardDescription>Mức độ hoàn thành tổng thể của các công việc.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">Đã hoàn thành</span>
-                        <span className="font-semibold">{Math.round(progress)}%</span>
-                      </div>
-                      <Progress value={progress} aria-label={`${Math.round(progress)}% hoàn thành`} />
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Phân bổ công việc</CardTitle>
-                      <CardDescription>Các công việc hiện tại theo trạng thái.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <ChartContainer
-                        config={{}}
-                        className="mx-auto aspect-square h-[200px]"
-                      >
-                        <PieChart>
-                          <Tooltip
-                            cursor={false}
-                            content={<ChartTooltipContent hideLabel />}
-                          />
-                          <Pie
-                            data={taskStatusDistribution}
-                            dataKey="value"
-                            nameKey="name"
-                            innerRadius={60}
-                            strokeWidth={5}
-                          >
-                            {taskStatusDistribution.map((entry) => (
-                              <Cell key={`cell-${entry.name}`} fill={entry.fill} />
-                            ))}
-                          </Pie>
-                        </PieChart>
-                      </ChartContainer>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <div>
-                            <CardTitle>Thành viên đội</CardTitle>
-                            <CardDescription>Có {teamMembers.length} thành viên trong đội này.</CardDescription>
-                        </div>
-                        <AlertDialog open={isAddMemberOpen} onOpenChange={setAddMemberOpen}>
-                            <AlertDialogTrigger asChild>
-                                <Button size="icon"><UserPlus className="h-4 w-4" /></Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                                <AlertDialogHeader>
-                                    <AlertDialogTitle>Thêm thành viên vào {team.tenNhom}</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                        Chọn một người dùng để thêm vào đội. Họ sẽ được thêm với vai trò 'Thành viên'.
-                                    </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <Select onValueChange={setUserToAdd} value={userToAdd}>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Chọn một người dùng" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {usersNotInTeam.map(u => (
-                                            <SelectItem key={u.id} value={u.id}>{u.hoTen}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                                <AlertDialogFooter>
-                                    <AlertDialogCancel>Hủy</AlertDialogCancel>
-                                    <AlertDialogAction onClick={handleAddMember} disabled={!userToAdd}>Thêm thành viên</AlertDialogAction>
-                                </AlertDialogFooter>
-                            </AlertDialogContent>
-                        </AlertDialog>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      {teamMembers.map(member => (
-                        <div key={member.id} className="flex items-center gap-3">
-                          <Avatar className="h-9 w-9">
-                              <AvatarImage src={member.anhDaiDien} alt={member.hoTen} />
-                              <AvatarFallback>{member.hoTen.substring(0,2).toUpperCase()}</AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <p className="font-semibold">{member.hoTen}</p>
-                              {member.vaiTro === 'Trưởng nhóm' && <Crown className="h-4 w-4 text-amber-500" />}
+                <Tabs defaultValue="overview">
+                    <TabsList className="mb-4">
+                        <TabsTrigger value="overview">Tổng quan</TabsTrigger>
+                        <TabsTrigger value="analytics">Phân tích & Thống kê</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="overview" className="space-y-8">
+                        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                        <Card>
+                            <CardHeader>
+                            <CardTitle>Tiến độ dự án</CardTitle>
+                            <CardDescription>Mức độ hoàn thành tổng thể của các công việc.</CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                            <div className="flex items-center justify-between">
+                                <span className="text-sm text-muted-foreground">Đã hoàn thành</span>
+                                <span className="font-semibold">{Math.round(progress)}%</span>
                             </div>
-                            <p className="text-xs text-muted-foreground">{member.chuyenMon}</p>
-                          </div>
-                          { user.id !== member.id && (
-                          <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                  <Button variant="ghost" size="icon"><MoreHorizontal className="h-4 w-4"/></Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent>
-                                  {member.vaiTro === 'Thành viên' && (
-                                    <DropdownMenuItem onClick={() => handleChangeRole(member.id, 'Trưởng nhóm')}><Crown className="mr-2 h-4 w-4" /> Đặt làm Trưởng nhóm</DropdownMenuItem>
-                                  )}
-                                  {member.vaiTro === 'Trưởng nhóm' && (
-                                    <DropdownMenuItem onClick={() => handleChangeRole(member.id, 'Thành viên')}><Shield className="mr-2 h-4 w-4" /> Đặt làm Thành viên</DropdownMenuItem>
-                                  )}
-                                  <AlertDialog>
-                                      <AlertDialogTrigger asChild>
-                                        <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive focus:text-destructive">
-                                            <Trash2 className="mr-2 h-4 w-4" /> Xóa
-                                        </DropdownMenuItem>
-                                      </AlertDialogTrigger>
-                                      <AlertDialogContent>
-                                          <AlertDialogHeader>
-                                              <AlertDialogTitle>Bạn có chắc không?</AlertDialogTitle>
-                                              <AlertDialogDescription>
-                                                  Hành động này sẽ xóa vĩnh viễn {member.hoTen} khỏi đội. Hành động này không thể được hoàn tác.
-                                              </AlertDialogDescription>
-                                          </AlertDialogHeader>
-                                          <AlertDialogFooter>
-                                              <AlertDialogCancel>Hủy</AlertDialogCancel>
-                                              <AlertDialogAction onClick={() => handleRemoveMember(member.id)} className="bg-destructive hover:bg-destructive/90">Xóa</AlertDialogAction>
-                                          </AlertDialogFooter>
-                                      </AlertDialogContent>
-                                  </AlertDialog>
-                              </DropdownMenuContent>
-                          </DropdownMenu>
-                          )}
+                            <Progress value={progress} aria-label={`${Math.round(progress)}% hoàn thành`} />
+                            </CardContent>
+                        </Card>
+                        <Card>
+                            <CardHeader>
+                            <CardTitle>Phân bổ công việc</CardTitle>
+                            <CardDescription>Các công việc hiện tại theo trạng thái.</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                            <ChartContainer
+                                config={{}}
+                                className="mx-auto aspect-square h-[200px]"
+                            >
+                                <PieChart>
+                                <Tooltip
+                                    cursor={false}
+                                    content={<ChartTooltipContent hideLabel />}
+                                />
+                                <Pie
+                                    data={taskStatusDistribution}
+                                    dataKey="value"
+                                    nameKey="name"
+                                    innerRadius={60}
+                                    strokeWidth={5}
+                                >
+                                    {taskStatusDistribution.map((entry) => (
+                                    <Cell key={`cell-${entry.name}`} fill={entry.fill} />
+                                    ))}
+                                </Pie>
+                                </PieChart>
+                            </ChartContainer>
+                            </CardContent>
+                        </Card>
+                        <Card>
+                            <CardHeader className="flex flex-row items-center justify-between pb-2">
+                                <div>
+                                    <CardTitle>Thành viên đội</CardTitle>
+                                    <CardDescription>Có {teamMembers.length} thành viên trong đội này.</CardDescription>
+                                </div>
+                                <AlertDialog open={isAddMemberOpen} onOpenChange={setAddMemberOpen}>
+                                    <AlertDialogTrigger asChild>
+                                        <Button size="icon"><UserPlus className="h-4 w-4" /></Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle>Thêm thành viên vào {team.tenNhom}</AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                                Chọn một người dùng để thêm vào đội. Họ sẽ được thêm với vai trò 'Thành viên'.
+                                            </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <Select onValueChange={setUserToAdd} value={userToAdd}>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Chọn một người dùng" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {usersNotInTeam.map(u => (
+                                                    <SelectItem key={u.id} value={u.id}>{u.hoTen}</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                        <AlertDialogFooter>
+                                            <AlertDialogCancel>Hủy</AlertDialogCancel>
+                                            <AlertDialogAction onClick={handleAddMember} disabled={!userToAdd}>Thêm thành viên</AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                            {teamMembers.map(member => (
+                                <div key={member.id} className="flex items-center gap-3">
+                                <Avatar className="h-9 w-9">
+                                    <AvatarImage src={member.anhDaiDien} alt={member.hoTen} />
+                                    <AvatarFallback>{member.hoTen.substring(0,2).toUpperCase()}</AvatarFallback>
+                                </Avatar>
+                                <div className="flex-1">
+                                    <div className="flex items-center gap-2">
+                                    <p className="font-semibold">{member.hoTen}</p>
+                                    {member.vaiTro === 'Trưởng nhóm' && <Crown className="h-4 w-4 text-amber-500" />}
+                                    </div>
+                                    <p className="text-xs text-muted-foreground">{member.chuyenMon}</p>
+                                </div>
+                                { user.id !== member.id && (
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant="ghost" size="icon"><MoreHorizontal className="h-4 w-4"/></Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent>
+                                        {member.vaiTro === 'Thành viên' && (
+                                            <DropdownMenuItem onClick={() => handleChangeRole(member.id, 'Trưởng nhóm')}><Crown className="mr-2 h-4 w-4" /> Đặt làm Trưởng nhóm</DropdownMenuItem>
+                                        )}
+                                        {member.vaiTro === 'Trưởng nhóm' && (
+                                            <DropdownMenuItem onClick={() => handleChangeRole(member.id, 'Thành viên')}><Shield className="mr-2 h-4 w-4" /> Đặt làm Thành viên</DropdownMenuItem>
+                                        )}
+                                        <AlertDialog>
+                                            <AlertDialogTrigger asChild>
+                                                <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive focus:text-destructive">
+                                                    <Trash2 className="mr-2 h-4 w-4" /> Xóa
+                                                </DropdownMenuItem>
+                                            </AlertDialogTrigger>
+                                            <AlertDialogContent>
+                                                <AlertDialogHeader>
+                                                    <AlertDialogTitle>Bạn có chắc không?</AlertDialogTitle>
+                                                    <AlertDialogDescription>
+                                                        Hành động này sẽ xóa vĩnh viễn {member.hoTen} khỏi đội. Hành động này không thể được hoàn tác.
+                                                    </AlertDialogDescription>
+                                                </AlertDialogHeader>
+                                                <AlertDialogFooter>
+                                                    <AlertDialogCancel>Hủy</AlertDialogCancel>
+                                                    <AlertDialogAction onClick={() => handleRemoveMember(member.id)} className="bg-destructive hover:bg-destructive/90">Xóa</AlertDialogAction>
+                                                </AlertDialogFooter>
+                                            </AlertDialogContent>
+                                        </AlertDialog>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                                )}
+                                </div>
+                            ))}
+                            </CardContent>
+                        </Card>
                         </div>
-                      ))}
-                    </CardContent>
-                  </Card>
-                </div>
-                
-                <div>
-                  <h2 className="text-2xl font-bold tracking-tight mb-4">Công việc hiện tại</h2>
-                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                    {teamTasks.map(task => (
-                      <TaskCard key={task.id} task={task} onSelectTask={setSelectedTask} />
-                    ))}
-                     {teamTasks.length === 0 && <p className="text-muted-foreground col-span-full">Không tìm thấy công việc nào cho đội này.</p>}
-                  </div>
-                </div>
+                        
+                        <div>
+                        <h2 className="text-2xl font-bold tracking-tight mb-4">Công việc hiện tại</h2>
+                        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                            {teamTasks.map(task => (
+                            <TaskCard key={task.id} task={task} onSelectTask={setSelectedTask} />
+                            ))}
+                            {teamTasks.length === 0 && <p className="text-muted-foreground col-span-full">Không tìm thấy công việc nào cho đội này.</p>}
+                        </div>
+                        </div>
+                    </TabsContent>
+                    <TabsContent value="analytics" className="space-y-8">
+                         <div className="grid gap-6 md:grid-cols-2">
+                             <Card>
+                                 <CardHeader>
+                                     <CardTitle>Hiệu suất thành viên</CardTitle>
+                                     <CardDescription>Số lượng công việc theo trạng thái của mỗi thành viên.</CardDescription>
+                                 </CardHeader>
+                                 <CardContent>
+                                     <ChartContainer config={{}} className="h-[250px] w-full">
+                                         <BarChart data={memberPerformanceData} layout="vertical" margin={{ left: 10, right: 10}}>
+                                             <XAxis type="number" hide />
+                                             <YAxis dataKey="name" type="category" tickLine={false} axisLine={false} />
+                                             <Tooltip cursor={{ fill: 'hsl(var(--muted))' }} content={<ChartTooltipContent />} />
+                                             <Bar dataKey="todo" stackId="a" fill="hsl(var(--chart-1))" name="Cần làm" radius={[4, 0, 0, 4]} />
+                                             <Bar dataKey="inProgress" stackId="a" fill="hsl(var(--chart-3))" name="Đang làm" />
+                                             <Bar dataKey="done" stackId="a" fill="hsl(var(--chart-2))" name="Hoàn thành" radius={[0, 4, 4, 0]}/>
+                                         </BarChart>
+                                     </ChartContainer>
+                                 </CardContent>
+                             </Card>
+                              <Card>
+                                 <CardHeader>
+                                     <CardTitle>Phân loại công việc</CardTitle>
+                                     <CardDescription>Tỷ lệ các loại công việc trong đội.</CardDescription>
+                                 </CardHeader>
+                                 <CardContent>
+                                     <ChartContainer config={{}} className="h-[250px] w-full">
+                                        <PieChart>
+                                            <Tooltip content={<ChartTooltipContent nameKey="name" />} />
+                                            <Pie data={taskTypeDistribution} dataKey="value" nameKey="name" startAngle={90} endAngle={-270}>
+                                                 {taskTypeDistribution.map((entry) => (
+                                                    <Cell key={`cell-${entry.name}`} fill={entry.fill} />
+                                                ))}
+                                            </Pie>
+                                        </PieChart>
+                                     </ChartContainer>
+                                 </CardContent>
+                             </Card>
+                         </div>
+                    </TabsContent>
+                </Tabs>
+
               </div>
             </motion.main>
         </SidebarInset>
@@ -499,3 +570,5 @@ export default function TeamDetailPage() {
     </div>
   );
 }
+
+    
