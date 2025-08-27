@@ -25,20 +25,39 @@ const getIconForTaskType = (type: Task['loaiCongViec']) => {
     }
 };
 
+const safeGetDate = (date: string | Date | undefined): Date | null => {
+    if (!date) return null;
+    if (date instanceof Date) return date;
+    try {
+        return parseISO(date);
+    } catch {
+        return null;
+    }
+}
+
+
 export default function TimelineView({ tasks, onSelectTask }: TimelineViewProps) {
 
     const tasksByDate = useMemo(() => {
         const grouped: Record<string, Task[]> = {};
         const sortedTasks = [...tasks]
             .filter(t => t.ngayHetHan)
-            .sort((a, b) => parseISO(a.ngayHetHan as string).getTime() - parseISO(b.ngayHetHan as string).getTime());
+            .sort((a, b) => {
+                const dateA = safeGetDate(a.ngayHetHan);
+                const dateB = safeGetDate(b.ngayHetHan);
+                if (!dateA || !dateB) return 0;
+                return dateA.getTime() - dateB.getTime();
+            });
 
         sortedTasks.forEach(task => {
-            const dateKey = format(parseISO(task.ngayHetHan as string), 'yyyy-MM-dd');
-            if (!grouped[dateKey]) {
-                grouped[dateKey] = [];
+            const dueDate = safeGetDate(task.ngayHetHan);
+            if (dueDate) {
+                const dateKey = format(dueDate, 'yyyy-MM-dd');
+                if (!grouped[dateKey]) {
+                    grouped[dateKey] = [];
+                }
+                grouped[dateKey].push(task);
             }
-            grouped[dateKey].push(task);
         });
 
         return Object.entries(grouped);
