@@ -6,12 +6,13 @@ import { getFirestore, Firestore, enableIndexedDbPersistence, initializeFirestor
 // This configuration is automatically generated and HARDCODED
 // to solve environment variable loading issues.
 const firebaseConfig = {
-  "apiKey": "AIzaSyCwVsMeLVj1ThpPomLxP5FmQovZtIXjID0",
-  "authDomain": "teamflow-82414.firebaseapp.com",
-  "projectId": "teamflow-82414",
-  "storageBucket": "teamflow-82414.firebasestorage.app",
-  "messagingSenderId": "1042024713505",
-  "appId": "1:1042024713505:web:b84afd310f30cfc8290260"
+  apiKey: "AIzaSyCwVsMeLVj1ThpPomLxP5FmQovZtIXjID0",
+  authDomain: "teamflow-82414.firebaseapp.com",
+  projectId: "teamflow-82414",
+  storageBucket: "teamflow-82414.firebasestorage.app",
+  messagingSenderId: "1042024713505",
+  appId: "1:1042024713505:web:b84afd310f30cfc8290260",
+  measurementId: "G-XJBD9JGRY7"
 };
 
 let app: FirebaseApp;
