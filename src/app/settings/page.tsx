@@ -167,7 +167,7 @@ export default function SettingsPage() {
                                             <SelectItem value="vi">Tiếng Việt (Việt Nam)</SelectItem>
                                         </SelectContent>
                                     </Select>
-                                </div>
+                                d>
                             </CardContent>
                         </Card>
                     </div>
