@@ -13,11 +13,12 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { motion } from 'framer-motion';
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis } from "recharts"
 import { differenceInDays, format, subDays, parseISO } from 'date-fns';
-import { AlertCircle, CalendarIcon, CheckCircle, Lightbulb } from 'lucide-react';
+import { AlertCircle, CalendarIcon, CheckCircle, Lightbulb, ArrowRight } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import TourGuide from '@/components/tour-guide';
+import { Button } from '@/components/ui/button';
 
 const quotes = [
     { text: "Làm việc nhóm khiến giấc mơ thành hiện thực.", author: "Bang Gae" },
@@ -97,8 +98,10 @@ export default function HomePage() {
         const completedTasksByDate = tasks
             .filter(t => t.trangThai === 'Hoàn thành' && t.ngayHetHan)
             .reduce((acc, task) => {
-                const completedDate = format(parseISO(task.ngayHetHan as string), 'yyyy-MM-dd');
-                acc[completedDate] = (acc[completedDate] || 0) + 1;
+                const completedDateStr = task.ngayHetHan ? format(parseISO(task.ngayHetHan as string), 'yyyy-MM-dd') : '';
+                if (completedDateStr) {
+                   acc[completedDateStr] = (acc[completedDateStr] || 0) + 1;
+                }
                 return acc;
             }, {} as Record<string, number>);
 
@@ -107,6 +110,8 @@ export default function HomePage() {
             total: completedTasksByDate[format(date, 'yyyy-MM-dd')] || 0,
         }));
     }, [tasks]);
+    
+    const hasActivity = useMemo(() => taskCompletionData.some(d => d.total > 0), [taskCompletionData]);
 
     const upcomingTasks = useMemo(() => {
         const now = new Date();
@@ -149,13 +154,30 @@ export default function HomePage() {
                                         <CardDescription>Số lượng công việc bạn đã hoàn thành trong 30 ngày qua.</CardDescription>
                                     </CardHeader>
                                     <CardContent className="pl-2">
-                                        <ResponsiveContainer width="100%" height={300}>
-                                            <BarChart data={taskCompletionData}>
-                                                <XAxis dataKey="date" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
-                                                <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `${value}`} allowDecimals={false} />
-                                                <Bar dataKey="total" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-                                            </BarChart>
-                                        </ResponsiveContainer>
+                                        {hasActivity ? (
+                                            <ResponsiveContainer width="100%" height={300}>
+                                                <BarChart data={taskCompletionData}>
+                                                    <XAxis dataKey="date" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
+                                                    <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `${value}`} allowDecimals={false} />
+                                                    <Bar dataKey="total" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                                                </BarChart>
+                                            </ResponsiveContainer>
+                                        ) : (
+                                             <div className="flex flex-col items-center justify-center text-center text-muted-foreground h-[300px] gap-4 p-4 bg-muted/50 rounded-lg">
+                                                <Lightbulb className="h-12 w-12 text-accent" />
+                                                <div>
+                                                    <h3 className="font-semibold text-lg text-foreground">Chưa có hoạt động nào được ghi lại</h3>
+                                                    <p className="mt-1 max-w-md mx-auto">
+                                                        Bắt đầu làm việc để thấy biểu đồ của bạn được lấp đầy! Mời đồng đội và bắt đầu quản lý dự án cùng nhau.
+                                                    </p>
+                                                </div>
+                                                <Button asChild>
+                                                    <Link href="/board">
+                                                        Đi tới Bảng điều khiển <ArrowRight className="ml-2 h-4 w-4" />
+                                                    </Link>
+                                                </Button>
+                                            </div>
+                                        )}
                                     </CardContent>
                                 </Card>
                                 <div className="space-y-6">
