@@ -79,10 +79,10 @@ export default function Sidebar() {
         </div>
         <div className="mt-auto p-4">
             <Image 
-                src="https://picsum.photos/200/300" 
+                src="https://picsum.photos/200/260" 
                 alt="Placeholder image"
                 width={200}
-                height={300}
+                height={260}
                 className="rounded-lg"
                 data-ai-hint="abstract art"
             />
