@@ -12,12 +12,12 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import CreateTaskSheet from '@/components/create-task-sheet';
 import type { Task, User, Team } from '@/types';
-import Sidebar, { SidebarTrigger } from './sidebar';
+import { SidebarTrigger, MobileSidebar } from './sidebar';
 import { useAuth } from '@/hooks/use-auth';
 import { Logo } from './icons';
 import Link from 'next/link';
@@ -71,7 +71,7 @@ export default function Header({ users, teams, filters, setFilters, onCreateTask
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6">
       <div className="flex w-full items-center gap-4">
-        <SidebarTrigger className="lg:flex" />
+        <SidebarTrigger className="hidden lg:flex" />
         <Sheet>
             <SheetTrigger asChild>
                 <Button variant="outline" size="icon" className="shrink-0 lg:hidden">
@@ -79,16 +79,8 @@ export default function Header({ users, teams, filters, setFilters, onCreateTask
                     <span className="sr-only">Toggle navigation menu</span>
                 </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="w-64 p-0">
-                 <SheetHeader className="p-4 border-b">
-                    <SheetTitle asChild>
-                        <Link href="/" className="flex items-center gap-2 font-semibold">
-                            <Logo className="h-6 w-6 text-primary" />
-                            <span className="text-lg">TeamFlow</span>
-                        </Link>
-                    </SheetTitle>
-                </SheetHeader>
-                <Sidebar teams={teams} />
+            <SheetContent side="left" className="w-full max-w-xs p-0 sm:max-w-xs">
+                <MobileSidebar teams={teams} />
             </SheetContent>
         </Sheet>
         

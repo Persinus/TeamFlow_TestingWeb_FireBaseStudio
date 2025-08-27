@@ -30,6 +30,53 @@ interface SidebarProps {
   teams: Team[];
 }
 
+
+export function MobileSidebar({ teams }: SidebarProps) {
+  const pathname = usePathname();
+  const [isTeamsOpen, setIsTeamsOpen] = React.useState(pathname.startsWith('/teams'));
+
+  return (
+    <div className="flex h-full w-full flex-col">
+       <SidebarHeader>
+        <Link href="/" className="flex items-center gap-2 font-semibold">
+            <Logo className="h-6 w-6 text-primary" />
+            <span className="text-lg">TeamFlow</span>
+          </Link>
+      </SidebarHeader>
+      <SidebarContent>
+        <SidebarMenu>
+            <NavLink href="/" icon={Home} exact>Dashboard</NavLink>
+            <SidebarGroup className="px-0">
+                <SidebarMenuButton onClick={() => setIsTeamsOpen(!isTeamsOpen)} className="w-full">
+                    <Users/>
+                    <span>Teams</span>
+                    <ChevronDown className={cn("ml-auto h-4 w-4 transition-transform", isTeamsOpen && "rotate-180")} />
+                </SidebarMenuButton>
+                {isTeamsOpen && (
+                    <div className="grid gap-1 pl-7 py-2">
+                    {teams.map(team => (
+                        <Link
+                        key={team.id}
+                        href={`/teams/${team.id}`}
+                        className={cn(
+                            "block rounded-md px-3 py-1.5 text-muted-foreground hover:bg-muted hover:text-primary",
+                            pathname === `/teams/${team.id}` && "bg-muted text-primary font-semibold"
+                            )}
+                        >
+                        {team.name}
+                        </Link>
+                    ))}
+                    </div>
+                )}
+            </SidebarGroup>
+            <NavLink href="/settings" icon={Settings}>Settings</NavLink>
+        </SidebarMenu>
+      </SidebarContent>
+    </div>
+  );
+}
+
+
 export default function Sidebar({ teams }: SidebarProps) {
   const pathname = usePathname();
   const [isTeamsOpen, setIsTeamsOpen] = React.useState(pathname.startsWith('/teams'));
