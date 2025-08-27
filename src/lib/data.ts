@@ -6,7 +6,7 @@ export const MOCK_USERS: User[] = [
   { id: 'user-admin', name: 'Admin User', email: 'admin@teamflow.com', avatar: `https://picsum.photos/seed/user-admin/200/200`, expertise: 'Project Overlord', currentWorkload: 1 },
   { id: 'user-bruce', name: 'Bruce Wayne', email: 'bruce@teamflow.com', avatar: `https://picsum.photos/seed/user-bruce/200/200`, expertise: 'Frontend Development', currentWorkload: 2 },
   { id: 'user-clark', name: 'Clark Kent', email: 'clark@teamflow.com', avatar: `https://picsum.photos/seed/user-clark/200/200`, expertise: 'Backend Development', currentWorkload: 1 },
-  { id: 'user-diana', name: 'Diana Prince', email: 'diana@teamflow.com', avatar: `https_://picsum.photos/seed/user-diana/200/200`, expertise: 'UI/UX Design', currentWorkload: 3 },
+  { id: 'user-diana', name: 'Diana Prince', email: 'diana@teamflow.com', avatar: `https://picsum.photos/seed/user-diana/200/200`, expertise: 'UI/UX Design', currentWorkload: 3 },
   { id: 'user-barry', name: 'Barry Allen', email: 'barry@teamflow.com', avatar: `https://picsum.photos/seed/user-barry/200/200`, expertise: 'DevOps & Infrastructure', currentWorkload: 1 },
 ];
 
@@ -29,7 +29,7 @@ const MOCK_COMMENTS: { [taskId: string]: Comment[] } = {
   ]
 };
 
-let MOCK_TASKS: Task[] = [
+let MOCK_TASKS_RAW: Omit<Task, 'team' | 'comments' | 'assignee'>[] = [
   { id: 'task-1', title: 'Design new dashboard layout', description: 'Create mockups and prototypes for the v2 dashboard, focusing on a more intuitive user experience.', status: 'todo', teamId: 'team-frontend', assigneeId: 'user-diana', createdAt: new Date().toISOString() },
   { id: 'task-2', title: 'Implement user authentication API', description: 'Set up JWT-based authentication endpoints. This includes login, logout, and token refresh.', status: 'in-progress', teamId: 'team-backend', assigneeId: 'user-clark', createdAt: new Date().toISOString() },
   { id: 'task-3', title: 'Set up CI/CD pipeline', description: 'Configure GitHub Actions for automated testing and deployment to the staging environment.', status: 'done', teamId: 'team-infra', assigneeId: 'user-barry', createdAt: new Date().toISOString() },
@@ -43,8 +43,12 @@ let MOCK_TASKS: Task[] = [
 const simulateDelay = (ms: number) => new Promise(res => setTimeout(res, ms));
 
 // Helper to populate a task
-const populateTask = (task: Omit<Task, 'team' | 'comments' | 'assignee'>): Task => {
-    const team = MOCK_TEAMS.find(t => t.id === task.teamId)!;
+const populateTask = (task: Omit<Task, 'team' | 'comments' | 'assignee'>): Task | null => {
+    const team = MOCK_TEAMS.find(t => t.id === task.teamId);
+    if (!team) {
+        console.warn(`Task ${task.id} has an invalid teamId: ${task.teamId}`);
+        return null;
+    }
     const assignee = MOCK_USERS.find(u => u.id === task.assigneeId);
     const comments = MOCK_COMMENTS[task.id] || [];
     return { ...task, team, assignee, comments };
@@ -100,37 +104,37 @@ export const updateTeamMemberRole = async (teamId: string, userId: string, role:
 // TASK FUNCTIONS
 export const getTasks = async (): Promise<Task[]> => {
     await simulateDelay(100);
-    return MOCK_TASKS.map(populateTask);
+    return MOCK_TASKS_RAW.map(populateTask).filter(Boolean) as Task[];
 };
 
 export const getTask = async (id: string): Promise<Task | undefined> => {
     await simulateDelay(50);
-    const task = MOCK_TASKS.find(t => t.id === id);
-    return task ? populateTask(task) : undefined;
+    const task = MOCK_TASKS_RAW.find(t => t.id === id);
+    if (!task) return undefined;
+    return populateTask(task) ?? undefined;
 }
 
 export const getTasksByTeam = async (teamId: string): Promise<Task[]> => {
     await simulateDelay(100);
-    const teamTasks = MOCK_TASKS.filter(t => t.teamId === teamId);
-    return teamTasks.map(populateTask);
+    const teamTasks = MOCK_TASKS_RAW.filter(t => t.teamId === teamId);
+    return teamTasks.map(populateTask).filter(Boolean) as Task[];
 }
 
 export const addTask = async (taskData: Omit<Task, 'id' | 'comments' | 'team' | 'assignee'> & { teamId: string, assigneeId?: string }): Promise<string> => {
     await simulateDelay(200);
     const newId = `task-${Date.now()}`;
-    const newTask: Task = populateTask({
+    const newTaskRaw: Omit<Task, 'team' | 'comments' | 'assignee'> = {
         id: newId,
-        comments: [],
         createdAt: new Date().toISOString(),
         ...taskData
-    });
-    MOCK_TASKS.push(newTask);
+    };
+    MOCK_TASKS_RAW.push(newTaskRaw);
     return newId;
 };
 
 export const updateTaskStatus = async (taskId: string, status: TaskStatus): Promise<void> => {
     await simulateDelay(100);
-    const task = MOCK_TASKS.find(t => t.id === taskId);
+    const task = MOCK_TASKS_RAW.find(t => t.id === taskId);
     if (task) {
         task.status = status;
     }

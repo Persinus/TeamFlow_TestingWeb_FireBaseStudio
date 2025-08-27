@@ -13,6 +13,11 @@ import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import { SidebarInset } from '@/components/ui/sidebar';
 import { Skeleton } from '@/components/ui/skeleton';
+import { DndContext, DragEndEvent, DragOverEvent, DragOverlay, DragStartEvent, PointerSensor, useDraggable, useDroppable, useSensor, useSensors } from '@dnd-kit/core';
+import { createPortal } from 'react-dom';
+import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
+
 
 const columns: { id: TaskStatus; title: string }[] = [
   { id: 'backlog', title: 'Backlog' },
@@ -20,6 +25,26 @@ const columns: { id: TaskStatus; title: string }[] = [
   { id: 'in-progress', title: 'In Progress' },
   { id: 'done', title: 'Done' },
 ];
+
+
+function DroppableColumn({ id, title, children, isDragOver }: { id: string; title: string; children: React.ReactNode; isDragOver: boolean }) {
+  const { setNodeRef } = useDroppable({ id });
+  return (
+    <div
+      ref={setNodeRef}
+      className={cn("flex h-full flex-col gap-4 rounded-lg transition-colors", isDragOver ? "bg-accent/20" : "")}
+    >
+      <div className="flex items-center justify-between rounded-lg bg-background p-3 shadow-sm">
+        <h2 className="font-semibold text-foreground">{title}</h2>
+        <Badge variant="secondary" className="rounded-full">{React.Children.count(children)}</Badge>
+      </div>
+      <div className="flex flex-col gap-4">
+        {children}
+      </div>
+    </div>
+  );
+}
+
 
 function BoardSkeleton() {
   return (
@@ -31,9 +56,9 @@ function BoardSkeleton() {
             <Skeleton className="h-6 w-6 rounded-full" />
           </div>
           <div className="flex flex-col gap-4">
-            <Skeleton className="h-36 w-full rounded-lg" />
-            <Skeleton className="h-36 w-full rounded-lg" />
-            <Skeleton className="h-36 w-full rounded-lg" />
+            <Skeleton className="h-28 w-full rounded-lg" />
+            <Skeleton className="h-28 w-full rounded-lg" />
+            <Skeleton className="h-28 w-full rounded-lg" />
           </div>
         </div>
       ))}
@@ -45,6 +70,7 @@ function BoardSkeleton() {
 export default function DashboardPage() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
+  const { toast } = useToast();
 
   const [tasks, setTasks] = useState<Task[]>([]);
   const [users, setUsers] = useState<User[]>([]);
@@ -52,6 +78,11 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [filters, setFilters] = useState<{ assignee: string; team: string, search: string }>({ assignee: 'all', team: 'all', search: '' });
+
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const [overId, setOverId] = useState<string | null>(null);
+  const sensors = useSensors(useSensor(PointerSensor));
+  const activeTask = useMemo(() => tasks.find(t => t.id === activeId), [tasks, activeId]);
 
   const fetchData = useCallback(async () => {
     try {
@@ -83,6 +114,7 @@ export default function DashboardPage() {
 
   const filteredTasks = useMemo(() => {
     return tasks.filter(task => {
+      if (!task) return false;
       const assigneeMatch = filters.assignee === 'all' || task.assignee?.id === filters.assignee;
       const teamMatch = filters.team === 'all' || task.team.id === filters.team;
       const searchMatch = filters.search === '' || task.title.toLowerCase().includes(filters.search.toLowerCase());
@@ -92,12 +124,10 @@ export default function DashboardPage() {
 
   const handleCreateTask = async (newTaskData: Omit<Task, 'id' | 'comments' | 'team' | 'assignee'> & {teamId: string, assigneeId?: string}) => {
     await apiAddTask(newTaskData);
-    fetchData(); // Refetch all data to get the new task
+    fetchData(); 
   };
 
   const handleUpdateTask = async (updatedTask: Task) => {
-    // This is a placeholder as we're not editing tasks directly from the board view
-    // In a real app, you would have a function in data.ts like `updateTask`
     setTasks(prevTasks => prevTasks.map(task => task.id === updatedTask.id ? updatedTask : task));
     if (selectedTask?.id === updatedTask.id) {
       setSelectedTask(updatedTask);
@@ -105,7 +135,6 @@ export default function DashboardPage() {
   };
   
   const handleStatusChange = async (taskId: string, newStatus: TaskStatus) => {
-    // Optimistic update
     const originalTasks = tasks;
     const updatedTasks = tasks.map(task => 
       task.id === taskId ? { ...task, status: newStatus } : task
@@ -118,7 +147,6 @@ export default function DashboardPage() {
     try {
         await updateTaskStatus(taskId, newStatus);
     } catch(error) {
-        // Revert on failure
         setTasks(originalTasks);
         console.error("Failed to update status:", error);
     }
@@ -132,8 +160,8 @@ export default function DashboardPage() {
     const taskToUpdate = tasks.find(t => t.id === taskId);
     if(taskToUpdate) {
         const newComment = {
-            id: `comment-${Date.now()}`, // Temporary ID
-            author: user, // Optimistically use current user
+            id: `comment-${Date.now()}`,
+            author: user, 
             content: commentContent,
             createdAt: new Date().toISOString(),
         };
@@ -152,6 +180,36 @@ export default function DashboardPage() {
       return acc;
     }, {} as Record<TaskStatus, Task[]>);
   }, [filteredTasks]);
+
+  function handleDragStart(event: DragStartEvent) {
+    setActiveId(event.active.id as string);
+  }
+
+  function handleDragOver(event: DragOverEvent) {
+    const { over } = event;
+    setOverId(over ? over.id as string : null);
+  }
+
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    
+    if (active.id !== over?.id && over?.id) {
+        const newStatus = over.id as TaskStatus;
+        const taskId = active.id as string;
+        
+        const task = tasks.find(t => t.id === taskId);
+        if (task && task.status !== newStatus) {
+            handleStatusChange(taskId, newStatus);
+            toast({
+              title: "Task Moved",
+              description: `"${task.title}" moved to ${columns.find(c => c.id === newStatus)?.title}.`
+            })
+        }
+    }
+    setActiveId(null);
+    setOverId(null);
+  }
+
 
   if (authLoading || !user) {
     return <div className="flex h-screen items-center justify-center">Loading...</div>;
@@ -173,21 +231,33 @@ export default function DashboardPage() {
               {loading ? (
                 <BoardSkeleton />
               ) : (
-                <div className="grid min-w-[1200px] grid-cols-4 gap-6">
-                  {columns.map(column => (
-                    <div key={column.id} className="flex h-full flex-col gap-4">
-                      <div className="flex items-center justify-between rounded-lg bg-background p-3 shadow-sm">
-                        <h2 className="font-semibold text-foreground">{column.title}</h2>
-                        <Badge variant="secondary" className="rounded-full">{tasksByStatus[column.id].length}</Badge>
-                      </div>
-                      <div className="flex flex-col gap-4">
+                <DndContext 
+                  sensors={sensors}
+                  onDragStart={handleDragStart}
+                  onDragOver={handleDragOver}
+                  onDragEnd={handleDragEnd}
+                >
+                  <div className="grid min-w-[1200px] grid-cols-4 gap-6">
+                    {columns.map(column => (
+                      <DroppableColumn key={column.id} id={column.id} title={column.title} isDragOver={overId === column.id}>
                         {tasksByStatus[column.id].map(task => (
-                          <TaskCard key={task.id} task={task} onSelectTask={setSelectedTask} />
+                          <TaskCard 
+                            key={task.id} 
+                            task={task} 
+                            onSelectTask={setSelectedTask} 
+                            isDragging={activeId === task.id}
+                          />
                         ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                      </DroppableColumn>
+                    ))}
+                  </div>
+                  {typeof document !== "undefined" && createPortal(
+                     <DragOverlay>
+                        {activeTask ? <TaskCard task={activeTask} isDragging /> : null}
+                     </DragOverlay>,
+                     document.body
+                  )}
+                </DndContext>
               )}
             </main>
         </SidebarInset>

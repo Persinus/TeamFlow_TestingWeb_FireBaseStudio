@@ -11,6 +11,7 @@ import { MessageSquare, Send, Tag, User, Users } from 'lucide-react';
 import type { Task, TaskStatus } from '@/types';
 import { format, parseISO } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
+import { Badge } from './ui/badge';
 
 interface TaskDetailsSheetProps {
   task: Task | null;
@@ -20,12 +21,13 @@ interface TaskDetailsSheetProps {
   onStatusChange: (taskId: string, newStatus: TaskStatus) => void;
 }
 
-const statusDisplay: Record<TaskStatus, { text: string }> = {
-    backlog: { text: "Backlog" },
-    todo: { text: "To Do" },
-    "in-progress": { text: "In Progress" },
-    done: { text: "Done" },
-}
+const statusOptions: { value: TaskStatus, label: string }[] = [
+    { value: "backlog", label: "Backlog" },
+    { value: "todo", label: "To Do" },
+    { value: "in-progress", label: "In Progress" },
+    { value: "done", label: "Done" },
+];
+
 
 export default function TaskDetailsSheet({ task, onOpenChange, onUpdateTask, onAddComment, onStatusChange }: TaskDetailsSheetProps) {
   const [comment, setComment] = useState('');
@@ -47,9 +49,10 @@ export default function TaskDetailsSheet({ task, onOpenChange, onUpdateTask, onA
   
   const handleStatusChange = (newStatus: TaskStatus) => {
     onStatusChange(task.id, newStatus);
+    const statusLabel = statusOptions.find(s => s.value === newStatus)?.label || newStatus;
     toast({
       title: 'Status Updated',
-      description: `Task moved to "${statusDisplay[newStatus].text}".`
+      description: `Task moved to "${statusLabel}".`
     });
   }
 
@@ -69,8 +72,8 @@ export default function TaskDetailsSheet({ task, onOpenChange, onUpdateTask, onA
                         <SelectValue/>
                     </SelectTrigger>
                     <SelectContent>
-                        {Object.entries(statusDisplay).map(([status, { text }]) => (
-                            <SelectItem key={status} value={status}>{text}</SelectItem>
+                        {statusOptions.map(({value, label}) => (
+                            <SelectItem key={value} value={value}>{label}</SelectItem>
                         ))}
                     </SelectContent>
                 </Select>
@@ -95,12 +98,12 @@ export default function TaskDetailsSheet({ task, onOpenChange, onUpdateTask, onA
             <div className="flex items-center gap-4">
                 <Users className="h-5 w-5 text-muted-foreground" />
                 <span className="font-semibold text-muted-foreground w-24">Team</span>
-                <span>{task.team.name}</span>
+                <Badge variant="outline">{task.team.name}</Badge>
             </div>
         </div>
         <Separator />
         <div className="flex-1 flex flex-col gap-4 overflow-y-auto pr-4 -mr-4">
-            <h3 className="font-semibold flex items-center gap-2"><MessageSquare className="h-5 w-5"/> Comments</h3>
+            <h3 className="font-semibold flex items-center gap-2"><MessageSquare className="h-5 w-5"/> Comments ({task.comments.length})</h3>
             <div className="space-y-4">
                 {task.comments && task.comments.map(c => (
                     <div key={c.id} className="flex items-start gap-3">
@@ -115,7 +118,7 @@ export default function TaskDetailsSheet({ task, onOpenChange, onUpdateTask, onA
                                     {format(parseISO(c.createdAt), "MMM d, yyyy 'at' h:mm a")}
                                 </span>
                             </div>
-                            <p className="text-sm bg-muted p-3 rounded-lg">{c.content}</p>
+                            <p className="text-sm bg-muted p-3 rounded-lg mt-1">{c.content}</p>
                         </div>
                     </div>
                 ))}
