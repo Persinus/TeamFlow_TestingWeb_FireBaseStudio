@@ -24,8 +24,7 @@ const statusColors = {
 };
 
 export default function TeamDetailPage({ params }: { params: { teamId: string } }) {
-  const { teamId } = params;
-  const team = teams.find(t => t.id === teamId);
+  const team = useMemo(() => teams.find(t => t.id === params.teamId), [params.teamId]);
   
   // Dummy handlers for filters and task creation for Header component
   const [filters, setFilters] = React.useState({ assignee: 'all', team: 'all', search: '' });
@@ -34,6 +33,7 @@ export default function TeamDetailPage({ params }: { params: { teamId: string } 
 
 
   const teamMembers = useMemo(() => {
+    const { teamId } = params;
     // This is a simplified logic. In a real app, you'd have a proper team-member relationship.
     // Here we'll just find tasks for this team and get the assignees.
     const memberIds = new Set<string>();
@@ -43,11 +43,12 @@ export default function TeamDetailPage({ params }: { params: { teamId: string } 
       }
     });
     return users.filter(u => memberIds.has(u.id));
-  }, [teamId]);
+  }, [params]);
   
   const teamTasks = useMemo(() => {
+    const { teamId } = params;
     return initialTasks.filter(task => task.team.id === teamId);
-  }, [teamId]);
+  }, [params]);
   
   const progress = useMemo(() => {
     if (teamTasks.length === 0) return 0;
