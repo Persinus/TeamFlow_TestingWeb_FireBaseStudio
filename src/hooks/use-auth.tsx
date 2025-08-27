@@ -120,23 +120,13 @@ const seedInitialData = async (adminUserId: string) => {
     console.log('Initial data seeded successfully!');
 };
 
-// Mock user for bypassing login
-const mockUser: User = {
-    id: 'mock-user-id',
-    name: 'Demo User',
-    email: 'demo@teamflow.com',
-    avatar: 'https://picsum.photos/seed/mock-user/200/200',
-    expertise: 'Full-Stack Developer',
-    currentWorkload: 3,
-};
-
 
 interface AuthContextType {
     user: User | null;
     loading: boolean;
     login: (email: string, pass: string) => Promise<void>;
     logout: () => void;
-    register: (name: string, email: string, pass: string) => Promise<void>;
+    register: (name: string, email: string, pass:string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -155,15 +145,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 if (userSnap.exists()) {
                     setUser({ id: userSnap.id, ...userSnap.data() } as User);
                 } else {
-                    const name = firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'User';
-                    const newUser = await createUserProfile(firebaseUser, name);
-                    setUser(newUser);
+                    // This might happen if a user is created in Auth but not in Firestore yet
+                    const name = firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'New User';
+                    const newUserProfile = await createUserProfile(firebaseUser, name);
+                    setUser(newUserProfile);
                 }
             } else {
-                // --- Start of temporary bypass logic ---
-                console.warn("Authentication bypass is active. Using mock user.");
-                setUser(mockUser);
-                // --- End of temporary bypass logic ---
+                setUser(null);
             }
             setLoading(false);
         });
@@ -172,14 +160,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }, []);
 
     useEffect(() => {
-        // --- Start of temporary bypass logic ---
-        // We disable the redirect logic to allow access to all pages
-        const isAuthPage = pathname === '/login' || pathname === '/register';
-        if (!loading && user && isAuthPage) {
-            router.push('/');
-        }
-        // Original redirect logic is commented out below:
-        /*
         if (!loading) {
             const isAuthPage = pathname === '/login' || pathname === '/register';
             if (!user && !isAuthPage) {
@@ -188,8 +168,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 router.push('/');
             }
         }
-        */
-       // --- End of temporary bypass logic ---
     }, [user, loading, pathname, router]);
 
     const login = async (email: string, pass: string): Promise<void> => {
@@ -197,25 +175,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
 
     const logout = async () => {
-        if (auth.currentUser?.uid === 'mock-user-id') {
-             setUser(null);
-             router.push('/login');
-        } else {
-            await firebaseSignOut(auth);
-            setUser(null);
-            router.push('/login');
-        }
+        await firebaseSignOut(auth);
+        setUser(null);
+        router.push('/login');
     };
 
     const register = async (name: string, email: string, pass: string): Promise<void> => {
         const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
         const newUser = await createUserProfile(userCredential.user, name);
+        // Special case for seeding data if the admin registers
         if (email.toLowerCase() === 'admin@teamflow.com') {
             await updateDoc(doc(db, 'users', newUser.id), { expertise: 'Project Overlord' });
             await seedInitialData(newUser.id);
         }
     };
-
+    
     const value = { user, loading, login, logout, register };
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
