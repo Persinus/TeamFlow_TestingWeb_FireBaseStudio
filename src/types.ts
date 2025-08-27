@@ -4,6 +4,7 @@ export interface User {
   id: string; // Map to _id
   hoTen: string;
   email: string;
+  matKhau?: string; // Hashed password - should not be sent to client
   anhDaiDien: string; // URL to avatar image
   chuyenMon: string; // e.g., "Backend Developer", "Frontend Developer", "DevOps"
   taiCongViecHienTai: number; // e.g., number of active tasks

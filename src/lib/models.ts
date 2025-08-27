@@ -7,6 +7,7 @@ const UserSchema = new Schema({
   _id: { type: String, required: true },
   hoTen: { type: String, required: true },
   email: { type: String, required: true, unique: true },
+  matKhau: { type: String, required: true, select: false },
   anhDaiDien: { type: String, required: true },
   chuyenMon: { type: String, required: true },
   taiCongViecHienTai: { type: Number, default: 0 },

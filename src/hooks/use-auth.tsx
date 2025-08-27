@@ -4,13 +4,8 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import type { User } from '@/types';
-import { getMockUserByEmail, updateUser as apiUpdateUser } from '@/app/actions';
+import { verifyUserCredentials } from '@/app/actions';
 import { MOCK_USERS } from '@/lib/mock-data';
-
-const adminUser = MOCK_USERS.find(u => u.email === 'admin@teamflow.com');
-if (!adminUser) {
-    throw new Error("Missing mock admin user");
-}
 
 interface AuthContextType {
     user: User | null;
@@ -34,14 +29,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const storedUser = sessionStorage.getItem('mockUser');
         if (storedUser) {
             setUser(JSON.parse(storedUser));
-        } else {
-            // If no user in session, set default admin user for demo purposes
-            getMockUserByEmail('admin@teamflow.com').then(adminUser => {
-                if (adminUser) {
-                    sessionStorage.setItem('mockUser', JSON.stringify(adminUser));
-                    setUser(adminUser);
-                }
-            })
         }
         setLoading(false);
     }, []);
@@ -60,16 +47,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const login = async (email: string, pass: string): Promise<void> => {
        setLoading(true);
-       await new Promise(resolve => setTimeout(resolve, 500)); // Simulate network latency
-
-       const foundUser = await getMockUserByEmail(email);
-
-       if (foundUser && pass === 'Admin@1234') { // Using a generic password for mock/demo
-           setUser(foundUser);
-           sessionStorage.setItem('mockUser', JSON.stringify(foundUser));
-       } else {
-           setLoading(false);
-           throw new Error("Thông tin đăng nhập không hợp lệ");
+       try {
+            const foundUser = await verifyUserCredentials({ email, password: pass });
+            if (foundUser) {
+                setUser(foundUser);
+                sessionStorage.setItem('mockUser', JSON.stringify(foundUser));
+            } else {
+                 throw new Error("Thông tin đăng nhập không hợp lệ");
+            }
+       } catch (error) {
+            throw error;
+       } finally {
+            setLoading(false);
        }
     };
 
@@ -82,13 +71,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const register = async (name: string, email: string, pass: string): Promise<void> => {
         // This is a mock. In a real app, this would create a new user in the database.
+        // It should call a server action `createUser` which is not implemented yet.
         console.log(`Mock registration for: ${name}, ${email}`);
         await new Promise(resolve => setTimeout(resolve, 500));
+        // For now, we'll just throw an error to indicate it's not implemented
+        throw new Error("Chức năng đăng ký chưa được triển khai đầy đủ.");
     };
 
     const updateUser = (updatedUser: User) => {
-        setUser(updatedUser);
-        sessionStorage.setItem('mockUser', JSON.stringify(updatedUser));
+        setUser(prevUser => {
+            if (!prevUser) return null;
+            const newUser = {...prevUser, ...updatedUser};
+            sessionStorage.setItem('mockUser', JSON.stringify(newUser));
+            return newUser;
+        });
     };
     
     const value = { user, loading, login, logout, register, updateUser };

@@ -2,12 +2,37 @@
 
 "use server";
 
+import bcrypt from 'bcryptjs';
 import type { User, Team, Task, TrangThaiCongViec as TaskStatus, VaiTroThanhVien as TeamMemberRole } from '@/types';
 import connectToDatabase from '@/lib/mongodb';
 import { User as UserModel, Team as TeamModel, Task as TaskModel } from '@/lib/models';
 import { suggestTaskAssignee } from "@/ai/flows/suggest-task-assignee";
 import type { SuggestTaskAssigneeInput } from "@/ai/flows/suggest-task-assignee";
 import { revalidatePath } from 'next/cache';
+
+// --- Auth Functions ---
+export const verifyUserCredentials = async (credentials: Pick<User, 'email' | 'matKhau'>): Promise<User | null> => {
+    await connectToDatabase();
+    const { email, matKhau } = credentials;
+
+    if (!email || !matKhau) return null;
+
+    const user = await UserModel.findOne({ email: email.toLowerCase() }).select('+matKhau').lean();
+    
+    if (!user) {
+        return null;
+    }
+
+    const isMatch = await bcrypt.compare(matKhau, user.matKhau);
+    if (!isMatch) {
+        return null;
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { matKhau: _, ...userWithoutPassword } = user;
+    return populateUser(userWithoutPassword);
+};
+
 
 // --- AI Sugggestion Action ---
 export async function getAssigneeSuggestion(input: SuggestTaskAssigneeInput) {
@@ -21,81 +46,7 @@ export async function getAssigneeSuggestion(input: SuggestTaskAssigneeInput) {
 }
 
 
-// --- Task Functions ---
-const populateTask = (task: any): Task => {
-    // A helper to ensure the populated task has the correct shape after lean() and populate()
-    const taskObj = task._doc || task;
-
-    return {
-        id: taskObj._id.toString(),
-        tieuDe: taskObj.tieuDe,
-        moTa: taskObj.moTa,
-        trangThai: taskObj.trangThai,
-        loaiCongViec: taskObj.loaiCongViec,
-        doUuTien: taskObj.doUuTien,
-        nhomId: taskObj.nhomId,
-        nhom: taskObj.nhom ? {
-            ...taskObj.nhom,
-            id: taskObj.nhom._id.toString(),
-            tenNhom: taskObj.nhom.tenNhom,
-            moTa: taskObj.nhom.moTa,
-            thanhVien: taskObj.nhom.thanhVien?.map((m: any) => ({
-                ...m,
-                thanhVienId: m.thanhVienId,
-                vaiTro: m.vaiTro,
-                user: m.user ? {
-                  ...m.user,
-                  id: m.user._id.toString(),
-                  hoTen: m.user.hoTen,
-                  email: m.user.email,
-                  anhDaiDien: m.user.anhDaiDien,
-                  chuyenMon: m.user.chuyenMon,
-                  taiCongViecHienTai: m.user.taiCongViecHienTai,
-                } : undefined,
-            }))
-        } : undefined,
-        nguoiThucHienId: taskObj.nguoiThucHienId,
-        nguoiThucHien: taskObj.nguoiThucHien ? {
-            ...taskObj.nguoiThucHien,
-            id: taskObj.nguoiThucHien._id.toString(),
-            hoTen: taskObj.nguoiThucHien.hoTen,
-            email: taskObj.nguoiThucHien.email,
-            anhDaiDien: taskObj.nguoiThucHien.anhDaiDien,
-            chuyenMon: taskObj.nguoiThucHien.chuyenMon,
-            taiCongViecHienTai: taskObj.nguoiThucHien.taiCongViecHienTai,
-        } : undefined,
-        ngayTao: taskObj.ngayTao,
-        ngayBatDau: taskObj.ngayBatDau,
-        ngayHetHan: taskObj.ngayHetHan,
-        tags: taskObj.tags,
-    };
-};
-
-const populateTeam = (team: any): Team => {
-    const teamObj = team._doc || team;
-    return {
-        id: teamObj._id.toString(),
-        tenNhom: teamObj.tenNhom,
-        moTa: teamObj.moTa,
-        thanhVien: teamObj.thanhVien.map((m: any) => {
-            const memberObj = m._doc || m;
-            const userObj = memberObj.user ? (memberObj.user._doc || memberObj.user) : null;
-            return {
-                thanhVienId: memberObj.thanhVienId,
-                vaiTro: memberObj.vaiTro,
-                user: userObj ? {
-                    ...userObj,
-                    id: userObj._id.toString(),
-                    hoTen: userObj.hoTen,
-                    email: userObj.email,
-                    anhDaiDien: userObj.anhDaiDien,
-                    chuyenMon: userObj.chuyenMon,
-                } : undefined
-            };
-        }),
-    };
-};
-
+// --- Helper Functions for Populating Data ---
 const populateUser = (user: any): User => {
     const userObj = user._doc || user;
     return {
@@ -108,46 +59,64 @@ const populateUser = (user: any): User => {
         soDienThoai: userObj.soDienThoai,
         ngaySinh: userObj.ngaySinh,
     };
-}
+};
+
+const populateTeam = (team: any): Team => {
+    const teamObj = team._doc || team;
+    return {
+        id: teamObj._id.toString(),
+        tenNhom: teamObj.tenNhom,
+        moTa: teamObj.moTa,
+        thanhVien: teamObj.thanhVien.map((m: any) => {
+            const memberObj = m._doc || m;
+            const userObj = memberObj.thanhVienId ? (memberObj.thanhVienId._doc || memberObj.thanhVienId) : null;
+            return {
+                thanhVienId: userObj ? userObj._id.toString() : memberObj.thanhVienId.toString(),
+                vaiTro: memberObj.vaiTro,
+                user: userObj ? populateUser(userObj) : undefined,
+            };
+        }),
+    };
+};
+
+const populateTask = (task: any): Task => {
+    const taskObj = task._doc || task;
+    return {
+        id: taskObj._id.toString(),
+        tieuDe: taskObj.tieuDe,
+        moTa: taskObj.moTa,
+        trangThai: taskObj.trangThai,
+        loaiCongViec: taskObj.loaiCongViec,
+        doUuTien: taskObj.doUuTien,
+        nhomId: taskObj.nhomId ? taskObj.nhomId.toString() : undefined,
+        nhom: taskObj.nhomId ? populateTeam(taskObj.nhomId) : undefined,
+        nguoiThucHienId: taskObj.nguoiThucHienId ? taskObj.nguoiThucHienId.toString() : undefined,
+        nguoiThucHien: taskObj.nguoiThucHienId ? populateUser(taskObj.nguoiThucHienId) : undefined,
+        ngayTao: taskObj.ngayTao,
+        ngayBatDau: taskObj.ngayBatDau,
+        ngayHetHan: taskObj.ngayHetHan,
+        tags: taskObj.tags,
+    };
+};
 
 
+// --- Task Functions ---
 export const getTasks = async (): Promise<Task[]> => {
     await connectToDatabase();
     const tasks = await TaskModel.find()
-        .populate({ path: 'nhomId', model: TeamModel, populate: { path: 'thanhVien.thanhVienId', model: UserModel, select: 'hoTen anhDaiDien email chuyenMon' } })
+        .populate({
+            path: 'nhomId',
+            model: TeamModel,
+            populate: {
+                path: 'thanhVien.thanhVienId',
+                model: UserModel,
+                select: 'hoTen anhDaiDien email chuyenMon taiCongViecHienTai',
+            },
+        })
         .populate({ path: 'nguoiThucHienId', model: UserModel })
         .lean();
 
-    // Custom population because of schema complexity
-    const teams = await TeamModel.find().populate({path: 'thanhVien.thanhVienId', model: UserModel, as: 'user'}).lean();
-    const users = await UserModel.find().lean();
-    
-    return tasks.map((task: any) => {
-        const teamData = teams.find(t => t._id === task.nhomId);
-        const assigneeData = users.find(u => u._id === task.nguoiThucHienId);
-        return {
-            ...task,
-            id: task._id.toString(),
-            nhom: teamData ? {
-                ...teamData,
-                id: teamData._id.toString(),
-                tenNhom: teamData.tenNhom,
-                thanhVien: teamData.thanhVien.map((m: any) => ({
-                    ...m,
-                    user: {
-                      ...(m.thanhVienId),
-                      id: m.thanhVienId._id.toString(),
-                      hoTen: m.thanhVienId.hoTen,
-                    }
-                }))
-            } : undefined,
-            nguoiThucHien: assigneeData ? {
-                ...assigneeData,
-                id: assigneeData._id.toString(),
-                hoTen: assigneeData.hoTen,
-            } : undefined
-        } as Task;
-    });
+    return tasks.map(populateTask);
 };
 
 export const getTasksByAssignee = async (assigneeId: string): Promise<Task[]> => {
@@ -199,7 +168,9 @@ export const updateTask = async (taskId: string, taskData: Partial<Omit<Task, 'i
 
     await TaskModel.findByIdAndUpdate(taskId, updateData);
     revalidatePath('/');
-    revalidatePath(`/teams/${taskData.nhomId}`);
+    if (taskData.nhomId) {
+        revalidatePath(`/teams/${taskData.nhomId}`);
+    }
     if (taskData.nguoiThucHienId) {
         revalidatePath(`/profile`);
     }
@@ -255,21 +226,16 @@ export const updateUser = async (userId: string, userData: Partial<Pick<User, 'h
     return populateUser(updatedUser);
 };
 
-export const getMockUserByEmail = async (email: string): Promise<User | undefined> => {
-    return getUsers().then(users => users.find(u => u.email.toLowerCase() === email.toLowerCase()));
-};
-
-
 // --- Team Functions ---
 export const getTeams = async (): Promise<Team[]> => {
     await connectToDatabase();
-    const teams = await TeamModel.find().populate({ path: 'thanhVien.thanhVienId', model: UserModel, as: 'user' }).lean();
+    const teams = await TeamModel.find().populate({ path: 'thanhVien.thanhVienId', model: UserModel, select: 'hoTen anhDaiDien email chuyenMon' }).lean();
     return teams.map(populateTeam);
 };
 
 export const getTeam = async (id: string): Promise<Team | undefined> => {
     await connectToDatabase();
-    const team = await TeamModel.findById(id).populate({ path: 'thanhVien.thanhVienId', model: UserModel, as: 'user' }).lean();
+    const team = await TeamModel.findById(id).populate({ path: 'thanhVien.thanhVienId', model: UserModel, select: 'hoTen anhDaiDien email chuyenMon taiCongViecHienTai' }).lean();
     if (!team) return undefined;
     return populateTeam(team);
 };

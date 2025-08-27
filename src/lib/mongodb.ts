@@ -1,6 +1,7 @@
 
 
 import mongoose from 'mongoose';
+import bcrypt from 'bcryptjs';
 import { User as UserModel, Team as TeamModel, Task as TaskModel } from '@/lib/models';
 import { MOCK_USERS } from '@/lib/mock-data';
 
@@ -36,18 +37,22 @@ const seedDatabase = async () => {
 
         console.log('Seeding database with IT-oriented Vietnamese data...');
         
-        // 1. Insert all mock users with their specific IDs
+        // Hash the default password
+        const hashedPassword = await bcrypt.hash('Admin@1234', 10);
+
+        // 1. Insert all mock users with their specific IDs and hashed password
         const usersToCreate = MOCK_USERS.map(({ id, name, avatar, expertise, email, phone, dob, currentWorkload }) => ({
              _id: id,
              hoTen: name,
              email: email,
+             matKhau: hashedPassword,
              anhDaiDien: avatar,
              chuyenMon: expertise,
-             taiCongViecHienTai: currentWorkload,
+             taiCongViecHienTai: currentWorkload || 0,
              soDienThoai: phone,
              ngaySinh: dob,
         }));
-        await UserModel.insertMany(usersToCreate);
+        await UserModel.insertMany(usersToCreate, { ordered: false });
         console.log(`${MOCK_USERS.length} users created.`);
 
         // 2. Create default teams
@@ -122,6 +127,7 @@ const seedDatabase = async () => {
                 loaiCongViec: 'Công việc',
                 doUuTien: 'Thấp',
                 nhomId: coreTeam._id,
+                nguoiThucHienId: 'user-victor',
                 tags: ['database', 'performance', 'mongodb'],
             }
         ];
