@@ -28,45 +28,21 @@ const auth: Auth = getAuth(app);
 // ✅ Firestore with new persistence API
 let db: Firestore;
 if (typeof window !== "undefined") {
-  db = initializeFirestore(app, {
-    localCache: persistentLocalCache({
-      tabManager: persistentMultipleTabManager(), // Cho phép nhiều tab
-    }),
-  });
+   try {
+    db = initializeFirestore(app, {
+      localCache: persistentLocalCache({
+        tabManager: persistentMultipleTabManager(),
+      }),
+    });
+  } catch (e) {
+    // This can happen if the code is hot-reloaded, we can ignore it.
+    if ((e as any).code !== 'failed-precondition') {
+        console.error("Firebase initialization error", e);
+    }
+  }
 } else {
-  db = initializeFirestore(app, {}); // server-side không cần cache
+  db = initializeFirestore(app, {}); // server-side does not need cache
 }
 
-/**
- * Example service function: getTask by id
- */
-export const getTask = async (taskId: string) => {
-  const taskRef = doc(db, "tasks", taskId);
-
-  // Thử cache trước
-  try {
-    const cachedSnap = await getDocFromCache(taskRef);
-    if (cachedSnap.exists()) {
-      console.log("✅ Lấy từ cache");
-      return { id: cachedSnap.id, ...cachedSnap.data() };
-    }
-  } catch (err) {
-    console.warn("⚠️ Không có trong cache:", err);
-  }
-
-  // Nếu không có thì fallback server
-  try {
-    const serverSnap = await getDocFromServer(taskRef);
-    if (serverSnap.exists()) {
-      console.log("🌐 Lấy từ server");
-      return { id: serverSnap.id, ...serverSnap.data() };
-    }
-  } catch (err) {
-    console.error("❌ Không thể lấy từ server:", err);
-    throw err;
-  }
-
-  return null;
-};
 
 export { app, auth, db };

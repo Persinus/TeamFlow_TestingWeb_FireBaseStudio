@@ -8,6 +8,35 @@ import type { User } from '@/types';
 import { auth, db } from '@/lib/firebase';
 import { doc, setDoc, getDoc, serverTimestamp, updateDoc, collection, writeBatch, getDocs, query } from 'firebase/firestore';
 
+const fetchUserWithRetry = async (uid: string, retries = 3, delay = 300): Promise<User | null> => {
+    for (let i = 0; i < retries; i++) {
+        try {
+            const userRef = doc(db, 'users', uid);
+            const userSnap = await getDoc(userRef);
+            if (userSnap.exists()) {
+                return { id: userSnap.id, ...userSnap.data() } as User;
+            }
+            return null; // User profile doesn't exist in Firestore
+        } catch (error: any) {
+            // Only retry on "offline" errors
+            if (error.code === 'unavailable' || error.message.includes('offline')) {
+                console.warn(`Attempt ${i + 1} failed, client offline. Retrying...`);
+                if (i < retries - 1) {
+                    await new Promise(res => setTimeout(res, delay));
+                } else {
+                    console.error("Failed to fetch user profile after multiple retries.", error);
+                    throw error; // re-throw the last error
+                }
+            } else {
+                console.error("An unexpected error occurred while fetching user profile:", error);
+                throw error; // Don't retry on other errors
+            }
+        }
+    }
+    return null;
+};
+
+
 // Helper function to create a user profile in Firestore
 const createUserProfile = async (firebaseUser: FirebaseUser, name: string): Promise<User> => {
     if (!db) throw new Error("Firestore is not initialized");
@@ -148,15 +177,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
         const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
             if (firebaseUser) {
-                const userRef = doc(db, 'users', firebaseUser.uid);
-                const userSnap = await getDoc(userRef);
-                if (userSnap.exists()) {
-                    setUser({ id: userSnap.id, ...userSnap.data() } as User);
-                } else {
-                    // This case should ideally happen only on registration
-                    const name = firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'New User';
-                    const newUserProfile = await createUserProfile(firebaseUser, name);
-                    setUser(newUserProfile);
+                try {
+                    const userProfile = await fetchUserWithRetry(firebaseUser.uid);
+                    if (userProfile) {
+                        setUser(userProfile);
+                    } else {
+                        // This case should ideally happen only on registration
+                        const name = firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'New User';
+                        const newUserProfile = await createUserProfile(firebaseUser, name);
+                        setUser(newUserProfile);
+                    }
+                } catch (error) {
+                    console.error("Failed to process user authentication:", error);
+                    // Decide what to do on failure. Maybe log out? Or show an error toast?
+                    // For now, we'll just set user to null.
+                    setUser(null);
                 }
             } else {
                 setUser(null);
