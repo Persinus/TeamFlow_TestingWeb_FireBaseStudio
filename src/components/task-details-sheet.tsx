@@ -85,11 +85,23 @@ export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onU
   const [isDeleting, setIsDeleting] = useState(false);
   const { toast } = useToast();
   const [availableTags, setAvailableTags] = useState<string[]>([]);
-
+  
   const form = useForm<TaskFormData>({
     resolver: zodResolver(taskSchema),
+    defaultValues: {
+        tieuDe: task?.tieuDe || '',
+        moTa: task?.moTa || '',
+        trangThai: task?.trangThai,
+        nguoiThucHienId: task?.nguoiThucHienId || undefined,
+        nhomId: task?.nhomId,
+        ngayBatDau: safeParseDate(task?.ngayBatDau),
+        ngayHetHan: safeParseDate(task?.ngayHetHan),
+        tags: task?.tags || [],
+        loaiCongViec: task?.loaiCongViec,
+        doUuTien: task?.doUuTien,
+    }
   });
-  
+
   useEffect(() => {
     async function fetchTags() {
         const tags = await getAllTags();
@@ -338,3 +350,5 @@ export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onU
     </Sheet>
   );
 }
+
+    
