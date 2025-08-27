@@ -10,24 +10,26 @@ import Link from "next/link";
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import { Logo } from '@/components/icons';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, Loader2 } from 'lucide-react';
 
 export default function LoginPage() {
     const [email, setEmail] = useState('admin@teamflow.com');
     const [password, setPassword] = useState('Admin@1234');
     const [showPassword, setShowPassword] = useState(false);
-    const { user, login, loading } = useAuth();
+    const [isLoggingIn, setIsLoggingIn] = useState(false);
+    const { user, login, loading: authLoading } = useAuth();
     const router = useRouter();
     const { toast } = useToast();
 
     useEffect(() => {
-        if (!loading && user) {
+        if (!authLoading && user) {
             router.push('/');
         }
-    }, [user, loading, router]);
+    }, [user, authLoading, router]);
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
+        setIsLoggingIn(true);
         try {
             await login(email, password);
             // The redirection is now handled by the useEffect in useAuth hook
@@ -37,10 +39,12 @@ export default function LoginPage() {
                 title: 'Login Failed',
                 description: "Invalid email or password.",
             });
+        } finally {
+            setIsLoggingIn(false);
         }
     };
 
-    if (loading || user) {
+    if (authLoading || user) {
         return <div className="flex h-screen items-center justify-center">Loading...</div>;
     }
 
@@ -67,6 +71,7 @@ export default function LoginPage() {
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
                                     required
+                                    disabled={isLoggingIn}
                                 />
                             </div>
                             <div className="grid gap-2">
@@ -84,6 +89,7 @@ export default function LoginPage() {
                                         onChange={(e) => setPassword(e.target.value)}
                                         required 
                                         className="pr-10"
+                                        disabled={isLoggingIn}
                                     />
                                     <Button
                                         type="button"
@@ -91,14 +97,16 @@ export default function LoginPage() {
                                         size="icon"
                                         className="absolute inset-y-0 right-0 h-full px-3"
                                         onClick={() => setShowPassword(!showPassword)}
+                                        disabled={isLoggingIn}
                                     >
                                         {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                                         <span className="sr-only">{showPassword ? 'Hide password' : 'Show password'}</span>
                                     </Button>
                                 </div>
                             </div>
-                            <Button type="submit" className="w-full">
-                                Login
+                            <Button type="submit" className="w-full" disabled={isLoggingIn}>
+                                {isLoggingIn && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                {isLoggingIn ? 'Logging in...' : 'Login'}
                             </Button>
                         </div>
                     </form>
