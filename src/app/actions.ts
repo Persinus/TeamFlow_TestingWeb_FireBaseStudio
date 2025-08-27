@@ -1,4 +1,5 @@
 
+
 "use server";
 
 import bcrypt from 'bcryptjs';
@@ -78,15 +79,19 @@ const populateTeam = (team: any): Team => {
         id: teamObj._id.toString(),
         tenNhom: teamObj.tenNhom,
         moTa: teamObj.moTa,
-        thanhVien: teamObj.thanhVien.map((m: any) => {
-            const memberObj = m._doc || m;
-            const userObj = memberObj.thanhVienId ? (memberObj.thanhVienId._doc || memberObj.thanhVienId) : null;
+        thanhVien: (teamObj.thanhVien || []).map((m: any) => {
+            const memberObj = m?._doc || m;
+            if (!memberObj || !memberObj.thanhVienId) return null;
+
+            const userObj = memberObj.thanhVienId?._doc || memberObj.thanhVienId;
+            const isPopulated = typeof userObj === 'object' && userObj !== null && '_id' in userObj;
+            
             return {
-                thanhVienId: userObj ? userObj._id.toString() : memberObj.thanhVienId.toString(),
+                thanhVienId: isPopulated ? userObj._id.toString() : memberObj.thanhVienId.toString(),
                 vaiTro: memberObj.vaiTro,
-                user: userObj ? populateUser(userObj) : undefined,
+                user: isPopulated ? populateUser(userObj) : undefined,
             };
-        }),
+        }).filter(Boolean),
     };
 };
 
