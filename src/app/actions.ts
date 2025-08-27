@@ -161,7 +161,7 @@ export const addTask = async (taskData: Omit<Task, 'id' | 'nhom' | 'nguoiThucHie
         _id: `task-${Date.now()}`,
     });
     await newTask.save();
-    revalidatePath('/');
+    revalidatePath('/board');
     revalidatePath(`/teams/${taskData.nhomId}`);
     return newTask._id.toString();
 };
@@ -178,6 +178,7 @@ export const updateTask = async (taskId: string, taskData: Partial<Omit<Task, 'i
         throw new Error('Task not found');
     }
     revalidatePath('/');
+    revalidatePath('/board');
     revalidatePath(`/teams/${updatedTask.nhomId}`);
     if(updatedTask.nguoiThucHienId) {
          revalidatePath(`/profile`);
@@ -193,6 +194,7 @@ export const deleteTask = async (taskId: string): Promise<void> => {
     }
     await TaskModel.findByIdAndDelete(taskId);
     revalidatePath('/');
+    revalidatePath('/board');
     revalidatePath(`/teams/${task.nhomId}`);
     if (task.nguoiThucHienId) {
         revalidatePath(`/profile`);
@@ -202,7 +204,7 @@ export const deleteTask = async (taskId: string): Promise<void> => {
 export const updateTaskStatus = async (taskId: string, status: TaskStatus): Promise<void> => {
     await connectToDatabase();
     await TaskModel.findByIdAndUpdate(taskId, { trangThai: status });
-    revalidatePath('/');
+    revalidatePath('/board');
 };
 
 // --- Tag Functions ---
@@ -262,7 +264,7 @@ export const createTeam = async (teamData: Pick<Team, 'tenNhom' | 'moTa'>, leade
     });
     await newTeam.save();
     revalidatePath('/settings');
-    revalidatePath('/');
+    revalidatePath('/board');
     return newTeam._id.toString();
 };
 
@@ -270,7 +272,7 @@ export const updateTeam = async (teamId: string, teamData: Partial<Pick<Team, 't
     await connectToDatabase();
     await TeamModel.findByIdAndUpdate(teamId, teamData);
     revalidatePath('/settings');
-    revalidatePath('/');
+    revalidatePath('/board');
     revalidatePath(`/teams/${teamId}`);
 };
 
@@ -279,7 +281,7 @@ export const deleteTeam = async (teamId: string): Promise<void> => {
     await TaskModel.deleteMany({ nhomId: teamId });
     await TeamModel.findByIdAndDelete(teamId);
     revalidatePath('/settings');
-    revalidatePath('/');
+    revalidatePath('/board');
 };
 
 export const addTeamMember = async (teamId: string, userId: string): Promise<void> => {

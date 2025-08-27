@@ -3,7 +3,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { Home, Settings, Users, ChevronDown, PlusCircle } from 'lucide-react';
+import { Home, Settings, Users, ChevronDown, PlusCircle, HelpCircle, LayoutDashboard } from 'lucide-react';
 import { Logo } from '@/components/icons';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -30,10 +30,11 @@ const NavLink = ({ href, children, icon: Icon, exact = false, tooltip }: { href:
 interface SidebarProps {
   teams: Team[];
   onTeamChange: () => void;
+  onShowTour: () => void;
 }
 
 
-export function MobileSidebar({ teams, onTeamChange }: SidebarProps) {
+export function MobileSidebar({ teams, onTeamChange, onShowTour }: SidebarProps) {
   const pathname = usePathname();
   const [isTeamsOpen, setIsTeamsOpen] = React.useState(pathname.startsWith('/teams'));
   const [isManageTeamsOpen, setManageTeamsOpen] = useState(false);
@@ -48,7 +49,8 @@ export function MobileSidebar({ teams, onTeamChange }: SidebarProps) {
       </SidebarHeader>
       <SidebarContent>
         <SidebarMenu>
-            <NavLink href="/" icon={Home} exact>Bảng điều khiển</NavLink>
+            <NavLink href="/" icon={Home} exact tooltip="Trang chủ">Trang chủ</NavLink>
+            <NavLink href="/board" icon={LayoutDashboard} tooltip="Bảng điều khiển">Bảng điều khiển</NavLink>
             <SidebarGroup className="px-0">
                 <SidebarMenuButton onClick={() => setIsTeamsOpen(!isTeamsOpen)} className="w-full">
                     <Users/>
@@ -66,7 +68,7 @@ export function MobileSidebar({ teams, onTeamChange }: SidebarProps) {
                                 pathname === `/teams/${team.id}` && "bg-sidebar-accent text-sidebar-accent-foreground font-semibold"
                                 )}
                             >
-                            {team.name}
+                            {team.tenNhom}
                             </Link>
                         ))}
                     </div>
@@ -82,6 +84,10 @@ export function MobileSidebar({ teams, onTeamChange }: SidebarProps) {
                 <span>Quản lý đội</span>
              </Button>
         </ManageTeamsDialog>
+        <Button variant="ghost" onClick={onShowTour} className="w-full justify-start gap-3 p-2 text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
+            <HelpCircle className="h-5 w-5" />
+            <span>Hướng dẫn</span>
+        </Button>
          <div className="flex items-center gap-3 p-2">
              <Logo className="h-7 w-7 text-primary" />
              <span className="font-semibold text-sidebar-foreground">TeamFlow</span>
@@ -92,7 +98,7 @@ export function MobileSidebar({ teams, onTeamChange }: SidebarProps) {
 }
 
 
-export default function Sidebar({ teams, onTeamChange }: SidebarProps) {
+export default function Sidebar({ teams, onTeamChange, onShowTour }: SidebarProps) {
   const pathname = usePathname();
   const [isTeamsOpen, setIsTeamsOpen] = React.useState(pathname.startsWith('/teams'));
   const { state } = useSidebar();
@@ -108,7 +114,8 @@ export default function Sidebar({ teams, onTeamChange }: SidebarProps) {
       </SidebarHeader>
         <SidebarContent>
             <SidebarMenu>
-                <NavLink href="/" icon={Home} exact tooltip="Bảng điều khiển">Bảng điều khiển</NavLink>
+                <NavLink href="/" icon={Home} exact tooltip="Trang chủ">Trang chủ</NavLink>
+                <NavLink href="/board" icon={LayoutDashboard} tooltip="Bảng điều khiển">Bảng điều khiển</NavLink>
                 <SidebarGroup>
                     <SidebarMenuButton onClick={() => setIsTeamsOpen(!isTeamsOpen)} tooltip="Các đội">
                         <Users/>
@@ -126,7 +133,7 @@ export default function Sidebar({ teams, onTeamChange }: SidebarProps) {
                                     pathname === `/teams/${team.id}` && "bg-sidebar-accent text-sidebar-accent-foreground font-semibold"
                                     )}
                                 >
-                                {team.name}
+                                {team.tenNhom}
                                 </Link>
                             ))}
                         </div>
@@ -142,6 +149,10 @@ export default function Sidebar({ teams, onTeamChange }: SidebarProps) {
                 <span>Quản lý đội</span>
              </SidebarMenuButton>
            </ManageTeamsDialog>
+            <SidebarMenuButton tooltip="Hướng dẫn" className="w-full text-sidebar-foreground" onClick={onShowTour}>
+                <HelpCircle />
+                <span>Hướng dẫn</span>
+            </SidebarMenuButton>
             <div className={cn("flex items-center gap-2 p-2 text-sidebar-foreground", state === 'collapsed' && 'justify-center')}>
                 <Logo className="h-7 w-7 text-primary flex-shrink-0" />
                 {state === 'expanded' && <span className="font-semibold text-sm">TeamFlow v1.0</span>}
