@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils';
 import type { Team } from '@/types';
 import { Sidebar as RootSidebar, SidebarHeader, SidebarContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarGroup, useSidebar, SidebarFooter } from '@/components/ui/sidebar';
 import ManageTeamsDialog from './manage-teams-dialog';
+import { Button } from './ui/button';
 
 const NavLink = ({ href, children, icon: Icon, exact = false, tooltip }: { href: string; children: React.ReactNode; icon: React.ElementType; exact?: boolean; tooltip?: string; }) => {
   const pathname = usePathname();
