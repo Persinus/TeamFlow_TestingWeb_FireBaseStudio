@@ -162,5 +162,3 @@ export default function Sidebar({ teams, onTeamChange, onShowTour }: SidebarProp
 }
 
 export { SidebarTrigger } from '@/components/ui/sidebar';
-
-    

@@ -24,26 +24,34 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const pathname = usePathname();
 
     useEffect(() => {
-        // Simulate checking for a logged-in user from a previous session
-        const storedUser = sessionStorage.getItem('teamflow-user');
-        if (storedUser) {
-            setUser(JSON.parse(storedUser));
-        }
-        setLoading(false);
+        const checkUser = () => {
+            try {
+                const storedUser = sessionStorage.getItem('teamflow-user');
+                if (storedUser) {
+                    setUser(JSON.parse(storedUser));
+                }
+            } catch (error) {
+                console.error("Failed to parse user from session storage", error);
+                sessionStorage.removeItem('teamflow-user');
+                setUser(null);
+            } finally {
+                setLoading(false);
+            }
+        };
+        checkUser();
     }, []);
 
     useEffect(() => {
         if (loading) return; 
 
         const isAuthPage = pathname === '/login' || pathname === '/register';
-        const userIsSet = !!sessionStorage.getItem('teamflow-user');
         
-        if (!userIsSet && !isAuthPage) {
+        if (!user && !isAuthPage) {
             router.push('/login');
-        } else if (userIsSet && isAuthPage) {
+        } else if (user && isAuthPage) {
             router.push('/');
         }
-    }, [loading, pathname, router]);
+    }, [user, loading, pathname, router]);
 
     const login = async (email: string, pass: string): Promise<void> => {
        setLoading(true);
@@ -52,6 +60,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             if (foundUser) {
                 setUser(foundUser);
                 sessionStorage.setItem('teamflow-user', JSON.stringify(foundUser));
+                router.push('/');
             } else {
                  throw new Error("Thông tin đăng nhập không hợp lệ");
             }

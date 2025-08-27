@@ -205,10 +205,6 @@ export default function TeamDetailPage() {
     await updateTask(updatedTaskData.id, updatedTaskData);
     await fetchData(); // Refetch all data to ensure consistency
     setSelectedTask(prev => prev ? {...prev, ...updatedTaskData} : null); // Optimistically update
-    toast({
-      title: "Công việc đã được cập nhật",
-      description: `"${updatedTaskData.tieuDe}" đã được cập nhật thành công.`
-    });
   };
 
   const handleDeleteTask = async (taskId: string) => {

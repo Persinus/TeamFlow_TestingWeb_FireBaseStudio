@@ -151,14 +151,10 @@ export default function BoardPage() {
     fetchData(); 
   };
   
-  const handleUpdateTask = async (updatedTaskData: Omit<Task, 'nhom' | 'nguoiThucHien'>) => {
+  const handleUpdateTask = async (updatedTaskData: Omit<Task, 'id' | 'nhom' | 'nguoiThucHien'>) => {
     await updateTask(updatedTaskData.id, updatedTaskData);
     await fetchData(); // Refetch all data to ensure consistency
     setSelectedTask(prev => prev ? {...prev, ...updatedTaskData} : null); // Optimistically update selected task
-    toast({
-      title: "Công việc đã được cập nhật",
-      description: `"${updatedTaskData.tieuDe}" đã được cập nhật thành công.`
-    });
   };
 
   const handleDeleteTask = async (taskId: string) => {
