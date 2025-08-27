@@ -15,7 +15,7 @@ export const teams: Team[] = [
 
 const now = new Date();
 
-export const initialTasks: Task[] = [
+export let initialTasks: Task[] = [
   {
     id: 'task-1',
     title: 'Design new homepage mockup',
@@ -85,3 +85,8 @@ export const initialTasks: Task[] = [
     ],
   },
 ];
+
+
+export const addTask = (task: Task) => {
+  initialTasks.unshift(task);
+};

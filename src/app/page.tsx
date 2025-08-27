@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from 'react';
-import { initialTasks, users, teams } from '@/lib/data';
+import { initialTasks, users, teams, addTask } from '@/lib/data';
 import type { Task, TaskStatus } from '@/types';
 import Sidebar from '@/components/sidebar';
 import Header from '@/components/header';
@@ -36,7 +36,8 @@ export default function DashboardPage() {
       id: `task-${Date.now()}`,
       comments: [],
     };
-    setTasks(prevTasks => [newTask, ...prevTasks]);
+    addTask(newTask); // Add to the global-like source
+    setTasks(prevTasks => [newTask, ...prevTasks]); // Update local state to re-render
   };
 
   const handleUpdateTask = (updatedTask: Task) => {
