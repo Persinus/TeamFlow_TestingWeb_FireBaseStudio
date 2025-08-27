@@ -5,11 +5,11 @@ import { addDays, subDays } from 'date-fns';
 
 // Mock Data
 export const MOCK_USERS: User[] = [
-  { id: 'user-admin', name: 'Admin User', email: 'admin@teamflow.com', avatar: `https://picsum.photos/seed/user-admin/200/200`, expertise: 'Project Overlord', currentWorkload: 1 },
-  { id: 'user-bruce', name: 'Bruce Wayne', email: 'bruce@teamflow.com', avatar: `https://picsum.photos/seed/user-bruce/200/200`, expertise: 'Frontend Development', currentWorkload: 2 },
-  { id: 'user-clark', name: 'Clark Kent', email: 'clark@teamflow.com', avatar: `https://picsum.photos/seed/user-clark/200/200`, expertise: 'Backend Development', currentWorkload: 1 },
-  { id: 'user-diana', name: 'Diana Prince', email: 'diana@teamflow.com', avatar: `https://picsum.photos/seed/diana/200/200`, expertise: 'UI/UX Design', currentWorkload: 3 },
-  { id: 'user-barry', name: 'Barry Allen', email: 'barry@teamflow.com', avatar: `https://picsum.photos/seed/user-barry/200/200`, expertise: 'DevOps & Infrastructure', currentWorkload: 1 },
+  { id: 'user-admin', name: 'Admin User', email: 'admin@teamflow.com', avatar: `https://api.dicebear.com/7.x/micah/svg?seed=Admin`, expertise: 'Project Overlord', currentWorkload: 1 },
+  { id: 'user-bruce', name: 'Bruce Wayne', email: 'bruce@teamflow.com', avatar: `https://api.dicebear.com/7.x/micah/svg?seed=Bruce`, expertise: 'Frontend Development', currentWorkload: 2 },
+  { id: 'user-clark', name: 'Clark Kent', email: 'clark@teamflow.com', avatar: `https://api.dicebear.com/7.x/micah/svg?seed=Clark`, expertise: 'Backend Development', currentWorkload: 1 },
+  { id: 'user-diana', name: 'Diana Prince', email: 'diana@teamflow.com', avatar: `https://api.dicebear.com/7.x/micah/svg?seed=Diana`, expertise: 'UI/UX Design', currentWorkload: 3 },
+  { id: 'user-barry', name: 'Barry Allen', email: 'barry@teamflow.com', avatar: `https://api.dicebear.com/7.x/micah/svg?seed=Barry`, expertise: 'DevOps & Infrastructure', currentWorkload: 1 },
 ];
 
 export let MOCK_TEAMS: Team[] = [
@@ -140,6 +140,13 @@ export const addTask = async (taskData: Omit<Task, 'id' | 'team' | 'assignee' | 
         ...taskData
     };
     MOCK_TASKS_RAW.push(newTaskRaw);
+    if (taskData.tags) {
+        taskData.tags.forEach(tag => {
+            if (!ALL_TAGS.includes(tag)) {
+                ALL_TAGS.push(tag);
+            }
+        });
+    }
     return newId;
 };
 
@@ -148,6 +155,13 @@ export const updateTask = async (taskId: string, taskData: Partial<Omit<Task, 'i
     const taskIndex = MOCK_TASKS_RAW.findIndex(t => t.id === taskId);
     if (taskIndex !== -1) {
         MOCK_TASKS_RAW[taskIndex] = { ...MOCK_TASKS_RAW[taskIndex], ...taskData };
+        if (taskData.tags) {
+            taskData.tags.forEach(tag => {
+                if (!ALL_TAGS.includes(tag)) {
+                    ALL_TAGS.push(tag);
+                }
+            });
+        }
     }
 };
 
