@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Menu, Search, Moon, Sun } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -12,7 +12,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import CreateTaskSheet from '@/components/create-task-sheet';
@@ -29,9 +29,16 @@ interface HeaderProps {
 export default function Header({ filters, setFilters, onCreateTask }: HeaderProps) {
   const [theme, setTheme] = useState('light');
 
+  useEffect(() => {
+    const storedTheme = localStorage.getItem('theme') || 'light';
+    setTheme(storedTheme);
+    document.documentElement.classList.toggle('dark', storedTheme === 'dark');
+  }, []);
+
   const toggleTheme = () => {
     const newTheme = theme === 'light' ? 'dark' : 'light';
     setTheme(newTheme);
+    localStorage.setItem('theme', newTheme);
     document.documentElement.classList.toggle('dark', newTheme === 'dark');
   };
 
@@ -50,6 +57,9 @@ export default function Header({ filters, setFilters, onCreateTask }: HeaderProp
                 </Button>
             </SheetTrigger>
             <SheetContent side="left" className="w-64 p-0">
+                <SheetHeader>
+                  <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
+                </SheetHeader>
                 <Sidebar />
             </SheetContent>
         </Sheet>
