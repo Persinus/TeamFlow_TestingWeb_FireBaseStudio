@@ -2,12 +2,13 @@
 "use client"
 
 import * as React from "react"
-import { parseISO, isSameDay, format, startOfMonth } from "date-fns"
-import { Calendar, CalendarProps } from "@/components/ui/calendar"
-import { Popover, PopoverContent, PopoverTrigger, PopoverAnchor } from "@/components/ui/popover"
-import { Badge } from "@/components/ui/badge"
+import { parseISO, format } from "date-fns"
+import { Calendar } from "@/components/ui/calendar"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import type { Task } from "@/types"
 import { cn } from "@/lib/utils"
+import { Card } from "@/components/ui/card"
+import { buttonVariants } from "@/components/ui/button"
 
 interface CalendarViewProps {
   tasks: Task[]
@@ -76,7 +77,7 @@ export default function CalendarView({ tasks, onSelectTask }: CalendarViewProps)
   }
 
   return (
-    <Card className="p-0">
+    <Card>
       <Calendar
         mode="single"
         month={month}
@@ -104,8 +105,3 @@ export default function CalendarView({ tasks, onSelectTask }: CalendarViewProps)
     </Card>
   )
 }
-
-// We need to re-import some components that Calendar uses internally for this to work
-import { Card } from "@/components/ui/card"
-import { buttonVariants } from "@/components/ui/button"
-

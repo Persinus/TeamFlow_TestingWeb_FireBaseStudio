@@ -31,7 +31,7 @@ interface TaskDetailsSheetProps {
   teams: Team[];
   onOpenChange: (isOpen: boolean) => void;
   onUpdateTask: (updatedTask: Omit<Task, 'team' | 'assignee' | 'comments'>) => Promise<void>;
-  onCommentAdded: () => Promise<void>;
+  onCommentAdded?: () => Promise<void>; // Make optional
 }
 
 const taskSchema = z.object({
@@ -116,7 +116,7 @@ export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onU
   };
 
   const handlePostComment = async () => {
-    if (!newComment.trim() || !user) return;
+    if (!newComment.trim() || !user || !onCommentAdded) return;
     setIsPostingComment(true);
     try {
         await addComment(task.id, newComment, user.id);
@@ -161,6 +161,7 @@ export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onU
                         <DetailRow icon={CalendarIcon} label="Due Date" value={task.dueDate ? format(parseISO(task.dueDate), 'PPP') : 'Not set'} />
                     </div>
                      <Separator />
+                     {onCommentAdded && (
                      <div>
                         <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
                            <MessageSquare className="h-5 w-5" /> Comments
@@ -197,6 +198,7 @@ export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onU
                             </div>
                         </div>
                     </div>
+                    )}
                 </div>
             ) : (
                 <Form {...form}>
