@@ -39,7 +39,7 @@ export function MultiSelect({
   value,
   onChange,
   onCreate,
-  placeholder = "Select options...",
+  placeholder = "Chọn các tùy chọn...",
   className,
 }: MultiSelectProps) {
   const [open, setOpen] = React.useState(false);
@@ -107,7 +107,7 @@ export function MultiSelect({
           />
           <CommandList>
             <CommandEmpty>
-                {onCreate ? `No results found. Press "Enter" to create.` : "No results found."}
+                {onCreate ? `Không tìm thấy kết quả. Nhấn "Enter" để tạo mới.` : "Không tìm thấy kết quả."}
             </CommandEmpty>
             <CommandGroup>
               {options.map((option) => (

@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -68,9 +67,9 @@ export default function Header({ users, teams, filters, setFilters, onCreateTask
   const handleLogout = async () => {
     try {
       await logout();
-      toast({title: 'Logged out successfully'});
+      toast({title: 'Đăng xuất thành công'});
     } catch(error) {
-      toast({title: 'Logout failed', variant: 'destructive'});
+      toast({title: 'Đăng xuất thất bại', variant: 'destructive'});
     }
   }
 
@@ -86,12 +85,12 @@ export default function Header({ users, teams, filters, setFilters, onCreateTask
             <SheetTrigger asChild>
                 <Button variant="outline" size="icon" className="shrink-0 lg:hidden">
                     <Menu className="h-5 w-5" />
-                    <span className="sr-only">Toggle navigation menu</span>
+                    <span className="sr-only">Mở menu điều hướng</span>
                 </Button>
             </SheetTrigger>
             <SheetContent side="left" className="w-full max-w-xs p-0 sm:max-w-xs">
                 <SheetHeader>
-                    <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
+                    <SheetTitle className="sr-only">Menu Điều hướng</SheetTitle>
                 </SheetHeader>
                 <MobileSidebar teams={teams} onTeamChange={() => {
                   // This is a dummy handler for mobile, page reload will fetch new teams.
@@ -103,7 +102,7 @@ export default function Header({ users, teams, filters, setFilters, onCreateTask
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             type="search"
-            placeholder="Search tasks by title or tag..."
+            placeholder="Tìm kiếm công việc theo tiêu đề hoặc thẻ..."
             className="w-full rounded-lg bg-secondary pl-8 md:w-[200px] lg:w-[320px]"
             value={filters.search}
             onChange={handleSearchChange}
@@ -113,11 +112,11 @@ export default function Header({ users, teams, filters, setFilters, onCreateTask
         <div className="flex items-center gap-2">
             <Select value={filters.assignee} onValueChange={(value) => setFilters(f => ({...f, assignee: value}))}>
                 <SelectTrigger className={cn("w-[150px] hidden md:flex", filters.assignee !== 'all' && 'text-primary border-primary')}>
-                    <SelectValue placeholder="Filter by assignee" />
+                    <SelectValue placeholder="Lọc theo người được giao" />
                 </SelectTrigger>
                 <SelectContent>
-                    <SelectItem value="all">All Assignees</SelectItem>
-                    <SelectItem value="unassigned">Unassigned</SelectItem>
+                    <SelectItem value="all">Tất cả người được giao</SelectItem>
+                    <SelectItem value="unassigned">Chưa được giao</SelectItem>
                     <SelectSeparator />
                     {users.map(user => (
                         <SelectItem key={user.id} value={user.id}>{user.name}</SelectItem>
@@ -126,10 +125,10 @@ export default function Header({ users, teams, filters, setFilters, onCreateTask
             </Select>
             <Select value={filters.team} onValueChange={(value) => setFilters(f => ({...f, team: value}))}>
                 <SelectTrigger className={cn("w-[150px] hidden md:flex", filters.team !== 'all' && 'text-primary border-primary')}>
-                    <SelectValue placeholder="Filter by team" />
+                    <SelectValue placeholder="Lọc theo đội" />
                 </SelectTrigger>
                 <SelectContent>
-                    <SelectItem value="all">All Teams</SelectItem>
+                    <SelectItem value="all">Tất cả các đội</SelectItem>
                     {teams.map(team => (
                         <SelectItem key={team.id} value={team.id}>{team.name}</SelectItem>
                     ))}
@@ -138,7 +137,7 @@ export default function Header({ users, teams, filters, setFilters, onCreateTask
         </div>
 
         <CreateTaskSheet onCreateTask={onCreateTask} users={users} teams={teams}>
-          <Button>Create Task</Button>
+          <Button>Tạo công việc</Button>
         </CreateTaskSheet>
         
         <DropdownMenu>
@@ -151,24 +150,24 @@ export default function Header({ users, teams, filters, setFilters, onCreateTask
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuLabel>My Account</DropdownMenuLabel>
+            <DropdownMenuLabel>Tài khoản của tôi</DropdownMenuLabel>
             <DropdownMenuSeparator />
              <DropdownMenuItem onClick={navigateToProfile} className="gap-2">
               <UserIcon className="h-4 w-4" />
-              <span>Profile</span>
+              <span>Hồ sơ</span>
             </DropdownMenuItem>
             <DropdownMenuItem onClick={navigateToSettings} className="gap-2">
               <SettingsIcon className="h-4 w-4" />
-              <span>Settings</span>
+              <span>Cài đặt</span>
             </DropdownMenuItem>
             <DropdownMenuItem onClick={toggleTheme} className="gap-2">
               {theme === 'light' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
-              <span>{theme === 'light' ? 'Dark' : 'Light'} Mode</span>
+              <span>Chế độ {theme === 'light' ? 'Tối' : 'Sáng'}</span>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleLogout} className="gap-2">
               <LogOut className="h-4 w-4" />
-              <span>Logout</span>
+              <span>Đăng xuất</span>
               </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

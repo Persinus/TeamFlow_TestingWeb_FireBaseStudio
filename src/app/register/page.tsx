@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -30,21 +31,21 @@ export default function RegisterPage() {
         try {
             await register(name, email, password);
             toast({
-                title: 'Registration Successful',
-                description: 'You can now log in with your new account.',
+                title: 'Đăng ký thành công',
+                description: 'Bây giờ bạn có thể đăng nhập bằng tài khoản mới của mình.',
             });
             router.push('/login');
         } catch (error: any) {
              toast({
                 variant: 'destructive',
-                title: 'Registration Failed',
+                title: 'Đăng ký thất bại',
                 description: error.message,
             });
         }
     };
     
     if (loading || user) {
-        return <div className="flex h-screen items-center justify-center">Loading...</div>;
+        return <div className="flex h-screen items-center justify-center">Đang tải...</div>;
     }
 
     return (
@@ -55,14 +56,14 @@ export default function RegisterPage() {
                         <Logo className="h-8 w-8 text-primary" />
                         <h1 className="text-2xl font-bold">TeamFlow</h1>
                     </div>
-                    <CardTitle className="text-xl">Sign Up</CardTitle>
-                    <CardDescription>Enter your information to create an account</CardDescription>
+                    <CardTitle className="text-xl">Đăng ký</CardTitle>
+                    <CardDescription>Nhập thông tin của bạn để tạo tài khoản</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <form onSubmit={handleRegister}>
                         <div className="grid gap-4">
                             <div className="grid gap-2">
-                                <Label htmlFor="full-name">Full Name</Label>
+                                <Label htmlFor="full-name">Họ và tên</Label>
                                 <Input 
                                     id="full-name" 
                                     placeholder="Diana Prince" 
@@ -83,7 +84,7 @@ export default function RegisterPage() {
                                 />
                             </div>
                             <div className="grid gap-2">
-                                <Label htmlFor="password">Password</Label>
+                                <Label htmlFor="password">Mật khẩu</Label>
                                 <Input 
                                     id="password" 
                                     type="password"
@@ -93,14 +94,14 @@ export default function RegisterPage() {
                                 />
                             </div>
                             <Button type="submit" className="w-full">
-                                Create an account
+                                Tạo tài khoản
                             </Button>
                         </div>
                     </form>
                     <div className="mt-4 text-center text-sm">
-                        Already have an account?{" "}
+                        Đã có tài khoản?{" "}
                         <Link href="/login" className="underline">
-                            Sign in
+                            Đăng nhập
                         </Link>
                     </div>
                 </CardContent>

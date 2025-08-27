@@ -45,7 +45,7 @@ export default function SettingsPage() {
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [phone, setPhone] = useState('');
-    const [status, setStatus] = useState('Focusing on the main quest!');
+    const [status, setStatus] = useState('Đang tập trung vào nhiệm vụ chính!');
     const [dob, setDob] = useState<Date | undefined>(undefined);
     const [isUpdating, setIsUpdating] = useState(false);
     const [isAvatarModalOpen, setAvatarModalOpen] = useState(false);
@@ -95,8 +95,8 @@ export default function SettingsPage() {
         setTimeout(() => {
             setIsSwitchingLang(false);
             toast({
-                title: "Language Updated",
-                description: `Language changed to ${newLang === 'en' ? 'English' : 'Tiếng Việt'}. UI will update on next refresh.`,
+                title: "Đã cập nhật ngôn ngữ",
+                description: `Ngôn ngữ đã được đổi sang ${newLang === 'en' ? 'English' : 'Tiếng Việt'}. Giao diện sẽ cập nhật sau khi tải lại.`,
             });
         }, 700);
     };
@@ -110,9 +110,9 @@ export default function SettingsPage() {
             await apiUpdateUser(user.id, { name, phone, dob: dob?.toISOString() });
             // Update auth context
             updateUser({ ...user, name, phone, dob: dob?.toISOString() });
-            toast({ title: 'Profile Updated', description: 'Your information has been saved.' });
+            toast({ title: 'Hồ sơ đã được cập nhật', description: 'Thông tin của bạn đã được lưu.' });
         } catch (error) {
-            toast({ variant: 'destructive', title: 'Update Failed', description: 'Could not save your profile.' });
+            toast({ variant: 'destructive', title: 'Cập nhật thất bại', description: 'Không thể lưu hồ sơ của bạn.' });
         } finally {
             setIsUpdating(false);
         }
@@ -123,9 +123,9 @@ export default function SettingsPage() {
         try {
             await apiUpdateUser(user.id, { avatar: avatarUrl });
             updateUser({ ...user, avatar: avatarUrl });
-            toast({ title: 'Avatar Updated!' });
+            toast({ title: 'Ảnh đại diện đã được cập nhật!' });
         } catch (error) {
-            toast({ variant: 'destructive', title: 'Update Failed', description: 'Could not update your avatar.' });
+            toast({ variant: 'destructive', title: 'Cập nhật thất bại', description: 'Không thể cập nhật ảnh đại diện của bạn.' });
         } finally {
             setAvatarModalOpen(false);
         }
@@ -140,7 +140,7 @@ export default function SettingsPage() {
     };
 
     if (loading || !user) {
-        return <div className="flex h-screen items-center justify-center">Loading...</div>;
+        return <div className="flex h-screen items-center justify-center">Đang tải...</div>;
     }
 
     return (
@@ -156,13 +156,13 @@ export default function SettingsPage() {
                         className="flex-1 p-4 sm:p-6 md:p-8"
                     >
                         <div className="max-w-4xl mx-auto space-y-8">
-                            <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
+                            <h1 className="text-3xl font-bold tracking-tight">Cài đặt</h1>
                             
                             <Card>
                                 <form onSubmit={handleProfileUpdate}>
                                     <CardHeader>
-                                        <CardTitle>Profile</CardTitle>
-                                        <CardDescription>This is how others will see you on the site.</CardDescription>
+                                        <CardTitle>Hồ sơ</CardTitle>
+                                        <CardDescription>Đây là cách người khác sẽ thấy bạn trên trang web.</CardDescription>
                                     </CardHeader>
                                     <CardContent className="space-y-6">
                                         <div className="flex items-center gap-4">
@@ -172,19 +172,19 @@ export default function SettingsPage() {
                                             </Avatar>
                                             <Button type="button" variant="outline" onClick={() => setAvatarModalOpen(true)}>
                                                 <ImageIcon className="mr-2 h-4 w-4" />
-                                                Change Photo
+                                                Đổi ảnh
                                             </Button>
                                         </div>
                                         <div className="space-y-2">
                                             <Label htmlFor="status" className="flex items-center gap-2">
                                                 <Smile className="h-4 w-4" />
-                                                Status
+                                                Trạng thái
                                             </Label>
-                                            <Textarea id="status" value={status} onChange={(e) => setStatus(e.target.value)} placeholder="What's on your mind?" />
+                                            <Textarea id="status" value={status} onChange={(e) => setStatus(e.target.value)} placeholder="Bạn đang nghĩ gì?" />
                                         </div>
                                         <div className="grid sm:grid-cols-2 gap-4">
                                             <div className="space-y-2">
-                                                <Label htmlFor="name">Full Name</Label>
+                                                <Label htmlFor="name">Họ và tên</Label>
                                                 <Input id="name" value={name} onChange={(e) => setName(e.target.value)} />
                                             </div>
                                             <div className="space-y-2">
@@ -192,11 +192,11 @@ export default function SettingsPage() {
                                                 <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} disabled />
                                             </div>
                                             <div className="space-y-2">
-                                                <Label htmlFor="phone">Phone Number</Label>
+                                                <Label htmlFor="phone">Số điện thoại</Label>
                                                 <Input id="phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} />
                                             </div>
                                             <div className="space-y-2">
-                                                <Label htmlFor="dob">Date of Birth</Label>
+                                                <Label htmlFor="dob">Ngày sinh</Label>
                                                 <Popover>
                                                     <PopoverTrigger asChild>
                                                         <Button
@@ -207,7 +207,7 @@ export default function SettingsPage() {
                                                         )}
                                                         >
                                                         <CalendarIcon className="mr-2 h-4 w-4" />
-                                                        {dob ? format(dob, "PPP") : <span>Pick a date</span>}
+                                                        {dob ? format(dob, "PPP") : <span>Chọn một ngày</span>}
                                                         </Button>
                                                     </PopoverTrigger>
                                                     <PopoverContent className="w-auto p-0">
@@ -223,7 +223,7 @@ export default function SettingsPage() {
                                         </div>
                                         <Button type="submit" disabled={isUpdating}>
                                             {isUpdating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                            Update Profile
+                                            Cập nhật hồ sơ
                                         </Button>
                                     </CardContent>
                                 </form>
@@ -231,29 +231,29 @@ export default function SettingsPage() {
 
                             <Card>
                                 <CardHeader>
-                                    <CardTitle>Appearance</CardTitle>
-                                    <CardDescription>Customize the look and feel of the application.</CardDescription>
+                                    <CardTitle>Giao diện</CardTitle>
+                                    <CardDescription>Tùy chỉnh giao diện và cảm nhận của ứng dụng.</CardDescription>
                                 </CardHeader>
                                 <CardContent className="space-y-4">
                                     <div className="space-y-2">
-                                        <Label>Theme</Label>
+                                        <Label>Giao diện</Label>
                                         <div className="flex items-center justify-between rounded-lg border p-3">
                                         <div className="flex items-center gap-2">
                                             {theme === 'light' ? <Sun className="h-5 w-5"/> : <Moon className="h-5 w-5"/>}
-                                            <span>{theme === 'light' ? 'Light Mode' : 'Dark Mode'}</span>
+                                            <span>{theme === 'light' ? 'Chế độ sáng' : 'Chế độ tối'}</span>
                                         </div>
                                         <Button variant="outline" size="icon" onClick={toggleTheme}>
                                                 {theme === 'light' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
-                                                <span className="sr-only">Toggle theme</span>
+                                                <span className="sr-only">Chuyển đổi giao diện</span>
                                             </Button>
                                         </div>
                                     </div>
                                     <div className="space-y-2">
-                                        <Label htmlFor="language">Language</Label>
+                                        <Label htmlFor="language">Ngôn ngữ</Label>
                                         <div className="flex items-center gap-2">
                                             <Select value={language} onValueChange={handleLanguageChange} disabled={isSwitchingLang}>
                                                 <SelectTrigger id="language">
-                                                    <SelectValue placeholder="Select language" />
+                                                    <SelectValue placeholder="Chọn ngôn ngữ" />
                                                 </SelectTrigger>
                                                 <SelectContent>
                                                     <SelectItem value="en">English</SelectItem>
@@ -273,8 +273,8 @@ export default function SettingsPage() {
             <Dialog open={isAvatarModalOpen} onOpenChange={setAvatarModalOpen}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>Choose your Avatar</DialogTitle>
-                        <DialogDescription>Select an avatar from the list below.</DialogDescription>
+                        <DialogTitle>Chọn ảnh đại diện của bạn</DialogTitle>
+                        <DialogDescription>Chọn một ảnh đại diện từ danh sách bên dưới.</DialogDescription>
                     </DialogHeader>
                     <div className="grid grid-cols-4 gap-4 py-4">
                         {availableAvatars.map((avatarUrl, index) => (

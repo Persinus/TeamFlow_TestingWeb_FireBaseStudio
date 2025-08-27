@@ -26,7 +26,7 @@ interface ManageTeamsDialogProps {
 
 const teamSchema = z.object({
   id: z.string(),
-  name: z.string().min(3, { message: "Team name must be at least 3 characters." }),
+  name: z.string().min(3, { message: "Tên đội phải có ít nhất 3 ký tự." }),
   description: z.string().optional(),
 });
 
@@ -69,9 +69,9 @@ export default function ManageTeamsDialog({ children, open, onOpenChange, teams,
         await deleteTeam(teamId);
         remove(index);
         onTeamsUpdate();
-        toast({ title: "Team Deleted", description: "The team has been successfully deleted." });
+        toast({ title: "Đã xóa đội", description: "Đội đã được xóa thành công." });
     } catch (error) {
-        toast({ variant: 'destructive', title: "Error", description: "Failed to delete team." });
+        toast({ variant: 'destructive', title: "Lỗi", description: "Không thể xóa đội." });
     }
   }
 
@@ -92,9 +92,9 @@ export default function ManageTeamsDialog({ children, open, onOpenChange, teams,
         
         onTeamsUpdate();
         onOpenChange(false);
-        toast({ title: "Teams Updated", description: "All changes have been saved successfully." });
+        toast({ title: "Đã cập nhật đội", description: "Tất cả các thay đổi đã được lưu thành công." });
     } catch (error) {
-        toast({ variant: 'destructive', title: "Error", description: "Failed to save team changes." });
+        toast({ variant: 'destructive', title: "Lỗi", description: "Không thể lưu các thay đổi của đội." });
     } finally {
         setIsSaving(false);
     }
@@ -105,9 +105,9 @@ export default function ManageTeamsDialog({ children, open, onOpenChange, teams,
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Manage Teams</DialogTitle>
+          <DialogTitle>Quản lý đội</DialogTitle>
           <DialogDescription>
-            Add, edit, or delete your teams here. Click save when you're done.
+            Thêm, chỉnh sửa hoặc xóa các đội của bạn ở đây. Nhấn lưu khi bạn hoàn tất.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -123,7 +123,7 @@ export default function ManageTeamsDialog({ children, open, onOpenChange, teams,
                                         render={({ field }) => (
                                             <FormItem>
                                                 <FormControl>
-                                                    <Input placeholder="Team Name" {...field} />
+                                                    <Input placeholder="Tên đội" {...field} />
                                                 </FormControl>
                                                 <FormMessage />
                                             </FormItem>
@@ -135,7 +135,7 @@ export default function ManageTeamsDialog({ children, open, onOpenChange, teams,
                                         render={({ field }) => (
                                             <FormItem>
                                                 <FormControl>
-                                                    <Input placeholder="Team Description (Optional)" {...field} />
+                                                    <Input placeholder="Mô tả đội (Tùy chọn)" {...field} />
                                                 </FormControl>
                                             </FormItem>
                                         )}
@@ -149,13 +149,13 @@ export default function ManageTeamsDialog({ children, open, onOpenChange, teams,
                     </div>
                 </ScrollArea>
                 <Button type="button" variant="outline" className="w-full" onClick={handleAddNewTeam}>
-                    <PlusCircle className="mr-2 h-4 w-4" /> Add New Team
+                    <PlusCircle className="mr-2 h-4 w-4" /> Thêm đội mới
                 </Button>
                 <DialogFooter>
-                    <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
+                    <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Hủy</Button>
                     <Button type="submit" disabled={isSaving}>
                         {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                        Save Changes
+                        Lưu thay đổi
                     </Button>
                 </DialogFooter>
             </form>

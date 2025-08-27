@@ -1,5 +1,4 @@
 
-
 "use client"
 
 import * as React from "react"
@@ -68,7 +67,7 @@ export default function CalendarView({ tasks, onSelectTask }: CalendarViewProps)
        </div>
       <div className="p-4 border-t md:border-t-0">
           <h3 className="text-lg font-semibold mb-2">
-            Tasks for {date ? format(date, 'PPP') : '...'}
+            Công việc cho {date ? format(date, 'PPP') : '...'}
           </h3>
           {tasksForSelectedDate.length > 0 ? (
             <div className="space-y-2">
@@ -91,7 +90,7 @@ export default function CalendarView({ tasks, onSelectTask }: CalendarViewProps)
                 ))}
             </div>
           ) : (
-            <p className="text-sm text-muted-foreground">No tasks due on this day.</p>
+            <p className="text-sm text-muted-foreground">Không có công việc nào đến hạn vào ngày này.</p>
           )}
       </div>
     </Card>

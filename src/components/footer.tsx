@@ -15,11 +15,11 @@ export default function Footer() {
                         <span className="font-semibold">TeamFlow</span>
                     </div>
                     <p className="text-sm text-muted-foreground">
-                        © {new Date().getFullYear()} TeamFlow. All rights reserved.
+                        © {new Date().getFullYear()} TeamFlow. Đã đăng ký bản quyền.
                     </p>
                     <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                        <Link href="#" className="hover:text-primary transition-colors">Privacy Policy</Link>
-                        <Link href="#" className="hover:text-primary transition-colors">Terms of Service</Link>
+                        <Link href="#" className="hover:text-primary transition-colors">Chính sách bảo mật</Link>
+                        <Link href="#" className="hover:text-primary transition-colors">Điều khoản dịch vụ</Link>
                     </div>
                 </div>
             </div>

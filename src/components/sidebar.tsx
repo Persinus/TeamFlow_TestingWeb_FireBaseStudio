@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React, { useState } from 'react';
@@ -49,11 +48,11 @@ export function MobileSidebar({ teams, onTeamChange }: SidebarProps) {
       </SidebarHeader>
       <SidebarContent>
         <SidebarMenu>
-            <NavLink href="/" icon={Home} exact>Dashboard</NavLink>
+            <NavLink href="/" icon={Home} exact>Bảng điều khiển</NavLink>
             <SidebarGroup className="px-0">
                 <SidebarMenuButton onClick={() => setIsTeamsOpen(!isTeamsOpen)} className="w-full">
                     <Users/>
-                    <span>Teams</span>
+                    <span>Các đội</span>
                     <ChevronDown className={cn("ml-auto h-4 w-4 transition-transform", isTeamsOpen && "rotate-180")} />
                 </SidebarMenuButton>
                 {isTeamsOpen && (
@@ -73,14 +72,14 @@ export function MobileSidebar({ teams, onTeamChange }: SidebarProps) {
                     </div>
                 )}
             </SidebarGroup>
-            <NavLink href="/settings" icon={Settings}>Settings</NavLink>
+            <NavLink href="/settings" icon={Settings}>Cài đặt</NavLink>
         </SidebarMenu>
       </SidebarContent>
        <SidebarFooter className="p-2">
         <ManageTeamsDialog open={isManageTeamsOpen} onOpenChange={setManageTeamsOpen} teams={teams} onTeamsUpdate={onTeamChange}>
              <Button variant="ghost" className="w-full justify-start gap-3 p-2 text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
                 <Settings className="h-5 w-5" />
-                <span>Manage Teams</span>
+                <span>Quản lý đội</span>
              </Button>
         </ManageTeamsDialog>
          <div className="flex items-center gap-3 p-2">
@@ -109,11 +108,11 @@ export default function Sidebar({ teams, onTeamChange }: SidebarProps) {
       </SidebarHeader>
         <SidebarContent>
             <SidebarMenu>
-                <NavLink href="/" icon={Home} exact tooltip="Dashboard">Dashboard</NavLink>
+                <NavLink href="/" icon={Home} exact tooltip="Bảng điều khiển">Bảng điều khiển</NavLink>
                 <SidebarGroup>
-                    <SidebarMenuButton onClick={() => setIsTeamsOpen(!isTeamsOpen)} tooltip="Teams">
+                    <SidebarMenuButton onClick={() => setIsTeamsOpen(!isTeamsOpen)} tooltip="Các đội">
                         <Users/>
-                        <span>Teams</span>
+                        <span>Các đội</span>
                         <ChevronDown className={cn("ml-auto h-4 w-4 transition-transform", isTeamsOpen && "rotate-180")} />
                     </SidebarMenuButton>
                     {isTeamsOpen && state === 'expanded' && (
@@ -133,14 +132,14 @@ export default function Sidebar({ teams, onTeamChange }: SidebarProps) {
                         </div>
                     )}
                 </SidebarGroup>
-                <NavLink href="/settings" icon={Settings} tooltip="Settings">Settings</NavLink>
+                <NavLink href="/settings" icon={Settings} tooltip="Cài đặt">Cài đặt</NavLink>
             </SidebarMenu>
         </SidebarContent>
         <SidebarFooter>
            <ManageTeamsDialog open={isManageTeamsOpen} onOpenChange={setManageTeamsOpen} teams={teams} onTeamsUpdate={onTeamChange}>
-             <SidebarMenuButton tooltip="Manage Teams" className="w-full text-sidebar-foreground">
+             <SidebarMenuButton tooltip="Quản lý đội" className="w-full text-sidebar-foreground">
                 <Settings />
-                <span>Manage Teams</span>
+                <span>Quản lý đội</span>
              </SidebarMenuButton>
            </ManageTeamsDialog>
             <div className={cn("flex items-center gap-2 p-2 text-sidebar-foreground", state === 'collapsed' && 'justify-center')}>

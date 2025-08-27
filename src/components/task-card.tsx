@@ -1,5 +1,4 @@
 
-
 import React from 'react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -49,12 +48,12 @@ export default function TaskCard({ task, onSelectTask, isDragging }: TaskCardPro
       const daysDifference = differenceInDays(dueDate, now);
 
       if (isOverdue) {
-          return { text: `Overdue by ${Math.abs(daysDifference)} day(s)`, className: 'text-destructive', cardBorderClass: 'border-l-4 border-destructive' };
+          return { text: `Quá hạn ${Math.abs(daysDifference)} ngày`, className: 'text-destructive', cardBorderClass: 'border-l-4 border-destructive' };
       }
       if (daysDifference <= 3) {
-          return { text: `Due in ${daysDifference + 1} day(s)`, className: 'text-accent-foreground', cardBorderClass: 'border-l-4 border-accent' };
+          return { text: `Đến hạn trong ${daysDifference + 1} ngày`, className: 'text-accent-foreground', cardBorderClass: 'border-l-4 border-accent' };
       }
-      return { text: `Due ${format(dueDate, 'MMM d')}`, className: 'text-muted-foreground', cardBorderClass: '' };
+      return { text: `Hạn chót ${format(dueDate, 'd/M')}`, className: 'text-muted-foreground', cardBorderClass: '' };
   };
 
   const deadlineInfo = getDeadlineInfo();
@@ -77,7 +76,7 @@ export default function TaskCard({ task, onSelectTask, isDragging }: TaskCardPro
         >
         <div {...attributes} {...listeners} className="absolute top-2 right-1 p-1 text-muted-foreground/50 cursor-grab opacity-0 group-hover:opacity-100 transition-opacity">
             <GripVertical className="h-5 w-5" />
-            <span className="sr-only">Drag to move</span>
+            <span className="sr-only">Kéo để di chuyển</span>
         </div>
 
         <div className="cursor-pointer" onClick={() => onSelectTask?.(task)}>

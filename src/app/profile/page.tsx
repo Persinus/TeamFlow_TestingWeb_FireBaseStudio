@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -66,7 +65,7 @@ export default function ProfilePage() {
             setUsers(usersData);
             setAssignedTasks(tasksData);
         } catch (error) {
-            toast({ variant: 'destructive', title: "Error", description: "Failed to load profile data."});
+            toast({ variant: 'destructive', title: "Lỗi", description: "Không thể tải dữ liệu hồ sơ."});
         } finally {
             setPageLoading(false);
         }
@@ -142,8 +141,8 @@ export default function ProfilePage() {
                             
                             <Card>
                                 <CardHeader>
-                                    <CardTitle>My Assigned Tasks</CardTitle>
-                                    <CardDescription>You have {assignedTasks.length} task(s) assigned to you.</CardDescription>
+                                    <CardTitle>Công việc được giao</CardTitle>
+                                    <CardDescription>Bạn có {assignedTasks.length} công việc được giao.</CardDescription>
                                 </CardHeader>
                                 <CardContent>
                                     {assignedTasks.length > 0 ? (
@@ -153,7 +152,7 @@ export default function ProfilePage() {
                                             ))}
                                         </div>
                                     ) : (
-                                        <p className="text-muted-foreground">No tasks are currently assigned to you. Enjoy the peace and quiet!</p>
+                                        <p className="text-muted-foreground">Hiện tại không có công việc nào được giao cho bạn. Hãy tận hưởng sự yên bình!</p>
                                     )}
                                 </CardContent>
                             </Card>

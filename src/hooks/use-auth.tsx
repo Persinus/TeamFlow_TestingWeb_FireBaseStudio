@@ -69,7 +69,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
            sessionStorage.setItem('mockUser', JSON.stringify(foundUser));
        } else {
            setLoading(false);
-           throw new Error("Invalid credentials");
+           throw new Error("Thông tin đăng nhập không hợp lệ");
        }
     };
 
@@ -99,7 +99,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 export const useAuth = () => {
     const context = useContext(AuthContext);
     if (context === undefined) {
-        throw new Error('useAuth must be used within an AuthProvider');
+        throw new Error('useAuth phải được sử dụng trong một AuthProvider');
     }
     return context;
 };

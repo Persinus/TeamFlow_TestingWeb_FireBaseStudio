@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -36,8 +37,8 @@ export default function LoginPage() {
         } catch (error: any) {
             toast({
                 variant: 'destructive',
-                title: 'Login Failed',
-                description: "Invalid email or password.",
+                title: 'Đăng nhập thất bại',
+                description: "Email hoặc mật khẩu không hợp lệ.",
             });
         } finally {
             setIsLoggingIn(false);
@@ -45,7 +46,7 @@ export default function LoginPage() {
     };
 
     if (authLoading || user) {
-        return <div className="flex h-screen items-center justify-center">Loading...</div>;
+        return <div className="flex h-screen items-center justify-center">Đang tải...</div>;
     }
 
     return (
@@ -56,8 +57,8 @@ export default function LoginPage() {
                         <Logo className="h-8 w-8 text-primary" />
                         <h1 className="text-2xl font-bold">TeamFlow</h1>
                     </div>
-                    <CardTitle className="text-2xl">Login</CardTitle>
-                    <CardDescription>Enter your email below to login to your account</CardDescription>
+                    <CardTitle className="text-2xl">Đăng nhập</CardTitle>
+                    <CardDescription>Nhập email của bạn dưới đây để đăng nhập vào tài khoản</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <form onSubmit={handleLogin}>
@@ -76,9 +77,9 @@ export default function LoginPage() {
                             </div>
                             <div className="grid gap-2">
                                 <div className="flex items-center">
-                                    <Label htmlFor="password">Password</Label>
+                                    <Label htmlFor="password">Mật khẩu</Label>
                                     <Link href="#" className="ml-auto inline-block text-sm underline">
-                                        Forgot your password?
+                                        Quên mật khẩu?
                                     </Link>
                                 </div>
                                 <div className="relative">
@@ -100,20 +101,20 @@ export default function LoginPage() {
                                         disabled={isLoggingIn}
                                     >
                                         {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                                        <span className="sr-only">{showPassword ? 'Hide password' : 'Show password'}</span>
+                                        <span className="sr-only">{showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}</span>
                                     </Button>
                                 </div>
                             </div>
                             <Button type="submit" className="w-full" disabled={isLoggingIn}>
                                 {isLoggingIn && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                {isLoggingIn ? 'Logging in...' : 'Login'}
+                                {isLoggingIn ? 'Đang đăng nhập...' : 'Đăng nhập'}
                             </Button>
                         </div>
                     </form>
                     <div className="mt-4 text-center text-sm">
-                        Don&apos;t have an account?{" "}
+                        Chưa có tài khoản?{" "}
                         <Link href="/register" className="underline">
-                            Sign up
+                            Đăng ký
                         </Link>
                     </div>
                 </CardContent>

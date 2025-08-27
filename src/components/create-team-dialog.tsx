@@ -23,7 +23,7 @@ interface CreateTeamDialogProps {
 }
 
 const teamSchema = z.object({
-  name: z.string().min(3, { message: "Team name must be at least 3 characters." }),
+  name: z.string().min(3, { message: "Tên đội phải có ít nhất 3 ký tự." }),
   description: z.string().optional(),
 });
 
@@ -42,19 +42,19 @@ export default function CreateTeamDialog({ children, open, onOpenChange, onTeamC
 
   const onSubmit = async (values: z.infer<typeof teamSchema>) => {
     if (!user) {
-        toast({ variant: 'destructive', title: "Authentication Error", description: "You must be logged in to create a team." });
+        toast({ variant: 'destructive', title: "Lỗi xác thực", description: "Bạn phải đăng nhập để tạo đội." });
         return;
     }
     
     setIsCreating(true);
     try {
         await createTeam(values, user.id);
-        toast({ title: "Team Created", description: `The team "${values.name}" has been successfully created.` });
+        toast({ title: "Đã tạo đội", description: `Đội "${values.name}" đã được tạo thành công.` });
         onTeamCreated(); // Callback to refresh the team list
         onOpenChange(false);
         form.reset();
     } catch (error) {
-        toast({ variant: 'destructive', title: "Error", description: "Failed to create the team." });
+        toast({ variant: 'destructive', title: "Lỗi", description: "Không thể tạo đội." });
     } finally {
         setIsCreating(false);
     }
@@ -65,9 +65,9 @@ export default function CreateTeamDialog({ children, open, onOpenChange, onTeamC
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Create New Team</DialogTitle>
+          <DialogTitle>Tạo đội mới</DialogTitle>
           <DialogDescription>
-            Give your new team a name and a short description. You will be the team leader.
+            Đặt tên cho đội mới của bạn và một mô tả ngắn. Bạn sẽ là đội trưởng.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -77,9 +77,9 @@ export default function CreateTeamDialog({ children, open, onOpenChange, onTeamC
                     name="name"
                     render={({ field }) => (
                         <FormItem>
-                        <FormLabel>Team Name</FormLabel>
+                        <FormLabel>Tên đội</FormLabel>
                         <FormControl>
-                            <Input placeholder="e.g. Design Legends" {...field} />
+                            <Input placeholder="ví dụ: Huyền thoại Thiết kế" {...field} />
                         </FormControl>
                         <FormMessage />
                         </FormItem>
@@ -90,19 +90,19 @@ export default function CreateTeamDialog({ children, open, onOpenChange, onTeamC
                     name="description"
                     render={({ field }) => (
                         <FormItem>
-                        <FormLabel>Description (Optional)</FormLabel>
+                        <FormLabel>Mô tả (Tùy chọn)</FormLabel>
                         <FormControl>
-                            <Textarea placeholder="What is this team's mission?" {...field} />
+                            <Textarea placeholder="Nhiệm vụ của đội này là gì?" {...field} />
                         </FormControl>
                         <FormMessage />
                         </FormItem>
                     )}
                 />
                  <DialogFooter>
-                    <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
+                    <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Hủy</Button>
                     <Button type="submit" disabled={isCreating}>
                         {isCreating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Create Team
+                        Tạo đội
                     </Button>
                 </DialogFooter>
             </form>

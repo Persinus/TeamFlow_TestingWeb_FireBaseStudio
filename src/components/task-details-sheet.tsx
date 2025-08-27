@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -36,11 +35,11 @@ interface TaskDetailsSheetProps {
 }
 
 const taskSchema = z.object({
-  title: z.string().min(1, 'Title is required'),
+  title: z.string().min(1, 'Tiêu đề là bắt buộc'),
   description: z.string().optional(),
   status: z.enum(['todo', 'in-progress', 'backlog', 'done']),
   assigneeId: z.string().optional(),
-  teamId: z.string().min(1, 'Team is required'),
+  teamId: z.string().min(1, 'Đội là bắt buộc'),
   startDate: z.date().optional(),
   dueDate: z.date().optional(),
   tags: z.array(z.string()).optional(),
@@ -134,8 +133,8 @@ export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onU
     } catch(error) {
       toast({
         variant: 'destructive',
-        title: 'Update failed',
-        description: 'There was a problem updating the task.',
+        title: 'Cập nhật thất bại',
+        description: 'Đã có lỗi xảy ra khi cập nhật công việc.',
       });
     } finally {
       setIsUpdating(false);
@@ -147,33 +146,40 @@ export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onU
         await onDeleteTask(task.id);
         toast({
             variant: 'destructive',
-            title: 'Task Deleted',
-            description: `"${task.title}" has been permanently deleted.`,
+            title: 'Đã xóa công việc',
+            description: `"${task.title}" đã được xóa vĩnh viễn.`,
         });
         onOpenChange(false);
     } catch (error) {
         toast({
             variant: 'destructive',
-            title: 'Delete failed',
-            description: 'There was a problem deleting the task.',
+            title: 'Xóa thất bại',
+            description: 'Đã có lỗi xảy ra khi xóa công việc.',
         });
     }
   }
 
   const formatDate = (date: string | Date | undefined) => {
     const parsedDate = safeParseDate(date);
-    return parsedDate ? format(parsedDate, 'PPP') : 'Not set';
+    return parsedDate ? format(parsedDate, 'PPP') : 'Chưa đặt';
   };
+  
+  const statusMap: Record<TaskStatus, string> = {
+    backlog: 'Tồn đọng',
+    todo: 'Cần làm',
+    'in-progress': 'Đang làm',
+    done: 'Hoàn thành'
+  }
 
 
   return (
     <Sheet open={!!task} onOpenChange={onOpenChange}>
       <SheetContent className="sm:max-w-2xl w-[95vw] flex flex-col">
          <SheetHeader className="pr-12">
-           <SheetTitle className="truncate">{isEditing ? 'Editing Task' : task.title}</SheetTitle>
+           <SheetTitle className="truncate">{isEditing ? 'Chỉnh sửa công việc' : task.title}</SheetTitle>
            {!isEditing && (
             <SheetDescription>
-                In team <span className="font-semibold text-foreground">{team?.name}</span>. Created on {formatDate(task.createdAt)}
+                Trong đội <span className="font-semibold text-foreground">{team?.name}</span>. Tạo ngày {formatDate(task.createdAt)}
             </SheetDescription>
            )}
         </SheetHeader>
@@ -181,56 +187,56 @@ export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onU
         {!isEditing && (
             <Button size="icon" variant="outline" className="absolute top-4 right-16" onClick={() => setIsEditing(true)}>
                 <Pencil className="h-4 w-4" />
-                <span className="sr-only">Edit Task</span>
+                <span className="sr-only">Chỉnh sửa công việc</span>
             </Button>
         )}
 
         <div className="flex-1 overflow-y-auto pr-2 -mr-4 pl-1">
             {!isEditing ? (
                 <div className="space-y-6 py-4">
-                    <p className="text-base text-foreground whitespace-pre-wrap">{task.description || 'No description provided.'}</p>
+                    <p className="text-base text-foreground whitespace-pre-wrap">{task.description || 'Không có mô tả.'}</p>
                     <Separator />
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-                        <DetailRow icon={CheckSquare} label="Status" value={<Badge variant="outline" className="capitalize">{task.status.replace('-', ' ')}</Badge>} />
-                        <DetailRow icon={UserIcon} label="Assignee" value={assignee?.name || 'Unassigned'} />
-                        <DetailRow icon={Users} label="Team" value={team?.name || 'N/A'} />
-                        <DetailRow icon={Tag} label="Tags" value={task.tags && task.tags.length > 0 ? <div className="flex flex-wrap gap-1">{task.tags.map(t => <Badge key={t} variant="secondary" style={{ backgroundColor: getTagColor(t) }} className="text-xs text-black">{t}</Badge>)}</div> : 'No tags'} />
-                        <DetailRow icon={CalendarIcon} label="Start Date" value={formatDate(task.startDate)} />
-                        <DetailRow icon={CalendarIcon} label="Due Date" value={formatDate(task.dueDate)} />
+                        <DetailRow icon={CheckSquare} label="Trạng thái" value={<Badge variant="outline" className="capitalize">{statusMap[task.status]}</Badge>} />
+                        <DetailRow icon={UserIcon} label="Người được giao" value={assignee?.name || 'Chưa giao'} />
+                        <DetailRow icon={Users} label="Đội" value={team?.name || 'Không có'} />
+                        <DetailRow icon={Tag} label="Thẻ" value={task.tags && task.tags.length > 0 ? <div className="flex flex-wrap gap-1">{task.tags.map(t => <Badge key={t} variant="secondary" style={{ backgroundColor: getTagColor(t) }} className="text-xs text-black">{t}</Badge>)}</div> : 'Không có thẻ'} />
+                        <DetailRow icon={CalendarIcon} label="Ngày bắt đầu" value={formatDate(task.startDate)} />
+                        <DetailRow icon={CalendarIcon} label="Ngày hết hạn" value={formatDate(task.dueDate)} />
                     </div>
                 </div>
             ) : (
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
                          <FormField control={form.control} name="title" render={({ field }) => (
-                            <FormItem><FormLabel>Title</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                            <FormItem><FormLabel>Tiêu đề</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
                          )} />
                          <FormField control={form.control} name="description" render={({ field }) => (
-                            <FormItem><FormLabel>Description</FormLabel><FormControl><Textarea className="min-h-[100px]" {...field} /></FormControl><FormMessage /></FormItem>
+                            <FormItem><FormLabel>Mô tả</FormLabel><FormControl><Textarea className="min-h-[100px]" {...field} /></FormControl><FormMessage /></FormItem>
                          )} />
                          
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                            <FormField control={form.control} name="status" render={({ field }) => (
-                                <FormItem><FormLabel>Status</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl><SelectContent>
-                                    <SelectItem value="backlog">Backlog</SelectItem><SelectItem value="todo">To Do</SelectItem>
-                                    <SelectItem value="in-progress">In Progress</SelectItem><SelectItem value="done">Done</SelectItem>
+                                <FormItem><FormLabel>Trạng thái</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl><SelectContent>
+                                    <SelectItem value="backlog">Tồn đọng</SelectItem><SelectItem value="todo">Cần làm</SelectItem>
+                                    <SelectItem value="in-progress">Đang làm</SelectItem><SelectItem value="done">Hoàn thành</SelectItem>
                                 </SelectContent></Select><FormMessage /></FormItem>
                             )} />
                             <FormField control={form.control} name="teamId" render={({ field }) => (
-                                <FormItem><FormLabel>Team</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl><SelectContent>
+                                <FormItem><FormLabel>Đội</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl><SelectContent>
                                     {teams.map(t => (<SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>))}
                                 </SelectContent></Select><FormMessage /></FormItem>
                             )} />
                              <FormField control={form.control} name="assigneeId" render={({ field }) => (
-                                <FormItem><FormLabel>Assignee</FormLabel><Select onValueChange={field.onChange} value={field.value || 'unassigned'}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent>
-                                    <SelectItem value="unassigned">Unassigned</SelectItem>
+                                <FormItem><FormLabel>Người được giao</FormLabel><Select onValueChange={field.onChange} value={field.value || 'unassigned'}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent>
+                                    <SelectItem value="unassigned">Chưa giao</SelectItem>
                                     {users.map(u => (<SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>))}
                                 </SelectContent></Select><FormMessage /></FormItem>
                             )} />
                         </div>
                         <FormField control={form.control} name="tags" render={({ field }) => (
                             <FormItem>
-                               <FormLabel>Tags</FormLabel>
+                               <FormLabel>Thẻ</FormLabel>
                                <FormControl>
                                   <MultiSelect
                                        options={availableTags.map(tag => ({ value: tag, label: tag }))}
@@ -241,7 +247,7 @@ export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onU
                                            setAvailableTags(prev => [...prev, value]);
                                            field.onChange([...(field.value ?? []), newTag.value]);
                                        }}
-                                       placeholder="Select or create tags..."
+                                       placeholder="Chọn hoặc tạo thẻ..."
                                        
                                    />
                                </FormControl>
@@ -250,13 +256,13 @@ export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onU
                         )} />
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <FormField control={form.control} name="startDate" render={({ field }) => (
-                                <FormItem className="flex flex-col"><FormLabel>Start Date</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant="outline" className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
-                                    {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                <FormItem className="flex flex-col"><FormLabel>Ngày bắt đầu</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant="outline" className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
+                                    {field.value ? format(field.value, "PPP") : <span>Chọn một ngày</span>}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                                 </Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0"><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus /></PopoverContent></Popover><FormMessage /></FormItem>
                             )} />
                             <FormField control={form.control} name="dueDate" render={({ field }) => (
-                                <FormItem className="flex flex-col"><FormLabel>Due Date</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant="outline" className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
-                                    {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                <FormItem className="flex flex-col"><FormLabel>Ngày hết hạn</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant="outline" className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
+                                    {field.value ? format(field.value, "PPP") : <span>Chọn một ngày</span>}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                                 </Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0"><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus /></PopoverContent></Popover><FormMessage /></FormItem>
                             )} />
                         </div>
@@ -264,31 +270,31 @@ export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onU
                             <AlertDialog>
                                 <AlertDialogTrigger asChild>
                                      <Button type="button" variant="destructive">
-                                        <Trash2 className="mr-2 h-4 w-4" /> Delete Task
+                                        <Trash2 className="mr-2 h-4 w-4" /> Xóa công việc
                                     </Button>
                                 </AlertDialogTrigger>
                                 <AlertDialogContent>
                                 <AlertDialogHeader>
-                                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                    <AlertDialogTitle>Bạn có hoàn toàn chắc chắn?</AlertDialogTitle>
                                     <AlertDialogDescription>
-                                    This action cannot be undone. This will permanently delete the task
-                                    and remove its data from our servers.
+                                    Hành động này không thể được hoàn tác. Thao tác này sẽ xóa vĩnh viễn công việc
+                                    và xóa dữ liệu của nó khỏi máy chủ của chúng tôi.
                                     </AlertDialogDescription>
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogCancel>Hủy</AlertDialogCancel>
                                     <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">
-                                        Yes, delete task
+                                        Vâng, xóa công việc
                                     </AlertDialogAction>
                                 </AlertDialogFooter>
                                 </AlertDialogContent>
                             </AlertDialog>
 
                             <div className="flex gap-2">
-                                <Button type="button" variant="ghost" onClick={() => setIsEditing(false)}>Cancel</Button>
+                                <Button type="button" variant="ghost" onClick={() => setIsEditing(false)}>Hủy</Button>
                                 <Button type="submit" disabled={isUpdating}>
                                     {isUpdating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                    Save Changes
+                                    Lưu thay đổi
                                 </Button>
                             </div>
                         </SheetFooter>

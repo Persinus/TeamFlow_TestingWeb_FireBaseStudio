@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
@@ -25,10 +24,10 @@ import CalendarView from '@/components/calendar-view';
 
 
 const columns: { id: TaskStatus; title: string }[] = [
-  { id: 'backlog', title: 'Backlog' },
-  { id: 'todo', title: 'To Do' },
-  { id: 'in-progress', title: 'In Progress' },
-  { id: 'done', title: 'Done' },
+  { id: 'backlog', title: 'Tồn đọng' },
+  { id: 'todo', title: 'Cần làm' },
+  { id: 'in-progress', title: 'Đang làm' },
+  { id: 'done', title: 'Hoàn thành' },
 ];
 
 
@@ -105,8 +104,8 @@ export default function DashboardPage() {
       setUsers(usersData);
       setTeams(teamsData);
     } catch (error) {
-      console.error("Failed to fetch data:", error);
-      toast({ variant: 'destructive', title: 'Error', description: 'Failed to load dashboard data.' });
+      console.error("Lỗi khi lấy dữ liệu:", error);
+      toast({ variant: 'destructive', title: 'Lỗi', description: 'Không thể tải dữ liệu dashboard.' });
     } finally {
       setLoading(false);
     }
@@ -151,8 +150,8 @@ export default function DashboardPage() {
     await fetchData(); // Refetch all data to ensure consistency
     setSelectedTask(prev => prev ? {...prev, ...updatedTaskData} : null); // Optimistically update selected task
     toast({
-      title: "Task Updated",
-      description: `"${updatedTaskData.title}" has been successfully updated.`
+      title: "Công việc đã được cập nhật",
+      description: `"${updatedTaskData.title}" đã được cập nhật thành công.`
     });
   };
 
@@ -176,7 +175,7 @@ export default function DashboardPage() {
         await updateTaskStatus(taskId, newStatus);
     } catch(error) {
         setTasks(originalTasks);
-        console.error("Failed to update status:", error);
+        console.error("Lỗi khi cập nhật trạng thái:", error);
     }
   };
   
@@ -207,8 +206,8 @@ export default function DashboardPage() {
         if (task && task.status !== newStatus && columns.some(c => c.id === newStatus)) {
             handleStatusChange(taskId, newStatus);
             toast({
-              title: "Task Moved",
-              description: `"${task.title}" moved to ${columns.find(c => c.id === newStatus)?.title}.`
+              title: "Công việc đã được di chuyển",
+              description: `"${task.title}" đã được chuyển đến ${columns.find(c => c.id === newStatus)?.title}.`
             })
         }
     }
@@ -218,7 +217,7 @@ export default function DashboardPage() {
 
 
   if (authLoading || !user) {
-    return <div className="flex h-screen items-center justify-center">Loading...</div>;
+    return <div className="flex h-screen items-center justify-center">Đang tải...</div>;
   }
 
   return (
@@ -241,14 +240,14 @@ export default function DashboardPage() {
             >
               <div className="mb-6 flex justify-between items-center">
                 <div>
-                  <h1 className="text-3xl font-bold tracking-tight">Project Dashboard</h1>
-                  <p className="text-muted-foreground">{viewMode === 'board' ? "Drag and drop tasks to change their status." : "View tasks by their due dates."}</p>
+                  <h1 className="text-3xl font-bold tracking-tight">Bảng điều khiển dự án</h1>
+                  <p className="text-muted-foreground">{viewMode === 'board' ? "Kéo và thả các công việc để thay đổi trạng thái." : "Xem công việc theo ngày hết hạn."}</p>
                 </div>
                  <div className="flex items-center gap-2 rounded-lg bg-card border p-1 shadow-sm">
-                    <Button variant={viewMode === 'board' ? 'secondary' : 'ghost'} size="icon" onClick={() => setViewMode('board')} aria-label="Board View">
+                    <Button variant={viewMode === 'board' ? 'secondary' : 'ghost'} size="icon" onClick={() => setViewMode('board')} aria-label="Chế độ xem bảng">
                         <LayoutGrid className="h-5 w-5" />
                     </Button>
-                     <Button variant={viewMode === 'calendar' ? 'secondary' : 'ghost'} size="icon" onClick={() => setViewMode('calendar')} aria-label="Calendar View">
+                     <Button variant={viewMode === 'calendar' ? 'secondary' : 'ghost'} size="icon" onClick={() => setViewMode('calendar')} aria-label="Chế độ xem lịch">
                         <CalendarDays className="h-5 w-5" />
                     </Button>
                 </div>

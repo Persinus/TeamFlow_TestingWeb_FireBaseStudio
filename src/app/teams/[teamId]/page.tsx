@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
@@ -72,8 +71,8 @@ export default function TeamDetailPage() {
         setTeamTasks(tasksData);
         setAllTeams(allTeamsData);
     } catch (error) {
-        console.error("Failed to fetch team data:", error);
-        toast({ variant: 'destructive', title: 'Error', description: 'Failed to load team data.' });
+        console.error("Lỗi khi tải dữ liệu đội:", error);
+        toast({ variant: 'destructive', title: 'Lỗi', description: 'Không thể tải dữ liệu của đội.' });
     } finally {
         setLoading(false);
     }
@@ -110,16 +109,22 @@ export default function TeamDetailPage() {
   
   const taskStatusDistribution = useMemo(() => {
     const distribution = {
-      backlog: 0,
-      todo: 0,
-      'in-progress': 0,
-      done: 0,
+      'Tồn đọng': 0,
+      'Cần làm': 0,
+      'Đang làm': 0,
+      'Hoàn thành': 0,
+    };
+    const statusMap = {
+      backlog: 'Tồn đọng',
+      todo: 'Cần làm',
+      'in-progress': 'Đang làm',
+      done: 'Hoàn thành',
     };
     teamTasks.forEach(task => {
-      distribution[task.status]++;
+      distribution[statusMap[task.status] as keyof typeof distribution]++;
     });
     return Object.entries(distribution)
-      .map(([name, value]) => ({ name, value, fill: statusColors[name as TaskStatus] }))
+      .map(([name, value]) => ({ name, value, fill: statusColors[Object.keys(statusMap).find(key => statusMap[key as TaskStatus] === name) as TaskStatus] }))
       .filter(item => item.value > 0);
   }, [teamTasks]);
 
@@ -127,10 +132,10 @@ export default function TeamDetailPage() {
     if (!userToAdd || !team) return;
     try {
         await addTeamMember(team.id, userToAdd);
-        toast({ title: 'Member Added', description: `${allUsers.find(u => u.id === userToAdd)?.name} has been added to the team.` });
+        toast({ title: 'Đã thêm thành viên', description: `${allUsers.find(u => u.id === userToAdd)?.name} đã được thêm vào đội.` });
         fetchData(); // Refetch
     } catch (error) {
-        toast({ variant: 'destructive', title: 'Error', description: 'Failed to add member.' });
+        toast({ variant: 'destructive', title: 'Lỗi', description: 'Không thể thêm thành viên.' });
     } finally {
         setAddMemberOpen(false);
         setUserToAdd('');
@@ -141,25 +146,25 @@ export default function TeamDetailPage() {
     if (!team) return;
     try {
         await removeTeamMember(team.id, memberId);
-        toast({ variant: 'destructive', title: 'Member Removed', description: `${allUsers.find(u => u.id === memberId)?.name} has been removed from the team.` });
+        toast({ variant: 'destructive', title: 'Đã xóa thành viên', description: `${allUsers.find(u => u.id === memberId)?.name} đã bị xóa khỏi đội.` });
         fetchData(); // Refetch
     } catch (error) {
-        toast({ variant: 'destructive', title: 'Error', description: 'Failed to remove member.' });
+        toast({ variant: 'destructive', title: 'Lỗi', description: 'Không thể xóa thành viên.' });
     }
   };
 
   const handleChangeRole = async (memberId: string, newRole: TeamMemberRole) => {
     if (!team) return;
      if (newRole === 'member' && team.members.filter(m => m.role === 'leader').length === 1 && team.members.find(m => (m.user as User)?.id === memberId)?.role === 'leader') {
-        toast({ variant: 'destructive', title: 'Action Denied', description: 'A team must have at least one leader.' });
+        toast({ variant: 'destructive', title: 'Hành động bị từ chối', description: 'Một đội phải có ít nhất một đội trưởng.' });
         return;
     }
     try {
         await updateTeamMemberRole(team.id, memberId, newRole);
-        toast({ title: 'Role Updated', description: `${allUsers.find(u => u.id === memberId)?.name} is now a ${newRole}.` });
+        toast({ title: 'Vai trò đã được cập nhật', description: `${allUsers.find(u => u.id === memberId)?.name} giờ là một ${newRole === 'leader' ? 'Đội trưởng' : 'Thành viên'}.` });
         fetchData(); // Refetch
     } catch (error) {
-        toast({ variant: 'destructive', title: 'Error', description: 'Failed to update role.' });
+        toast({ variant: 'destructive', title: 'Lỗi', description: 'Không thể cập nhật vai trò.' });
     }
   };
   
@@ -168,8 +173,8 @@ export default function TeamDetailPage() {
     await fetchData(); // Refetch all data to ensure consistency
     setSelectedTask(prev => prev ? {...prev, ...updatedTaskData} : null); // Optimistically update
     toast({
-      title: "Task Updated",
-      description: `"${updatedTaskData.title}" has been successfully updated.`
+      title: "Công việc đã được cập nhật",
+      description: `"${updatedTaskData.title}" đã được cập nhật thành công.`
     });
   };
 
@@ -244,21 +249,21 @@ export default function TeamDetailPage() {
                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                   <Card>
                     <CardHeader>
-                      <CardTitle>Project Progress</CardTitle>
-                      <CardDescription>Overall completion of tasks.</CardDescription>
+                      <CardTitle>Tiến độ dự án</CardTitle>
+                      <CardDescription>Mức độ hoàn thành tổng thể của các công việc.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
                       <div className="flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">Completed</span>
+                        <span className="text-sm text-muted-foreground">Đã hoàn thành</span>
                         <span className="font-semibold">{Math.round(progress)}%</span>
                       </div>
-                      <Progress value={progress} aria-label={`${Math.round(progress)}% complete`} />
+                      <Progress value={progress} aria-label={`${Math.round(progress)}% hoàn thành`} />
                     </CardContent>
                   </Card>
                   <Card>
                     <CardHeader>
-                      <CardTitle>Task Distribution</CardTitle>
-                      <CardDescription>Current tasks by status.</CardDescription>
+                      <CardTitle>Phân bổ công việc</CardTitle>
+                      <CardDescription>Các công việc hiện tại theo trạng thái.</CardDescription>
                     </CardHeader>
                     <CardContent>
                       <ChartContainer
@@ -288,8 +293,8 @@ export default function TeamDetailPage() {
                   <Card>
                     <CardHeader className="flex flex-row items-center justify-between pb-2">
                         <div>
-                            <CardTitle>Team Members</CardTitle>
-                            <CardDescription>There are {teamMembers.length} members in this team.</CardDescription>
+                            <CardTitle>Thành viên đội</CardTitle>
+                            <CardDescription>Có {teamMembers.length} thành viên trong đội này.</CardDescription>
                         </div>
                         <AlertDialog open={isAddMemberOpen} onOpenChange={setAddMemberOpen}>
                             <AlertDialogTrigger asChild>
@@ -297,14 +302,14 @@ export default function TeamDetailPage() {
                             </AlertDialogTrigger>
                             <AlertDialogContent>
                                 <AlertDialogHeader>
-                                    <AlertDialogTitle>Add Member to {team.name}</AlertDialogTitle>
+                                    <AlertDialogTitle>Thêm thành viên vào {team.name}</AlertDialogTitle>
                                     <AlertDialogDescription>
-                                        Select a user to add to the team. They will be added as a 'member'.
+                                        Chọn một người dùng để thêm vào đội. Họ sẽ được thêm với vai trò 'thành viên'.
                                     </AlertDialogDescription>
                                 </AlertDialogHeader>
                                 <Select onValueChange={setUserToAdd} value={userToAdd}>
                                     <SelectTrigger>
-                                        <SelectValue placeholder="Select a user" />
+                                        <SelectValue placeholder="Chọn một người dùng" />
                                     </SelectTrigger>
                                     <SelectContent>
                                         {usersNotInTeam.map(u => (
@@ -313,8 +318,8 @@ export default function TeamDetailPage() {
                                     </SelectContent>
                                 </Select>
                                 <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                    <AlertDialogAction onClick={handleAddMember} disabled={!userToAdd}>Add Member</AlertDialogAction>
+                                    <AlertDialogCancel>Hủy</AlertDialogCancel>
+                                    <AlertDialogAction onClick={handleAddMember} disabled={!userToAdd}>Thêm thành viên</AlertDialogAction>
                                 </AlertDialogFooter>
                             </AlertDialogContent>
                         </AlertDialog>
@@ -340,27 +345,27 @@ export default function TeamDetailPage() {
                               </DropdownMenuTrigger>
                               <DropdownMenuContent>
                                   {member.role === 'member' && (
-                                    <DropdownMenuItem onClick={() => handleChangeRole(member.id, 'leader')}><Crown className="mr-2 h-4 w-4" /> Make Leader</DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => handleChangeRole(member.id, 'leader')}><Crown className="mr-2 h-4 w-4" /> Đặt làm đội trưởng</DropdownMenuItem>
                                   )}
                                   {member.role === 'leader' && (
-                                    <DropdownMenuItem onClick={() => handleChangeRole(member.id, 'member')}><Shield className="mr-2 h-4 w-4" /> Make Member</DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => handleChangeRole(member.id, 'member')}><Shield className="mr-2 h-4 w-4" /> Đặt làm thành viên</DropdownMenuItem>
                                   )}
                                   <AlertDialog>
                                       <AlertDialogTrigger asChild>
                                         <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive focus:text-destructive">
-                                            <Trash2 className="mr-2 h-4 w-4" /> Remove
+                                            <Trash2 className="mr-2 h-4 w-4" /> Xóa
                                         </DropdownMenuItem>
                                       </AlertDialogTrigger>
                                       <AlertDialogContent>
                                           <AlertDialogHeader>
-                                              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                              <AlertDialogTitle>Bạn có chắc không?</AlertDialogTitle>
                                               <AlertDialogDescription>
-                                                  This will permanently remove {member.name} from the team. This action cannot be undone.
+                                                  Hành động này sẽ xóa vĩnh viễn {member.name} khỏi đội. Hành động này không thể được hoàn tác.
                                               </AlertDialogDescription>
                                           </AlertDialogHeader>
                                           <AlertDialogFooter>
-                                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                              <AlertDialogAction onClick={() => handleRemoveMember(member.id)} className="bg-destructive hover:bg-destructive/90">Remove</AlertDialogAction>
+                                              <AlertDialogCancel>Hủy</AlertDialogCancel>
+                                              <AlertDialogAction onClick={() => handleRemoveMember(member.id)} className="bg-destructive hover:bg-destructive/90">Xóa</AlertDialogAction>
                                           </AlertDialogFooter>
                                       </AlertDialogContent>
                                   </AlertDialog>
@@ -374,12 +379,12 @@ export default function TeamDetailPage() {
                 </div>
                 
                 <div>
-                  <h2 className="text-2xl font-bold tracking-tight mb-4">Current Tasks</h2>
+                  <h2 className="text-2xl font-bold tracking-tight mb-4">Công việc hiện tại</h2>
                   <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                     {teamTasks.map(task => (
                       <TaskCard key={task.id} task={task} onSelectTask={setSelectedTask} />
                     ))}
-                     {teamTasks.length === 0 && <p className="text-muted-foreground col-span-full">No tasks found for this team.</p>}
+                     {teamTasks.length === 0 && <p className="text-muted-foreground col-span-full">Không tìm thấy công việc nào cho đội này.</p>}
                   </div>
                 </div>
               </div>
