@@ -28,7 +28,6 @@ import { SidebarInset } from '@/components/ui/sidebar';
 import { Skeleton } from '@/components/ui/skeleton';
 import TaskDetailsSheet from '@/components/task-details-sheet';
 import { motion } from 'framer-motion';
-import TourGuide from '@/components/tour-guide';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 const statusColors: Record<TaskStatus, string> = {
@@ -63,7 +62,6 @@ export default function TeamDetailPage() {
   const [teamToEdit, setTeamToEdit] = useState<{name: string, description: string}>({name: '', description: ''});
   const [userToAdd, setUserToAdd] = useState('');
   const [selectedTask, setSelectedTask] = React.useState<Task | null>(null);
-  const [isTourOpen, setIsTourOpen] = useState(false);
 
 
   const fetchData = useCallback(async () => {
@@ -247,7 +245,7 @@ export default function TeamDetailPage() {
   if (authLoading || loading || !user) {
     return (
         <div className="flex min-h-screen w-full flex-col lg:flex-row bg-background">
-            <Sidebar teams={[]} onTeamChange={() => {}} onShowTour={() => {}}/>
+            <Sidebar teams={[]} onTeamChange={() => {}} />
             <div className="flex flex-1 flex-col">
                 <Header onCreateTask={handleCreateTask as any} />
                 <SidebarInset>
@@ -277,7 +275,7 @@ export default function TeamDetailPage() {
   
   return (
     <div className="flex min-h-screen w-full flex-col lg:flex-row bg-background">
-      <Sidebar teams={allTeams} onTeamChange={handleTeamCreated} onShowTour={() => setIsTourOpen(true)} />
+      <Sidebar teams={allTeams} onTeamChange={handleTeamCreated} />
       <div className="flex flex-1 flex-col">
         <Header onCreateTask={handleCreateTask as any} />
         <SidebarInset>
@@ -566,7 +564,6 @@ export default function TeamDetailPage() {
                 </DialogFooter>
             </DialogContent>
         </Dialog>
-        <TourGuide open={isTourOpen} onOpenChange={setIsTourOpen} />
     </div>
   );
 }

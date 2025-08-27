@@ -8,7 +8,6 @@ import Sidebar from '@/components/sidebar';
 import Header from '@/components/header';
 import TaskCard from '@/components/task-card';
 import TaskDetailsSheet from '@/components/task-details-sheet';
-import TourGuide from '@/components/tour-guide';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
@@ -96,8 +95,6 @@ export default function BoardPage() {
   const [overId, setOverId] = useState<string | null>(null);
   const sensors = useSensors(useSensor(PointerSensor));
   const activeTask = useMemo(() => tasks.find(t => t.id === activeId), [tasks, activeId]);
-
-  const [isTourOpen, setIsTourOpen] = useState(false);
 
   const fetchData = useCallback(async () => {
     try {
@@ -226,7 +223,7 @@ export default function BoardPage() {
 
   return (
     <div className="flex min-h-screen w-full flex-col lg:flex-row bg-background">
-      <Sidebar teams={teams} onTeamChange={fetchData} onShowTour={() => setIsTourOpen(true)} />
+      <Sidebar teams={teams} onTeamChange={fetchData} />
       <div className="flex flex-1 flex-col">
         <Header 
           onCreateTask={handleCreateTask}
@@ -339,7 +336,6 @@ export default function BoardPage() {
             onDeleteTask={handleDeleteTask}
         />
       )}
-      <TourGuide open={isTourOpen} onOpenChange={setIsTourOpen} />
     </div>
   );
 }

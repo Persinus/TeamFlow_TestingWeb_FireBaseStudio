@@ -11,6 +11,7 @@ import type { Team } from '@/types';
 import { Sidebar as RootSidebar, SidebarHeader, SidebarContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarGroup, useSidebar, SidebarFooter } from '@/components/ui/sidebar';
 import CreateTeamDialog from './create-team-dialog';
 import { Button } from './ui/button';
+import { useTour } from '@/hooks/use-tour';
 
 const NavLink = ({ href, children, icon: Icon, exact = false, tooltip }: { href: string; children: React.ReactNode; icon: React.ElementType; exact?: boolean; tooltip?: string; }) => {
   const pathname = usePathname();
@@ -30,12 +31,12 @@ const NavLink = ({ href, children, icon: Icon, exact = false, tooltip }: { href:
 interface SidebarProps {
   teams: Team[];
   onTeamChange: () => void;
-  onShowTour: () => void;
 }
 
 
-export function MobileSidebar({ teams, onTeamChange, onShowTour }: SidebarProps) {
+export function MobileSidebar({ teams, onTeamChange }: SidebarProps) {
   const pathname = usePathname();
+  const { showTour } = useTour();
   const [isTeamsOpen, setIsTeamsOpen] = React.useState(pathname.startsWith('/teams'));
   const [isManageTeamsOpen, setManageTeamsOpen] = useState(false);
 
@@ -84,7 +85,7 @@ export function MobileSidebar({ teams, onTeamChange, onShowTour }: SidebarProps)
         </SidebarMenu>
       </SidebarContent>
        <SidebarFooter className="p-2">
-        <Button variant="ghost" onClick={onShowTour} className="w-full justify-start gap-3 p-2 text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
+        <Button variant="ghost" onClick={showTour} className="w-full justify-start gap-3 p-2 text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
             <HelpCircle className="h-5 w-5" />
             <span>Hướng dẫn</span>
         </Button>
@@ -98,8 +99,9 @@ export function MobileSidebar({ teams, onTeamChange, onShowTour }: SidebarProps)
 }
 
 
-export default function Sidebar({ teams, onTeamChange, onShowTour }: SidebarProps) {
+export default function Sidebar({ teams, onTeamChange }: SidebarProps) {
   const pathname = usePathname();
+  const { showTour } = useTour();
   const [isTeamsOpen, setIsTeamsOpen] = React.useState(pathname.startsWith('/teams'));
   const { state } = useSidebar();
 
@@ -148,7 +150,7 @@ export default function Sidebar({ teams, onTeamChange, onShowTour }: SidebarProp
             </SidebarMenu>
         </SidebarContent>
         <SidebarFooter>
-            <SidebarMenuButton tooltip="Hướng dẫn" className="w-full text-sidebar-foreground" onClick={onShowTour}>
+            <SidebarMenuButton tooltip="Hướng dẫn" className="w-full text-sidebar-foreground" onClick={showTour}>
                 <HelpCircle />
                 <span>Hướng dẫn</span>
             </SidebarMenuButton>

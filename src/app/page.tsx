@@ -17,7 +17,6 @@ import { AlertCircle, CalendarIcon, CheckCircle, Lightbulb, ArrowRight } from 'l
 import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
-import TourGuide from '@/components/tour-guide';
 import { Button } from '@/components/ui/button';
 
 const quotes = [
@@ -71,7 +70,6 @@ export default function HomePage() {
     const [teams, setTeams] = useState<Team[]>([]);
     const [loading, setLoading] = useState(true);
     const [randomQuote, setRandomQuote] = useState(quotes[0]);
-    const [isTourOpen, setIsTourOpen] = useState(false);
 
     useEffect(() => {
         if (!authLoading && !user) {
@@ -131,7 +129,7 @@ export default function HomePage() {
 
     return (
         <div className="flex min-h-screen w-full flex-col lg:flex-row bg-background">
-            <Sidebar teams={teams} onTeamChange={() => getTeams().then(setTeams)} onShowTour={() => setIsTourOpen(true)} />
+            <Sidebar teams={teams} onTeamChange={() => getTeams().then(setTeams)} />
             <div className="flex flex-1 flex-col">
                 <Header onCreateTask={async () => {}} />
                 <SidebarInset>
@@ -228,7 +226,6 @@ export default function HomePage() {
                     </motion.main>
                 </SidebarInset>
             </div>
-            <TourGuide open={isTourOpen} onOpenChange={setIsTourOpen} />
         </div>
     );
 }

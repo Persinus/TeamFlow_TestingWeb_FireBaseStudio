@@ -6,11 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious, type CarouselApi } from '@/components/ui/carousel';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from './ui/card';
-
-interface TourGuideProps {
-    open: boolean;
-    onOpenChange: (open: boolean) => void;
-}
+import { useTour } from '@/hooks/use-tour';
 
 const tourSteps = [
     {
@@ -47,7 +43,8 @@ const tourSteps = [
     }
 ];
 
-export default function TourGuide({ open, onOpenChange }: TourGuideProps) {
+export default function TourGuide() {
+    const { isTourOpen, setIsTourOpen } = useTour();
     const [api, setApi] = React.useState<CarouselApi>();
     const [current, setCurrent] = React.useState(0);
     const [count, setCount] = React.useState(0);
@@ -66,7 +63,7 @@ export default function TourGuide({ open, onOpenChange }: TourGuideProps) {
     }, [api]);
 
     const handleFinish = () => {
-        onOpenChange(false);
+        setIsTourOpen(false);
         setTimeout(() => api?.scrollTo(0), 300); // Reset to first slide for next time
     };
 
@@ -79,7 +76,7 @@ export default function TourGuide({ open, onOpenChange }: TourGuideProps) {
     }, [api]);
 
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
+        <Dialog open={isTourOpen} onOpenChange={setIsTourOpen}>
             <DialogContent className="sm:max-w-lg">
                 <DialogHeader>
                     <DialogTitle>Hướng dẫn sử dụng TeamFlow</DialogTitle>

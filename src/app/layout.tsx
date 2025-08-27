@@ -5,6 +5,8 @@ import { Toaster } from '@/components/ui/toaster';
 import { AuthProvider } from '@/hooks/use-auth';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import Footer from '@/components/footer';
+import { TourProvider } from '@/hooks/use-tour';
+import TourGuide from '@/components/tour-guide';
 
 export const metadata: Metadata = {
   title: 'TeamFlow',
@@ -25,11 +27,14 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased flex flex-col min-h-screen">
         <AuthProvider>
+          <TourProvider>
             <SidebarProvider>
               <div className="flex-1 flex flex-col">{children}</div>
               <Footer />
             </SidebarProvider>
             <Toaster />
+            <TourGuide />
+          </TourProvider>
         </AuthProvider>
       </body>
     </html>
