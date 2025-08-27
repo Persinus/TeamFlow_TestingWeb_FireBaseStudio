@@ -5,12 +5,12 @@ import { getFirestore } from 'firebase/firestore';
 // This configuration is automatically generated and HARDCODED
 // to solve environment variable loading issues.
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY_HERE",
-  authDomain: "YOUR_AUTH_DOMAIN_HERE",
-  projectId: "YOUR_PROJECT_ID_HERE",
-  storageBucket: "YOUR_STORAGE_BUCKET_HERE",
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID_HERE",
-  appId: "YOUR_APP_ID_HERE",
+  apiKey: "AIzaSyBfljlfIo3F3yv9gdimB98QRRwwxpPExkg",
+  authDomain: "dev-prototyping-in-web-ide.firebaseapp.com",
+  projectId: "dev-prototyping-in-web-ide",
+  storageBucket: "dev-prototyping-in-web-ide.appspot.com",
+  messagingSenderId: "33342188478",
+  appId: "1:33342188478:web:75a7f920d3f545199651e7",
 };
 
 
