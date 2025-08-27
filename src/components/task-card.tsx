@@ -30,7 +30,7 @@ export default function TaskCard({ task, onSelectTask, isDragging }: TaskCardPro
   } : undefined;
 
   const getDeadlineInfo = () => {
-      if (!task.dueDate) return { text: null, className: '' };
+      if (!task.dueDate) return { text: null, className: '', cardBorderClass: '' };
 
       const dueDate = parseISO(task.dueDate);
       const now = new Date();
@@ -52,13 +52,12 @@ export default function TaskCard({ task, onSelectTask, isDragging }: TaskCardPro
     <motion.div 
         ref={setNodeRef} 
         style={style} 
-        {...listeners} 
-        {...attributes}
         layoutId={task.id}
-        whileHover={{ scale: 1.03 }}
         className={cn(isDragging && "z-50")}
     >
         <Card 
+            {...listeners} 
+            {...attributes}
             className={cn(
                 "hover:shadow-lg transition-all duration-300 bg-card cursor-pointer",
                 isDragging && "ring-2 ring-primary shadow-2xl opacity-80",

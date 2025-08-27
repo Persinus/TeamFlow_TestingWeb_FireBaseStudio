@@ -1,15 +1,15 @@
 
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { useForm, Controller } from 'react-hook-form';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import type { Task, TaskStatus, User, Team } from '@/types';
+import type { Task, TaskStatus, User, Team, Comment } from '@/types';
 import { format, parseISO } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
@@ -17,7 +17,11 @@ import { Calendar } from './ui/calendar';
 import { cn } from '@/lib/utils';
 import { Textarea } from './ui/textarea';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from './ui/form';
-import { CalendarIcon, Loader2 } from 'lucide-react';
+import { CalendarIcon, Loader2, MessageSquare, Pencil, User as UserIcon, Users, Tag, CheckSquare, Plus } from 'lucide-react';
+import { addComment as apiAddComment } from '@/lib/data';
+import { useAuth } from '@/hooks/use-auth';
+import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
+import { Separator } from './ui/separator';
 
 interface TaskDetailsSheetProps {
   task: Task | null;
@@ -25,6 +29,7 @@ interface TaskDetailsSheetProps {
   teams: Team[];
   onOpenChange: (isOpen: boolean) => void;
   onUpdateTask: (updatedTask: Omit<Task, 'team' | 'assignee' | 'comments'>) => Promise<void>;
+  onCommentAdded: () => void;
 }
 
 const taskSchema = z.object({
@@ -39,34 +44,46 @@ const taskSchema = z.object({
 
 type TaskFormData = z.infer<typeof taskSchema>;
 
-export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onUpdateTask }: TaskDetailsSheetProps) {
+const DetailRow = ({ icon: Icon, label, value }: { icon: React.ElementType, label: string, value: React.ReactNode }) => (
+    <div className="flex items-start gap-3">
+        <Icon className="h-5 w-5 text-muted-foreground mt-1" />
+        <div className="flex flex-col">
+            <span className="text-sm font-semibold text-muted-foreground">{label}</span>
+            <span className="text-base text-foreground">{value}</span>
+        </div>
+    </div>
+);
+
+export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onUpdateTask, onCommentAdded }: TaskDetailsSheetProps) {
+  const [isEditing, setIsEditing] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [newComment, setNewComment] = useState("");
+  const [isAddingComment, setIsAddingComment] = useState(false);
+  const { user: currentUser } = useAuth();
   const { toast } = useToast();
 
   const form = useForm<TaskFormData>({
     resolver: zodResolver(taskSchema),
-    defaultValues: {
-        title: '',
-        description: '',
-        status: 'todo',
-        assigneeId: '',
-        teamId: '',
-    }
+    defaultValues: {}
   });
-  
+
   useEffect(() => {
     if (task) {
-        form.reset({
-            title: task.title,
-            description: task.description,
-            status: task.status,
-            assigneeId: task.assigneeId || undefined,
-            teamId: task.teamId,
-            startDate: task.startDate ? parseISO(task.startDate) : undefined,
-            dueDate: task.dueDate ? parseISO(task.dueDate) : undefined,
-        });
+      form.reset({
+        title: task.title,
+        description: task.description || '',
+        status: task.status,
+        assigneeId: task.assigneeId || undefined,
+        teamId: task.teamId,
+        startDate: task.startDate ? parseISO(task.startDate) : undefined,
+        dueDate: task.dueDate ? parseISO(task.dueDate) : undefined,
+      });
+      setIsEditing(false); // Reset to view mode whenever a new task is selected
     }
   }, [task, form]);
+  
+  const assignee = useMemo(() => users.find(u => u.id === task?.assigneeId), [task, users]);
+  const team = useMemo(() => teams.find(t => t.id === task?.teamId), [task, teams]);
 
   if (!task) return null;
 
@@ -79,8 +96,9 @@ export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onU
         assigneeId: data.assigneeId === 'unassigned' ? undefined : data.assigneeId,
         startDate: data.startDate?.toISOString(),
         dueDate: data.dueDate?.toISOString(),
-        createdAt: task.createdAt, // keep original creation date
+        createdAt: task.createdAt,
       });
+      setIsEditing(false);
     } catch(error) {
       toast({
         variant: 'destructive',
@@ -92,202 +110,147 @@ export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onU
     }
   };
 
+  const handleAddComment = async () => {
+      if (!newComment.trim() || !currentUser) return;
+      setIsAddingComment(true);
+      try {
+          await apiAddComment(task.id, newComment, currentUser.id);
+          setNewComment("");
+          onCommentAdded();
+           toast({
+                title: "Comment Added",
+                description: "Your comment has been posted.",
+            });
+      } catch (error) {
+          toast({ variant: 'destructive', title: 'Error', description: 'Failed to add comment.'});
+      } finally {
+          setIsAddingComment(false);
+      }
+  }
+
   return (
     <Sheet open={!!task} onOpenChange={onOpenChange}>
       <SheetContent className="sm:max-w-2xl w-[95vw] flex flex-col">
-        <SheetHeader>
-          <SheetTitle>Edit Task Details</SheetTitle>
-          <SheetDescription>Make changes to the task below and click save.</SheetDescription>
+        <SheetHeader className="pr-12">
+          <SheetTitle className="truncate">{task.title}</SheetTitle>
+          <SheetDescription>
+            Created on {format(parseISO(task.createdAt), 'PPP')}
+          </SheetDescription>
         </SheetHeader>
+        
+        {!isEditing && (
+            <Button size="icon" variant="outline" className="absolute top-4 right-16" onClick={() => setIsEditing(true)}>
+                <Pencil className="h-4 w-4" />
+                <span className="sr-only">Edit Task</span>
+            </Button>
+        )}
 
-        <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="flex-1 flex flex-col overflow-y-auto">
-                <div className="space-y-4 px-1 py-4">
-                     <FormField
-                        control={form.control}
-                        name="title"
-                        render={({ field }) => (
-                            <FormItem>
-                            <FormLabel>Title</FormLabel>
-                            <FormControl>
-                                <Input placeholder="e.g. Design new login page" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                            </FormItem>
-                        )}
-                        />
-                    <FormField
-                        control={form.control}
-                        name="description"
-                        render={({ field }) => (
-                            <FormItem>
-                            <FormLabel>Description</FormLabel>
-                            <FormControl>
-                                <Textarea placeholder="Add a detailed description for the task..." {...field} className="min-h-[100px]" />
-                            </FormControl>
-                            <FormMessage />
-                            </FormItem>
-                        )}
-                        />
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <FormField
-                            control={form.control}
-                            name="status"
-                            render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Status</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                <FormControl>
-                                    <SelectTrigger>
-                                    <SelectValue placeholder="Select a status" />
-                                    </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                    <SelectItem value="backlog">Backlog</SelectItem>
-                                    <SelectItem value="todo">To Do</SelectItem>
-                                    <SelectItem value="in-progress">In Progress</SelectItem>
-                                    <SelectItem value="done">Done</SelectItem>
-                                </SelectContent>
-                                </Select>
-                                <FormMessage />
-                            </FormItem>
-                            )}
-                        />
-                         <FormField
-                            control={form.control}
-                            name="teamId"
-                            render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Team</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                <FormControl>
-                                    <SelectTrigger>
-                                    <SelectValue placeholder="Assign to a team" />
-                                    </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                    {teams.map(team => (
-                                        <SelectItem key={team.id} value={team.id}>{team.name}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                                </Select>
-                                <FormMessage />
-                            </FormItem>
-                            )}
-                        />
-                         <FormField
-                            control={form.control}
-                            name="assigneeId"
-                            render={({ field }) => (
-                                <FormItem>
-                                <FormLabel>Assignee</FormLabel>
-                                    <Select onValueChange={field.onChange} value={field.value || 'unassigned'}>
-                                        <FormControl>
-                                            <SelectTrigger>
-                                            <SelectValue placeholder="Select an assignee" />
-                                            </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                            <SelectItem value="unassigned">Unassigned</SelectItem>
-                                            {users.map(user => (
-                                                <SelectItem key={user.id} value={user.id}>{user.name}</SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                <FormMessage />
-                                </FormItem>
-                            )}
-                            />
+        <div className="flex-1 overflow-y-auto pr-2">
+            {!isEditing ? (
+                <div className="space-y-6 py-4">
+                    <p className="text-base text-foreground whitespace-pre-wrap">{task.description || 'No description provided.'}</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <DetailRow icon={CheckSquare} label="Status" value={<span className="capitalize">{task.status.replace('-', ' ')}</span>} />
+                        <DetailRow icon={UserIcon} label="Assignee" value={assignee?.name || 'Unassigned'} />
+                        <DetailRow icon={Users} label="Team" value={team?.name || 'N/A'} />
+                        <DetailRow icon={Tag} label="Task ID" value={task.id} />
+                        <DetailRow icon={CalendarIcon} label="Start Date" value={task.startDate ? format(parseISO(task.startDate), 'PPP') : 'Not set'} />
+                        <DetailRow icon={CalendarIcon} label="Due Date" value={task.dueDate ? format(parseISO(task.dueDate), 'PPP') : 'Not set'} />
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <FormField
-                            control={form.control}
-                            name="startDate"
-                            render={({ field }) => (
-                                <FormItem className="flex flex-col">
-                                <FormLabel>Start Date</FormLabel>
-                                <Popover>
-                                    <PopoverTrigger asChild>
-                                    <FormControl>
-                                        <Button
-                                        variant={"outline"}
-                                        className={cn(
-                                            "w-full pl-3 text-left font-normal",
-                                            !field.value && "text-muted-foreground"
-                                        )}
-                                        >
-                                        {field.value ? (
-                                            format(field.value, "PPP")
-                                        ) : (
-                                            <span>Pick a date</span>
-                                        )}
-                                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                        </Button>
-                                    </FormControl>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-auto p-0" align="start">
-                                    <Calendar
-                                        mode="single"
-                                        selected={field.value}
-                                        onSelect={field.onChange}
-                                        initialFocus
-                                    />
-                                    </PopoverContent>
-                                </Popover>
-                                <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name="dueDate"
-                            render={({ field }) => (
-                                <FormItem className="flex flex-col">
-                                <FormLabel>Due Date</FormLabel>
-                                <Popover>
-                                    <PopoverTrigger asChild>
-                                    <FormControl>
-                                        <Button
-                                        variant={"outline"}
-                                        className={cn(
-                                            "w-full pl-3 text-left font-normal",
-                                            !field.value && "text-muted-foreground"
-                                        )}
-                                        >
-                                        {field.value ? (
-                                            format(field.value, "PPP")
-                                        ) : (
-                                            <span>Pick a date</span>
-                                        )}
-                                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                        </Button>
-                                    </FormControl>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-auto p-0" align="start">
-                                    <Calendar
-                                        mode="single"
-                                        selected={field.value}
-                                        onSelect={field.onChange}
-                                        initialFocus
-                                    />
-                                    </PopoverContent>
-                                </Popover>
-                                <FormMessage />
-                                </FormItem>
-                            )}
-                        />
+                    <Separator />
+                     <div>
+                        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                            <MessageSquare className="h-5 w-5" /> Comments
+                        </h3>
+                        <div className="space-y-4">
+                            {task.comments.map(comment => (
+                                <div key={comment.id} className="flex items-start gap-3">
+                                    <Avatar className="h-8 w-8">
+                                        <AvatarImage src={comment.author.avatar} alt={comment.author.name} />
+                                        <AvatarFallback>{comment.author.name.substring(0,2).toUpperCase()}</AvatarFallback>
+                                    </Avatar>
+                                    <div className="bg-muted/50 rounded-lg p-3 w-full">
+                                        <div className="flex justify-between items-center">
+                                            <p className="font-semibold text-sm">{comment.author.name}</p>
+                                            <p className="text-xs text-muted-foreground">{format(parseISO(comment.createdAt), "MMM d, yyyy 'at' h:mm a")}</p>
+                                        </div>
+                                        <p className="text-sm mt-1">{comment.content}</p>
+                                    </div>
+                                </div>
+                            ))}
+                             {task.comments.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">No comments yet.</p>}
+                        </div>
+                        <div className="mt-6 flex gap-3">
+                            <Avatar className="h-8 w-8">
+                                <AvatarImage src={currentUser?.avatar} alt={currentUser?.name} />
+                                <AvatarFallback>{currentUser?.name.substring(0,2).toUpperCase()}</AvatarFallback>
+                            </Avatar>
+                            <div className="w-full flex items-center gap-2">
+                                <Textarea 
+                                    value={newComment} 
+                                    onChange={(e) => setNewComment(e.target.value)}
+                                    placeholder="Write a comment..." 
+                                    className="min-h-[40px]"
+                                />
+                                <Button onClick={handleAddComment} disabled={!newComment.trim() || isAddingComment}>
+                                    {isAddingComment ? <Loader2 className="h-4 w-4 animate-spin"/> : "Post"}
+                                </Button>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <SheetFooter className="mt-auto pt-4 border-t bg-background sticky bottom-0">
-                    <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
-                    <Button type="submit" disabled={isUpdating}>
-                        {isUpdating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Save Changes
-                    </Button>
-                </SheetFooter>
-            </form>
-        </Form>
+            ) : (
+                <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
+                         <FormField control={form.control} name="title" render={({ field }) => (
+                            <FormItem><FormLabel>Title</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                         )} />
+                         <FormField control={form.control} name="description" render={({ field }) => (
+                            <FormItem><FormLabel>Description</FormLabel><FormControl><Textarea className="min-h-[100px]" {...field} /></FormControl><FormMessage /></FormItem>
+                         )} />
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                           <FormField control={form.control} name="status" render={({ field }) => (
+                                <FormItem><FormLabel>Status</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl><SelectContent>
+                                    <SelectItem value="backlog">Backlog</SelectItem><SelectItem value="todo">To Do</SelectItem>
+                                    <SelectItem value="in-progress">In Progress</SelectItem><SelectItem value="done">Done</SelectItem>
+                                </SelectContent></Select><FormMessage /></FormItem>
+                            )} />
+                            <FormField control={form.control} name="teamId" render={({ field }) => (
+                                <FormItem><FormLabel>Team</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl><SelectContent>
+                                    {teams.map(t => (<SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>))}
+                                </SelectContent></Select><FormMessage /></FormItem>
+                            )} />
+                             <FormField control={form.control} name="assigneeId" render={({ field }) => (
+                                <FormItem><FormLabel>Assignee</FormLabel><Select onValueChange={field.onChange} value={field.value || 'unassigned'}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent>
+                                    <SelectItem value="unassigned">Unassigned</SelectItem>
+                                    {users.map(u => (<SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>))}
+                                </SelectContent></Select><FormMessage /></FormItem>
+                            )} />
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <FormField control={form.control} name="startDate" render={({ field }) => (
+                                <FormItem className="flex flex-col"><FormLabel>Start Date</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant="outline" className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
+                                    {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                </Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0"><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus /></PopoverContent></Popover><FormMessage /></FormItem>
+                            )} />
+                            <FormField control={form.control} name="dueDate" render={({ field }) => (
+                                <FormItem className="flex flex-col"><FormLabel>Due Date</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant="outline" className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
+                                    {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                </Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0"><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus /></PopoverContent></Popover><FormMessage /></FormItem>
+                            )} />
+                        </div>
+                         <SheetFooter className="pt-4">
+                            <Button type="button" variant="ghost" onClick={() => setIsEditing(false)}>Cancel</Button>
+                            <Button type="submit" disabled={isUpdating}>
+                                {isUpdating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Save Changes
+                            </Button>
+                        </SheetFooter>
+                    </form>
+                </Form>
+            )}
+        </div>
       </SheetContent>
     </Sheet>
   );

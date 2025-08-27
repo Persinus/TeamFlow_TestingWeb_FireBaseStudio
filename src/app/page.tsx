@@ -143,7 +143,7 @@ export default function DashboardPage() {
   const handleUpdateTask = async (updatedTaskData: Omit<Task, 'team' | 'assignee' | 'comments'>) => {
     await updateTask(updatedTaskData.id, updatedTaskData);
     await fetchData(); // Refetch all data to ensure consistency
-    setSelectedTask(null); // Close sheet on successful update
+    setSelectedTask(prev => prev ? {...prev, ...updatedTaskData} : null); // Optimistically update selected task
     toast({
       title: "Task Updated",
       description: `"${updatedTaskData.title}" has been successfully updated.`
@@ -167,6 +167,18 @@ export default function DashboardPage() {
         console.error("Failed to update status:", error);
     }
   };
+  
+  const handleCommentAdded = async () => {
+    if (selectedTask) {
+        // Refetch the single task to get the new comment
+        const updatedTasks = await getTasks();
+        const refreshedTask = updatedTasks.find(t => t.id === selectedTask.id);
+        if (refreshedTask) {
+            setSelectedTask(refreshedTask);
+        }
+        setTasks(updatedTasks);
+    }
+  }
 
   const tasksByStatus = useMemo(() => {
     return columns.reduce((acc, column) => {
@@ -192,7 +204,7 @@ export default function DashboardPage() {
         const taskId = active.id as string;
         
         const task = tasks.find(t => t.id === taskId);
-        if (task && task.status !== newStatus) {
+        if (task && task.status !== newStatus && columns.some(c => c.id === newStatus)) {
             handleStatusChange(taskId, newStatus);
             toast({
               title: "Task Moved",
@@ -272,6 +284,7 @@ export default function DashboardPage() {
             teams={teams}
             onOpenChange={(isOpen) => !isOpen && setSelectedTask(null)}
             onUpdateTask={handleUpdateTask}
+            onCommentAdded={handleCommentAdded}
         />
       )}
     </div>
