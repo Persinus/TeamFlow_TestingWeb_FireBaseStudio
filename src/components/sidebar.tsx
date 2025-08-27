@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useState } from 'react';
@@ -127,20 +128,18 @@ export default function Sidebar({ teams, onTeamCreated }: SidebarProps) {
                                 {team.name}
                                 </Link>
                             ))}
+                            <CreateTeamDialog open={isCreateTeamOpen} onOpenChange={setCreateTeamOpen} onTeamCreated={onTeamCreated}>
+                                <button className="flex items-center gap-2 rounded-md px-3 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-primary mt-1">
+                                    <PlusCircle className="h-4 w-4" />
+                                    <span>Create Team</span>
+                                </button>
+                            </CreateTeamDialog>
                         </div>
                     )}
                 </SidebarGroup>
                 <NavLink href="/settings" icon={Settings} tooltip="Settings">Settings</NavLink>
             </SidebarMenu>
         </SidebarContent>
-        <SidebarFooter>
-            <CreateTeamDialog open={isCreateTeamOpen} onOpenChange={setCreateTeamOpen} onTeamCreated={onTeamCreated}>
-                 <SidebarMenuButton onClick={() => setCreateTeamOpen(true)} tooltip="Create new team">
-                    <PlusCircle />
-                    <span>Create Team</span>
-                </SidebarMenuButton>
-            </CreateTeamDialog>
-        </SidebarFooter>
     </RootSidebar>
   );
 }
