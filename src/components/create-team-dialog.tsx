@@ -17,8 +17,6 @@ import { Loader2 } from 'lucide-react';
 
 interface CreateTeamDialogProps {
   children: React.ReactNode;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
   onTeamCreated: () => void;
 }
 
@@ -27,10 +25,11 @@ const teamSchema = z.object({
   description: z.string().optional(),
 });
 
-export default function CreateTeamDialog({ children, open, onOpenChange, onTeamCreated }: CreateTeamDialogProps) {
+export default function CreateTeamDialog({ children, onTeamCreated }: CreateTeamDialogProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const [isCreating, setIsCreating] = useState(false);
+  const [open, setOpen] = useState(false);
 
   const form = useForm<z.infer<typeof teamSchema>>({
     resolver: zodResolver(teamSchema),
@@ -51,7 +50,7 @@ export default function CreateTeamDialog({ children, open, onOpenChange, onTeamC
         await createTeam(values, user.id);
         toast({ title: "Đã tạo đội", description: `Đội "${values.name}" đã được tạo thành công.` });
         onTeamCreated(); // Callback to refresh the team list
-        onOpenChange(false);
+        setOpen(false);
         form.reset();
     } catch (error) {
         toast({ variant: 'destructive', title: "Lỗi", description: "Không thể tạo đội." });
@@ -61,7 +60,7 @@ export default function CreateTeamDialog({ children, open, onOpenChange, onTeamC
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
@@ -99,7 +98,7 @@ export default function CreateTeamDialog({ children, open, onOpenChange, onTeamC
                     )}
                 />
                  <DialogFooter>
-                    <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Hủy</Button>
+                    <Button type="button" variant="ghost" onClick={() => setOpen(false)}>Hủy</Button>
                     <Button type="submit" disabled={isCreating}>
                         {isCreating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         Tạo đội
@@ -111,3 +110,5 @@ export default function CreateTeamDialog({ children, open, onOpenChange, onTeamC
     </Dialog>
   );
 }
+
+    

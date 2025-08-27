@@ -9,7 +9,7 @@ import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import type { Team } from '@/types';
 import { Sidebar as RootSidebar, SidebarHeader, SidebarContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarGroup, useSidebar, SidebarFooter } from '@/components/ui/sidebar';
-import ManageTeamsDialog from './manage-teams-dialog';
+import CreateTeamDialog from './create-team-dialog';
 import { Button } from './ui/button';
 
 const NavLink = ({ href, children, icon: Icon, exact = false, tooltip }: { href: string; children: React.ReactNode; icon: React.ElementType; exact?: boolean; tooltip?: string; }) => {
@@ -71,6 +71,12 @@ export function MobileSidebar({ teams, onTeamChange, onShowTour }: SidebarProps)
                             {team.tenNhom}
                             </Link>
                         ))}
+                         <CreateTeamDialog onTeamCreated={onTeamChange}>
+                            <button className="flex items-center gap-2 rounded-md px-3 py-1.5 text-sm text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
+                                <PlusCircle className="h-4 w-4" />
+                                <span>Tạo đội mới</span>
+                            </button>
+                        </CreateTeamDialog>
                     </div>
                 )}
             </SidebarGroup>
@@ -78,12 +84,6 @@ export function MobileSidebar({ teams, onTeamChange, onShowTour }: SidebarProps)
         </SidebarMenu>
       </SidebarContent>
        <SidebarFooter className="p-2">
-        <ManageTeamsDialog open={isManageTeamsOpen} onOpenChange={setManageTeamsOpen} teams={teams} onTeamsUpdate={onTeamChange}>
-             <Button variant="ghost" className="w-full justify-start gap-3 p-2 text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
-                <Settings className="h-5 w-5" />
-                <span>Quản lý đội</span>
-             </Button>
-        </ManageTeamsDialog>
         <Button variant="ghost" onClick={onShowTour} className="w-full justify-start gap-3 p-2 text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
             <HelpCircle className="h-5 w-5" />
             <span>Hướng dẫn</span>
@@ -102,7 +102,6 @@ export default function Sidebar({ teams, onTeamChange, onShowTour }: SidebarProp
   const pathname = usePathname();
   const [isTeamsOpen, setIsTeamsOpen] = React.useState(pathname.startsWith('/teams'));
   const { state } = useSidebar();
-  const [isManageTeamsOpen, setManageTeamsOpen] = useState(false);
 
   return (
     <RootSidebar collapsible="icon" className="hidden lg:flex flex-col">
@@ -136,6 +135,12 @@ export default function Sidebar({ teams, onTeamChange, onShowTour }: SidebarProp
                                 {team.tenNhom}
                                 </Link>
                             ))}
+                              <CreateTeamDialog onTeamCreated={onTeamChange}>
+                                <button className="flex items-center gap-2 rounded-md px-3 py-1.5 text-sm text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
+                                    <PlusCircle className="h-4 w-4" />
+                                    <span>Tạo đội mới</span>
+                                </button>
+                            </CreateTeamDialog>
                         </div>
                     )}
                 </SidebarGroup>
@@ -143,12 +148,6 @@ export default function Sidebar({ teams, onTeamChange, onShowTour }: SidebarProp
             </SidebarMenu>
         </SidebarContent>
         <SidebarFooter>
-           <ManageTeamsDialog open={isManageTeamsOpen} onOpenChange={setManageTeamsOpen} teams={teams} onTeamsUpdate={onTeamChange}>
-             <SidebarMenuButton tooltip="Quản lý đội" className="w-full text-sidebar-foreground">
-                <Settings />
-                <span>Quản lý đội</span>
-             </SidebarMenuButton>
-           </ManageTeamsDialog>
             <SidebarMenuButton tooltip="Hướng dẫn" className="w-full text-sidebar-foreground" onClick={onShowTour}>
                 <HelpCircle />
                 <span>Hướng dẫn</span>
@@ -163,3 +162,5 @@ export default function Sidebar({ teams, onTeamChange, onShowTour }: SidebarProp
 }
 
 export { SidebarTrigger } from '@/components/ui/sidebar';
+
+    

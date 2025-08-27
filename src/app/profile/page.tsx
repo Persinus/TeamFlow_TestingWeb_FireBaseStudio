@@ -16,6 +16,7 @@ import TaskCard from '@/components/task-card';
 import TaskDetailsSheet from '@/components/task-details-sheet';
 import type { User, Team, Task } from '@/types';
 import { Skeleton } from '@/components/ui/skeleton';
+import TourGuide from '@/components/tour-guide';
 
 function ProfileSkeleton() {
     return (
@@ -52,6 +53,7 @@ export default function ProfilePage() {
     const [assignedTasks, setAssignedTasks] = useState<Task[]>([]);
     const [pageLoading, setPageLoading] = useState(true);
     const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+    const [isTourOpen, setIsTourOpen] = useState(false);
 
     const fetchData = useCallback(async (userId: string) => {
         setPageLoading(true);
@@ -101,7 +103,7 @@ export default function ProfilePage() {
     if (authLoading || pageLoading || !user) {
         return (
             <div className="flex min-h-screen w-full flex-col lg:flex-row bg-background">
-                <Sidebar teams={teams} onTeamChange={() => user && fetchData(user.id)} />
+                <Sidebar teams={teams} onTeamChange={() => user && fetchData(user.id)} onShowTour={() => setIsTourOpen(true)} />
                 <div className="flex flex-1 flex-col">
                     <Header users={users} teams={teams} filters={filters} setFilters={setFilters} onCreateTask={handleCreateTask} />
                     <SidebarInset>
@@ -116,7 +118,7 @@ export default function ProfilePage() {
 
     return (
         <div className="flex min-h-screen w-full flex-col lg:flex-row bg-background">
-            <Sidebar teams={teams} onTeamChange={() => fetchData(user.id)} />
+            <Sidebar teams={teams} onTeamChange={() => fetchData(user.id)} onShowTour={() => setIsTourOpen(true)} />
             <div className="flex flex-1 flex-col">
                 <Header users={users} teams={teams} filters={filters} setFilters={setFilters} onCreateTask={handleCreateTask} />
                 <SidebarInset>
@@ -170,6 +172,9 @@ export default function ProfilePage() {
                     onDeleteTask={handleDeleteTask}
                 />
             )}
+            <TourGuide open={isTourOpen} onOpenChange={setIsTourOpen} />
         </div>
     );
 }
+
+    

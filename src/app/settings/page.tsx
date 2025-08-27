@@ -25,6 +25,7 @@ import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { MOCK_USERS } from '@/lib/mock-data';
+import TourGuide from '@/components/tour-guide';
 
 // Get a list of unique avatar URLs from the mock data
 const availableAvatars = MOCK_USERS.map(u => u.anhDaiDien).filter((v, i, a) => a.indexOf(v) === i);
@@ -49,6 +50,7 @@ export default function SettingsPage() {
     const [dob, setDob] = useState<Date | undefined>(undefined);
     const [isUpdating, setIsUpdating] = useState(false);
     const [isAvatarModalOpen, setAvatarModalOpen] = useState(false);
+    const [isTourOpen, setIsTourOpen] = useState(false);
 
     
     const fetchData = useCallback(async () => {
@@ -145,7 +147,7 @@ export default function SettingsPage() {
 
     return (
         <div className="flex min-h-screen w-full flex-col lg:flex-row bg-background">
-            <Sidebar teams={teams} onTeamChange={fetchData} />
+            <Sidebar teams={teams} onTeamChange={fetchData} onShowTour={() => setIsTourOpen(true)} />
             <div className="flex flex-1 flex-col">
                 <Header users={users} teams={teams} filters={filters} setFilters={setFilters} onCreateTask={handleCreateTask as any} />
                 <SidebarInset>
@@ -288,6 +290,9 @@ export default function SettingsPage() {
                     </div>
                 </DialogContent>
             </Dialog>
+            <TourGuide open={isTourOpen} onOpenChange={setIsTourOpen} />
         </div>
     );
 }
+
+    

@@ -27,6 +27,7 @@ import { useToast } from '@/hooks/use-toast';
 import { SidebarInset } from '@/components/ui/sidebar';
 import { Skeleton } from '@/components/ui/skeleton';
 import TaskDetailsSheet from '@/components/task-details-sheet';
+import TourGuide from '@/components/tour-guide';
 
 const statusColors: Record<TaskStatus, string> = {
   'Tồn đọng': 'hsl(var(--muted-foreground))',
@@ -60,6 +61,7 @@ export default function TeamDetailPage() {
   const [teamToEdit, setTeamToEdit] = useState<{name: string, description: string}>({name: '', description: ''});
   const [userToAdd, setUserToAdd] = useState('');
   const [selectedTask, setSelectedTask] = React.useState<Task | null>(null);
+  const [isTourOpen, setIsTourOpen] = useState(false);
 
 
   const fetchData = useCallback(async () => {
@@ -227,7 +229,7 @@ export default function TeamDetailPage() {
   if (authLoading || loading || !user) {
     return (
         <div className="flex min-h-screen w-full flex-col lg:flex-row bg-background">
-            <Sidebar teams={[]} onTeamChange={() => {}}/>
+            <Sidebar teams={[]} onTeamChange={() => {}} onShowTour={() => {}}/>
             <div className="flex flex-1 flex-col">
                 <Header users={[]} teams={[]} filters={filters} setFilters={setFilters} onCreateTask={handleCreateTask as any} />
                 <SidebarInset>
@@ -257,7 +259,7 @@ export default function TeamDetailPage() {
   
   return (
     <div className="flex min-h-screen w-full flex-col lg:flex-row bg-background">
-      <Sidebar teams={allTeams} onTeamChange={handleTeamCreated} />
+      <Sidebar teams={allTeams} onTeamChange={handleTeamCreated} onShowTour={() => setIsTourOpen(true)} />
       <div className="flex flex-1 flex-col">
         <Header users={allUsers} teams={allTeams} filters={filters} setFilters={setFilters} onCreateTask={handleCreateTask as any} />
         <SidebarInset>
@@ -492,7 +494,9 @@ export default function TeamDetailPage() {
                 </DialogFooter>
             </DialogContent>
         </Dialog>
-
+        <TourGuide open={isTourOpen} onOpenChange={setIsTourOpen} />
     </div>
   );
 }
+
+    
