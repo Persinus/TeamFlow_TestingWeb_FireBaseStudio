@@ -17,9 +17,9 @@ import { DndContext, DragEndEvent, DragOverEvent, DragOverlay, DragStartEvent, P
 import { createPortal } from 'react-dom';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { LayoutGrid, CalendarDays, GanttChartSquare } from 'lucide-react';
+import { LayoutGrid, CalendarDays, GanttChartSquare, ListTree } from 'lucide-react';
 import CalendarView from '@/components/calendar-view';
 import TimelineView from '@/components/timeline-view';
 import { Select, SelectContent, SelectItem, SelectSeparator, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -35,12 +35,12 @@ const columns: { id: TaskStatus; title: string }[] = [
 ];
 
 
-function DroppableColumn({ id, title, children, isDragOver }: { id: string; title: string; children: React.ReactNode; isDragOver: boolean }) {
+function DroppableColumn({ id, title, children, isDragOver, isCompact }: { id: string; title: string; children: React.ReactNode; isDragOver: boolean, isCompact: boolean }) {
   const { setNodeRef } = useDroppable({ id });
   return (
     <motion.div
       ref={setNodeRef}
-      className={cn("flex h-full flex-col gap-4 rounded-lg transition-colors", isDragOver ? "bg-primary/10" : "")}
+      className={cn("flex h-full flex-col gap-2 rounded-lg transition-colors", isDragOver ? "bg-primary/10" : "")}
     >
       <div className="flex items-center justify-between rounded-lg bg-card p-3 shadow-sm border">
         <h2 className="font-semibold text-foreground">{title}</h2>
@@ -48,9 +48,11 @@ function DroppableColumn({ id, title, children, isDragOver }: { id: string; titl
       </div>
       <motion.div 
         layout
-        className="flex flex-col gap-4"
+        className={cn("flex flex-col", isCompact ? "gap-1.5" : "gap-4")}
       >
-        {children}
+        <AnimatePresence>
+            {children}
+        </AnimatePresence>
       </motion.div>
     </motion.div>
   );
@@ -91,6 +93,7 @@ export default function BoardPage() {
   const [filters, setFilters] = useState<{ assignee: string; team: string; search: string }>({ assignee: 'all', team: 'all', search: '' });
 
   const [viewMode, setViewMode] = useState<'board' | 'calendar' | 'timeline'>('board');
+  const [isCompactView, setIsCompactView] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [overId, setOverId] = useState<string | null>(null);
   const sensors = useSensors(useSensor(PointerSensor));
@@ -285,6 +288,9 @@ export default function BoardPage() {
                         <Button variant={viewMode === 'timeline' ? 'secondary' : 'ghost'} size="icon" onClick={() => setViewMode('timeline')} aria-label="Chế độ xem dòng thời gian">
                             <GanttChartSquare className="h-5 w-5" />
                         </Button>
+                         <Button variant={isCompactView ? 'secondary' : 'ghost'} size="icon" onClick={() => setIsCompactView(v => !v)} aria-label="Chế độ xem nhỏ gọn">
+                            <ListTree className="h-5 w-5" />
+                        </Button>
                     </div>
                 </div>
               </div>
@@ -299,13 +305,14 @@ export default function BoardPage() {
                 >
                   <div className="grid min-w-[1200px] grid-cols-4 gap-6">
                     {columns.map(column => (
-                      <DroppableColumn key={column.id} id={column.id} title={column.title} isDragOver={overId === column.id}>
+                      <DroppableColumn key={column.id} id={column.id} title={column.title} isDragOver={overId === column.id} isCompact={isCompactView}>
                         {tasksByStatus[column.id].map(task => (
                           <TaskCard 
                             key={task.id} 
                             task={task} 
                             onSelectTask={setSelectedTask} 
                             isDragging={activeId === task.id}
+                            isCompact={isCompactView}
                           />
                         ))}
                       </DroppableColumn>
@@ -313,7 +320,7 @@ export default function BoardPage() {
                   </div>
                   {typeof document !== "undefined" && createPortal(
                      <DragOverlay>
-                        {activeTask ? <TaskCard task={activeTask} isDragging /> : null}
+                        {activeTask ? <TaskCard task={activeTask} isDragging isCompact={isCompactView} /> : null}
                      </DragOverlay>,
                      document.body
                   )}

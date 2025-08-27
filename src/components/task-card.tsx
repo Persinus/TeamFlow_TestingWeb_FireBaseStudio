@@ -15,6 +15,7 @@ interface TaskCardProps {
   task: Task;
   onSelectTask?: (task: Task) => void;
   isDragging?: boolean;
+  isCompact?: boolean;
 }
 
 // Function to get a consistent, visually distinct color for each tag
@@ -27,7 +28,7 @@ const getTagColor = (tagName: string) => {
     return `hsl(${h}, 40%, 85%)`; // Using HSL for better color control: low saturation, high lightness
 };
 
-export default function TaskCard({ task, onSelectTask, isDragging }: TaskCardProps) {
+export default function TaskCard({ task, onSelectTask, isDragging, isCompact = false }: TaskCardProps) {
   const {attributes, listeners, setNodeRef, transform} = useDraggable({
     id: task.id,
     data: { task },
@@ -58,11 +59,52 @@ export default function TaskCard({ task, onSelectTask, isDragging }: TaskCardPro
 
   const deadlineInfo = getDeadlineInfo();
 
+  if (isCompact) {
+     return (
+       <motion.div
+        ref={setNodeRef}
+        style={style}
+        layoutId={task.id}
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0, transition: { duration: 0.2 } }}
+        exit={{ opacity: 0, transition: { duration: 0.15 } }}
+        className={cn("relative group", isDragging && "z-50")}
+       >
+        <Card 
+            className={cn(
+                "hover:shadow-md transition-all duration-200 bg-card",
+                isDragging && "ring-2 ring-primary shadow-lg opacity-80"
+            )}
+        >
+             <div {...attributes} {...listeners} className="absolute top-1/2 -translate-y-1/2 left-0.5 p-1 text-muted-foreground/30 cursor-grab opacity-0 group-hover:opacity-100 transition-opacity">
+                <GripVertical className="h-5 w-5" />
+             </div>
+             <div className="cursor-pointer py-2 pl-6 pr-2" onClick={() => onSelectTask?.(task)}>
+                 <div className="flex items-center justify-between gap-2">
+                     <span className="text-sm font-medium truncate flex-1">{task.tieuDe}</span>
+                      {task.nguoiThucHien ? (
+                        <Avatar className="h-6 w-6 flex-shrink-0">
+                            <AvatarImage src={task.nguoiThucHien.anhDaiDien} alt={task.nguoiThucHien.hoTen} />
+                            <AvatarFallback>{task.nguoiThucHien.hoTen.substring(0,2).toUpperCase()}</AvatarFallback>
+                        </Avatar>
+                    ) : (
+                        <div className="h-6 w-6 rounded-full bg-muted flex items-center justify-center text-muted-foreground text-[10px] flex-shrink-0">?</div>
+                    )}
+                 </div>
+             </div>
+        </Card>
+       </motion.div>
+     );
+  }
+
   return (
     <motion.div 
         ref={setNodeRef} 
         style={style} 
         layoutId={task.id}
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0, transition: { duration: 0.3 } }}
+        exit={{ opacity: 0, transition: { duration: 0.15 } }}
         className={cn("relative group", isDragging && "z-50")}
         whileHover={{ scale: 1.03 }}
         
