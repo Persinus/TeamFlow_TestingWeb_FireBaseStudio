@@ -36,13 +36,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (loading) return; 
 
         const isAuthPage = pathname === '/login' || pathname === '/register';
+        const userIsSet = !!sessionStorage.getItem('teamflow-user');
         
-        if (!user && !isAuthPage) {
+        if (!userIsSet && !isAuthPage) {
             router.push('/login');
-        } else if (user && isAuthPage) {
+        } else if (userIsSet && isAuthPage) {
             router.push('/');
         }
-    }, [user, loading, pathname, router]);
+    }, [loading, pathname, router]);
 
     const login = async (email: string, pass: string): Promise<void> => {
        setLoading(true);

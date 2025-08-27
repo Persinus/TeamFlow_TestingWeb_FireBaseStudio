@@ -98,7 +98,6 @@ export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onU
     fetchTags();
   }, []);
 
-  // Only reset the form when the task ID changes (a new task is selected)
   useEffect(() => {
     if (task) {
       form.reset({
@@ -114,7 +113,7 @@ export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onU
         doUuTien: task.doUuTien,
       });
     }
-  }, [task?.id]);
+  }, [task, form]);
   
   const assignee = useMemo(() => users.find(u => u.id === task?.nguoiThucHienId), [task, users]);
   const team = useMemo(() => teams.find(t => t.id === task?.nhomId), [task, teams]);
@@ -171,9 +170,8 @@ export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onU
   }
 
   const handleCreateTag = (value: string) => {
-    const lowercasedValue = value.toLowerCase();
-    if (!availableTags.some(t => t.toLowerCase() === lowercasedValue)) {
-        const newTag = value.trim();
+    const newTag = value.trim();
+    if (newTag && !availableTags.includes(newTag)) {
         setAvailableTags(prev => [...prev, newTag]);
         const currentTags = form.getValues('tags') || [];
         form.setValue('tags', [...currentTags, newTag]);
@@ -340,5 +338,3 @@ export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onU
     </Sheet>
   );
 }
-
-    
