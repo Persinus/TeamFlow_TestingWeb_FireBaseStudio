@@ -27,6 +27,7 @@ import { useToast } from '@/hooks/use-toast';
 import { SidebarInset } from '@/components/ui/sidebar';
 import { Skeleton } from '@/components/ui/skeleton';
 import TaskDetailsSheet from '@/components/task-details-sheet';
+import { motion } from 'framer-motion';
 import TourGuide from '@/components/tour-guide';
 
 const statusColors: Record<TaskStatus, string> = {
@@ -262,7 +263,12 @@ export default function TeamDetailPage() {
       <div className="flex flex-1 flex-col">
         <Header onCreateTask={handleCreateTask as any} />
         <SidebarInset>
-            <main className="flex-1 p-4 sm:p-6 md:p-8">
+            <motion.main 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              className="flex-1 p-4 sm:p-6 md:p-8"
+            >
               <div className="space-y-8">
                 <div className="flex items-center justify-between">
                   <div>
@@ -458,7 +464,7 @@ export default function TeamDetailPage() {
                   </div>
                 </div>
               </div>
-            </main>
+            </motion.main>
         </SidebarInset>
       </div>
        {selectedTask && (
@@ -497,5 +503,3 @@ export default function TeamDetailPage() {
     </div>
   );
 }
-
-    
