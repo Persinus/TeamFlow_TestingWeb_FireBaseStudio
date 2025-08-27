@@ -22,7 +22,8 @@ export default function CalendarView({ tasks, onSelectTask }: CalendarViewProps)
     const map = new Map<string, Task[]>()
     tasks.forEach(task => {
       if (task.dueDate) {
-        const dateKey = format(parseISO(task.dueDate), "yyyy-MM-dd")
+        const dueDate = typeof task.dueDate === 'string' ? parseISO(task.dueDate) : task.dueDate;
+        const dateKey = format(dueDate, "yyyy-MM-dd")
         if (!map.has(dateKey)) {
           map.set(dateKey, [])
         }
