@@ -114,7 +114,7 @@ export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onU
         doUuTien: task.doUuTien,
       });
     }
-  }, [task?.id, form]);
+  }, [task?.id]);
   
   const assignee = useMemo(() => users.find(u => u.id === task?.nguoiThucHienId), [task, users]);
   const team = useMemo(() => teams.find(t => t.id === task?.nhomId), [task, teams]);
@@ -173,11 +173,10 @@ export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onU
   const handleCreateTag = (value: string) => {
     const lowercasedValue = value.toLowerCase();
     if (!availableTags.some(t => t.toLowerCase() === lowercasedValue)) {
-        setAvailableTags(prev => [...prev, value]);
-    }
-    const currentTags = form.getValues('tags') || [];
-     if (!currentTags.some(t => t.toLowerCase() === lowercasedValue)) {
-      form.setValue('tags', [...currentTags, value]);
+        const newTag = value.trim();
+        setAvailableTags(prev => [...prev, newTag]);
+        const currentTags = form.getValues('tags') || [];
+        form.setValue('tags', [...currentTags, newTag]);
     }
   }
 
@@ -341,3 +340,5 @@ export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onU
     </Sheet>
   );
 }
+
+    
