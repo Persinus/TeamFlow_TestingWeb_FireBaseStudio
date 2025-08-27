@@ -10,10 +10,12 @@ import Link from "next/link";
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import { Logo } from '@/components/icons';
+import { Eye, EyeOff } from 'lucide-react';
 
 export default function LoginPage() {
     const [email, setEmail] = useState('admin@teamflow.com');
     const [password, setPassword] = useState('Admin@1234');
+    const [showPassword, setShowPassword] = useState(false);
     const { user, login, loading } = useAuth();
     const router = useRouter();
     const { toast } = useToast();
@@ -74,13 +76,26 @@ export default function LoginPage() {
                                         Forgot your password?
                                     </Link>
                                 </div>
-                                <Input 
-                                    id="password" 
-                                    type="password"
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    required 
-                                />
+                                <div className="relative">
+                                    <Input 
+                                        id="password" 
+                                        type={showPassword ? "text" : "password"}
+                                        value={password}
+                                        onChange={(e) => setPassword(e.target.value)}
+                                        required 
+                                        className="pr-10"
+                                    />
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="icon"
+                                        className="absolute inset-y-0 right-0 h-full px-3"
+                                        onClick={() => setShowPassword(!showPassword)}
+                                    >
+                                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                        <span className="sr-only">{showPassword ? 'Hide password' : 'Show password'}</span>
+                                    </Button>
+                                </div>
                             </div>
                             <Button type="submit" className="w-full">
                                 Login
