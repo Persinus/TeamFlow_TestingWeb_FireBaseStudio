@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -9,7 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import { SidebarInset } from '@/components/ui/sidebar';
-import { getTeams, getUsers, getTasksByAssignee, addTask, Task } from '@/lib/data';
+import { getTeams, getUsers, getTasksByAssignee, addTask, Task, updateTask } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
 import TaskCard from '@/components/task-card';
@@ -82,20 +83,17 @@ export default function ProfilePage() {
 
     // Dummy handlers for Header component
     const [filters, setFilters] = useState({ assignee: 'all', team: 'all', search: '' });
-    const handleCreateTask = async (newTaskData: Omit<Task, 'id' | 'comments' | 'team' | 'assignee' | 'createdAt'>) => {
+    const handleCreateTask = async (newTaskData: Omit<Task, 'id' | 'team' | 'assignee' | 'createdAt'>) => {
         await addTask(newTaskData);
         if(user) fetchData(user.id);
     };
     
-    const handleUpdateTask = async () => {
+    const handleUpdateTask = async (updatedTaskData: Omit<Task, 'team' | 'assignee'>) => {
+         await updateTask(updatedTaskData.id, updatedTaskData);
          if(user) await fetchData(user.id);
          setSelectedTask(null);
     }
     
-    const handleCommentAdded = async () => {
-         if(user) await fetchData(user.id);
-    }
-
     if (authLoading || pageLoading || !user) {
         return (
             <div className="flex min-h-screen w-full flex-col lg:flex-row bg-muted/40">
@@ -165,7 +163,6 @@ export default function ProfilePage() {
                     teams={teams}
                     onOpenChange={(isOpen) => !isOpen && setSelectedTask(null)}
                     onUpdateTask={handleUpdateTask}
-                    onCommentAdded={handleCommentAdded}
                 />
             )}
         </div>

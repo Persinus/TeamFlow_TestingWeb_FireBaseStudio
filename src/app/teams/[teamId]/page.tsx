@@ -4,7 +4,7 @@
 
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import { notFound, useRouter, useParams } from 'next/navigation';
-import { getTeam, getUsers, getTasksByTeam, addTeamMember, removeTeamMember, updateTeamMemberRole, getTeams, updateTask, addComment } from '@/lib/data';
+import { getTeam, getUsers, getTasksByTeam, addTeamMember, removeTeamMember, updateTeamMemberRole, getTeams, updateTask } from '@/lib/data';
 import type { Task, TaskStatus, User, Team, TeamMemberRole } from '@/types';
 import Sidebar from '@/components/sidebar';
 import Header from '@/components/header';
@@ -163,7 +163,7 @@ export default function TeamDetailPage() {
     }
   };
   
-  const handleUpdateTask = async (updatedTaskData: Omit<Task, 'team' | 'assignee' | 'comments'>) => {
+  const handleUpdateTask = async (updatedTaskData: Omit<Task, 'team' | 'assignee'>) => {
     await updateTask(updatedTaskData.id, updatedTaskData);
     await fetchData(); // Refetch all data to ensure consistency
     setSelectedTask(prev => prev ? {...prev, ...updatedTaskData} : null); // Optimistically update
@@ -173,15 +173,9 @@ export default function TeamDetailPage() {
     });
   };
 
-  const handleCommentAdded = async () => {
-    if (selectedTask) {
-        await fetchData(); // Just refetch everything for simplicity
-    }
-  }
-
   // Dummy handlers for Header
   const [filters, setFilters] = React.useState({ assignee: 'all', team: 'all', search: '' });
-  const handleCreateTask = async (newTaskData: Omit<Task, 'id' | 'comments' | 'team' | 'assignee' | 'createdAt'>) => {};
+  const handleCreateTask = async (newTaskData: Omit<Task, 'id' | 'team' | 'assignee' | 'createdAt'>) => {};
   const handleTeamCreated = async () => {
     // This will just refetch all teams, and the sidebar will update.
     const teams = await getTeams();
@@ -394,7 +388,6 @@ export default function TeamDetailPage() {
             teams={allTeams}
             onOpenChange={(isOpen) => !isOpen && setSelectedTask(null)}
             onUpdateTask={handleUpdateTask}
-            onCommentAdded={handleCommentAdded}
         />
        )}
     </div>

@@ -3,7 +3,7 @@
 "use client";
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { getTasks, updateTaskStatus, addComment as apiAddComment, addTask as apiAddTask, getUsers, getTeams, updateTask } from '@/lib/data';
+import { getTasks, updateTaskStatus, addTask as apiAddTask, getUsers, getTeams, updateTask } from '@/lib/data';
 import type { Task, TaskStatus, User, Team } from '@/types';
 import Sidebar from '@/components/sidebar';
 import Header from '@/components/header';
@@ -140,12 +140,12 @@ export default function DashboardPage() {
     });
   }, [tasks, filters]);
 
-  const handleCreateTask = async (newTaskData: Omit<Task, 'id' | 'comments' | 'team' | 'assignee' | 'createdAt'>) => {
+  const handleCreateTask = async (newTaskData: Omit<Task, 'id' | 'team' | 'assignee' | 'createdAt'>) => {
     await apiAddTask(newTaskData);
     fetchData(); 
   };
   
-  const handleUpdateTask = async (updatedTaskData: Omit<Task, 'team' | 'assignee' | 'comments'>) => {
+  const handleUpdateTask = async (updatedTaskData: Omit<Task, 'team' | 'assignee'>) => {
     await updateTask(updatedTaskData.id, updatedTaskData);
     await fetchData(); // Refetch all data to ensure consistency
     setSelectedTask(prev => prev ? {...prev, ...updatedTaskData} : null); // Optimistically update selected task
@@ -173,18 +173,6 @@ export default function DashboardPage() {
     }
   };
   
-  const handleCommentAdded = async () => {
-    if (selectedTask) {
-        // Refetch the single task to get the new comment
-        const updatedTasks = await getTasks();
-        const refreshedTask = updatedTasks.find(t => t.id === selectedTask.id);
-        if (refreshedTask) {
-            setSelectedTask(refreshedTask);
-        }
-        setTasks(updatedTasks);
-    }
-  }
-
   const tasksByStatus = useMemo(() => {
     return columns.reduce((acc, column) => {
       acc[column.id] = filteredTasks.filter(task => task.status === column.id).sort((a,b) => a.title.localeCompare(b.title));
@@ -301,7 +289,6 @@ export default function DashboardPage() {
             teams={teams}
             onOpenChange={(isOpen) => !isOpen && setSelectedTask(null)}
             onUpdateTask={handleUpdateTask}
-            onCommentAdded={handleCommentAdded}
         />
       )}
     </div>

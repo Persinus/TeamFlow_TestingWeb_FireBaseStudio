@@ -25,13 +25,6 @@ export interface Team {
   members: TeamMember[];
 }
 
-export interface Comment {
-  id: string;
-  author: User; 
-  content: string;
-  createdAt: string; // ISO string for date-fns formatting
-}
-
 export type TaskStatus = 'todo' | 'in-progress' | 'done' | 'backlog';
 
 export interface Task {
@@ -43,10 +36,8 @@ export interface Task {
   assignee?: User; 
   teamId: string; 
   team: Team; 
-  comments: Comment[];
   createdAt: string; // ISO string
   startDate?: string; // ISO string
   dueDate?: string; // ISO string
   tags?: string[];
 }
-

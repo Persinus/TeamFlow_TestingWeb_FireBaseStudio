@@ -4,7 +4,7 @@ import React from 'react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { MessageSquare, Calendar as CalendarIcon, AlertCircle, GripVertical } from 'lucide-react';
+import { Calendar as CalendarIcon, AlertCircle, GripVertical } from 'lucide-react';
 import type { Task } from '@/types';
 import { useDraggable } from '@dnd-kit/core';
 import { cn } from '@/lib/utils';
@@ -108,8 +108,6 @@ export default function TaskCard({ task, onSelectTask, isDragging }: TaskCardPro
             </CardContent>
             <CardFooter className="flex justify-between text-sm text-muted-foreground pt-2">
                 <div className="flex items-center gap-2">
-                    <MessageSquare className="h-4 w-4" />
-                    <span>{task.comments.length}</span>
                 </div>
                 {deadlineInfo.text && (
                     <div className={cn("flex items-center gap-1.5", deadlineInfo.className)}>

@@ -10,7 +10,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFo
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import type { Task, TaskStatus, User, Team, Comment } from '@/types';
+import type { Task, User, Team } from '@/types';
 import { format, parseISO } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
@@ -18,20 +18,18 @@ import { Calendar } from './ui/calendar';
 import { cn } from '@/lib/utils';
 import { Textarea } from './ui/textarea';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from './ui/form';
-import { CalendarIcon, Loader2, Pencil, User as UserIcon, Users, Tag, CheckSquare, MessageSquare } from 'lucide-react';
-import { useAuth } from '@/hooks/use-auth';
+import { CalendarIcon, Loader2, Pencil, User as UserIcon, Users, Tag, CheckSquare, X } from 'lucide-react';
 import { Separator } from './ui/separator';
-import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
-import { addComment } from '@/lib/data';
 import { Badge } from './ui/badge';
+import { MultiSelect } from './ui/multi-select';
+import { getAllTags } from '@/lib/data';
 
 interface TaskDetailsSheetProps {
   task: Task | null;
   users: User[];
   teams: Team[];
   onOpenChange: (isOpen: boolean) => void;
-  onUpdateTask: (updatedTask: Omit<Task, 'team' | 'assignee' | 'comments'>) => Promise<void>;
-  onCommentAdded?: () => Promise<void>; // Make optional
+  onUpdateTask: (updatedTask: Omit<Task, 'team' | 'assignee'>) => Promise<void>;
 }
 
 const taskSchema = z.object({
@@ -42,7 +40,7 @@ const taskSchema = z.object({
   teamId: z.string().min(1, 'Team is required'),
   startDate: z.date().optional(),
   dueDate: z.date().optional(),
-  tags: z.string().optional(),
+  tags: z.array(z.string()).optional(),
 });
 
 type TaskFormData = z.infer<typeof taskSchema>;
@@ -57,18 +55,24 @@ const DetailRow = ({ icon: Icon, label, value }: { icon: React.ElementType, labe
     </div>
 );
 
-export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onUpdateTask, onCommentAdded }: TaskDetailsSheetProps) {
-  const { user } = useAuth();
+export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onUpdateTask }: TaskDetailsSheetProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
-  const [newComment, setNewComment] = useState("");
-  const [isPostingComment, setIsPostingComment] = useState(false);
   const { toast } = useToast();
+  const [availableTags, setAvailableTags] = useState<string[]>([]);
 
   const form = useForm<TaskFormData>({
     resolver: zodResolver(taskSchema),
     defaultValues: {}
   });
+  
+  useEffect(() => {
+    async function fetchTags() {
+        const tags = await getAllTags();
+        setAvailableTags(tags);
+    }
+    fetchTags();
+  }, []);
 
   useEffect(() => {
     if (task) {
@@ -80,7 +84,7 @@ export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onU
         teamId: task.teamId,
         startDate: task.startDate ? parseISO(task.startDate) : undefined,
         dueDate: task.dueDate ? parseISO(task.dueDate) : undefined,
-        tags: task.tags ? task.tags.join(', ') : '',
+        tags: task.tags || [],
       });
       setIsEditing(false); // Reset to view mode whenever a new task is selected
     }
@@ -100,7 +104,7 @@ export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onU
         assigneeId: data.assigneeId === 'unassigned' ? undefined : data.assigneeId,
         startDate: data.startDate?.toISOString(),
         dueDate: data.dueDate?.toISOString(),
-        tags: data.tags ? data.tags.split(',').map(tag => tag.trim()).filter(Boolean) : [],
+        tags: data.tags || [],
         createdAt: task.createdAt,
       });
       setIsEditing(false);
@@ -115,29 +119,16 @@ export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onU
     }
   };
 
-  const handlePostComment = async () => {
-    if (!newComment.trim() || !user || !onCommentAdded) return;
-    setIsPostingComment(true);
-    try {
-        await addComment(task.id, newComment, user.id);
-        await onCommentAdded();
-        setNewComment("");
-        toast({ title: 'Comment Posted' });
-    } catch(error) {
-        toast({ variant: 'destructive', title: 'Error', description: 'Failed to post comment.' });
-    } finally {
-        setIsPostingComment(false);
-    }
-  };
-
   return (
     <Sheet open={!!task} onOpenChange={onOpenChange}>
       <SheetContent className="sm:max-w-2xl w-[95vw] flex flex-col">
-        <SheetHeader className="pr-12">
-          <SheetTitle className="truncate">{task.title}</SheetTitle>
-          <SheetDescription>
-            In team <span className="font-semibold text-foreground">{team?.name}</span>. Created on {format(parseISO(task.createdAt), 'PPP')}
-          </SheetDescription>
+         <SheetHeader className="pr-12">
+           <SheetTitle className="truncate">{isEditing ? 'Editing Task' : task.title}</SheetTitle>
+           {!isEditing && (
+            <SheetDescription>
+                In team <span className="font-semibold text-foreground">{team?.name}</span>. Created on {format(parseISO(task.createdAt), 'PPP')}
+            </SheetDescription>
+           )}
         </SheetHeader>
         
         {!isEditing && (
@@ -160,45 +151,6 @@ export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onU
                         <DetailRow icon={CalendarIcon} label="Start Date" value={task.startDate ? format(parseISO(task.startDate), 'PPP') : 'Not set'} />
                         <DetailRow icon={CalendarIcon} label="Due Date" value={task.dueDate ? format(parseISO(task.dueDate), 'PPP') : 'Not set'} />
                     </div>
-                     <Separator />
-                     {onCommentAdded && (
-                     <div>
-                        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                           <MessageSquare className="h-5 w-5" /> Comments
-                        </h3>
-                        <div className="space-y-4">
-                            {task.comments.map(comment => (
-                                <div key={comment.id} className="flex items-start gap-3">
-                                    <Avatar className="h-8 w-8">
-                                        <AvatarImage src={comment.author.avatar} />
-                                        <AvatarFallback>{comment.author.name.substring(0,2).toUpperCase()}</AvatarFallback>
-                                    </Avatar>
-                                    <div className="flex-1 bg-muted/50 rounded-lg p-3">
-                                        <div className="flex items-center justify-between mb-1">
-                                            <p className="font-semibold text-sm">{comment.author.name}</p>
-                                            <p className="text-xs text-muted-foreground">{format(parseISO(comment.createdAt), 'MMM d, h:mm a')}</p>
-                                        </div>
-                                        <p className="text-sm">{comment.content}</p>
-                                    </div>
-                                </div>
-                            ))}
-                            {task.comments.length === 0 && <p className="text-sm text-muted-foreground">No comments yet.</p>}
-                        </div>
-                        <div className="mt-6 flex gap-3">
-                            <Avatar className="h-9 w-9">
-                                <AvatarImage src={user?.avatar} />
-                                <AvatarFallback>{user?.name.substring(0,2).toUpperCase()}</AvatarFallback>
-                            </Avatar>
-                            <div className="flex-1">
-                                <Textarea value={newComment} onChange={(e) => setNewComment(e.target.value)} placeholder="Write a comment..." className="mb-2" />
-                                <Button onClick={handlePostComment} disabled={isPostingComment || !newComment.trim()}>
-                                    {isPostingComment && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                    Post Comment
-                                </Button>
-                            </div>
-                        </div>
-                    </div>
-                    )}
                 </div>
             ) : (
                 <Form {...form}>
@@ -210,7 +162,24 @@ export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onU
                             <FormItem><FormLabel>Description</FormLabel><FormControl><Textarea className="min-h-[100px]" {...field} /></FormControl><FormMessage /></FormItem>
                          )} />
                          <FormField control={form.control} name="tags" render={({ field }) => (
-                            <FormItem><FormLabel>Tags</FormLabel><FormControl><Input placeholder="tag1, tag2, tag3" {...field} /></FormControl><FormMessage /></FormItem>
+                             <FormItem>
+                                <FormLabel>Tags</FormLabel>
+                                <FormControl>
+                                   <MultiSelect
+                                        options={availableTags.map(tag => ({ value: tag, label: tag }))}
+                                        value={field.value || []}
+                                        onChange={field.onChange}
+                                        onCreate={(value) => {
+                                            const newTag = { value, label: value };
+                                            setAvailableTags(prev => [...prev, value]);
+                                            field.onChange([...(field.value || []), newTag.value]);
+                                        }}
+                                        placeholder="Select or create tags..."
+                                        
+                                    />
+                                </FormControl>
+                                <FormMessage />
+                             </FormItem>
                          )} />
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

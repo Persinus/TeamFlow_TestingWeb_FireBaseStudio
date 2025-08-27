@@ -23,7 +23,7 @@ import { format } from 'date-fns';
 
 interface CreateTaskSheetProps {
   children: React.ReactNode;
-  onCreateTask: (newTaskData: Omit<Task, 'id' | 'comments' | 'team' | 'assignee' | 'createdAt'>) => Promise<void>;
+  onCreateTask: (newTaskData: Omit<Task, 'id' | 'team' | 'assignee' | 'createdAt'>) => Promise<void>;
   users: User[];
   teams: Team[];
 }
@@ -36,7 +36,7 @@ const taskSchema = z.object({
   status: z.enum(['todo', 'in-progress', 'backlog', 'done']),
   startDate: z.date().optional(),
   dueDate: z.date().optional(),
-  tags: z.string().optional(),
+  tags: z.array(z.string()).optional(),
 });
 
 export default function CreateTaskSheet({ children, onCreateTask, users, teams }: CreateTaskSheetProps) {
@@ -50,7 +50,7 @@ export default function CreateTaskSheet({ children, onCreateTask, users, teams }
       title: '',
       description: '',
       status: 'todo',
-      tags: ''
+      tags: []
     },
   });
 
@@ -92,7 +92,7 @@ export default function CreateTaskSheet({ children, onCreateTask, users, teams }
       ...values,
       startDate: values.startDate?.toISOString(),
       dueDate: values.dueDate?.toISOString(),
-      tags: values.tags ? values.tags.split(',').map(tag => tag.trim()).filter(Boolean) : [],
+      tags: values.tags,
     });
     form.reset();
     setIsOpen(false);
@@ -300,7 +300,7 @@ export default function CreateTaskSheet({ children, onCreateTask, users, teams }
                 <FormItem>
                   <FormLabel>Tags</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g. bug, feature, ui" {...field} />
+                    <Input placeholder="e.g. bug, feature, ui" {...field} value={field.value?.join(', ') || ''} onChange={e => field.onChange(e.target.value.split(',').map(s => s.trim()))} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
