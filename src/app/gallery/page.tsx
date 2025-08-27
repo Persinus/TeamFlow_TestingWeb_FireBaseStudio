@@ -17,6 +17,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import Artwork from '@/components/gallery-artwork';
 import TaskDetailsSheet from '@/components/task-details-sheet';
+import { Card } from '@/components/ui/card';
 
 function GallerySkeleton() {
     return (
@@ -138,13 +139,3 @@ export default function GalleryPage() {
         </div>
     );
 }
-
-// Add a simple Card component for placeholder
-const Card = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(({ className, ...props }, ref) => (
-    <div
-        ref={ref}
-        className={`bg-card text-card-foreground border rounded-lg shadow-sm ${className}`}
-        {...props}
-    />
-));
-Card.displayName = "Card";
