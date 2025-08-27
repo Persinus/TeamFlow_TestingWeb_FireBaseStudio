@@ -3,13 +3,12 @@
 "use client"
 
 import * as React from "react"
-import { parseISO, format } from "date-fns"
+import { parseISO, format, isSameDay } from "date-fns"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import type { Task } from "@/types"
 import { cn } from "@/lib/utils"
 import { Card } from "@/components/ui/card"
-import { buttonVariants } from "@/components/ui/button"
 
 interface CalendarViewProps {
   tasks: Task[]
@@ -17,9 +16,8 @@ interface CalendarViewProps {
 }
 
 export default function CalendarView({ tasks, onSelectTask }: CalendarViewProps) {
-  const [month, setMonth] = React.useState(new Date())
+  const [date, setDate] = React.useState<Date | undefined>(new Date());
 
-  // Memoize tasks by due date for quick lookup
   const tasksByDueDate = React.useMemo(() => {
     const map = new Map<string, Task[]>()
     tasks.forEach(task => {
@@ -34,87 +32,67 @@ export default function CalendarView({ tasks, onSelectTask }: CalendarViewProps)
     return map
   }, [tasks])
 
-  const DayWithTasks: React.FC<{ displayMonth: Date, date: Date }> = ({ displayMonth, date }) => {
+  const tasksForSelectedDate = React.useMemo(() => {
+    if (!date) return [];
+    const dateKey = format(date, "yyyy-MM-dd");
+    return tasksByDueDate.get(dateKey) || [];
+  }, [date, tasksByDueDate]);
+  
+  const DayWithTasks: React.FC<{ date: Date }> = ({ date }) => {
     const dateKey = format(date, "yyyy-MM-dd")
     const tasksForDay = tasksByDueDate.get(dateKey) || []
 
     return (
-      <Popover>
-        <PopoverTrigger asChild disabled={tasksForDay.length === 0}>
-           <div className={cn(
-               "h-full w-full relative flex items-center justify-center", 
-               tasksForDay.length > 0 && "cursor-pointer"
-            )}>
-                <span>{format(date, "d")}</span>
-                {tasksForDay.length > 0 && (
-                    <div className="absolute bottom-1 w-1 h-1 rounded-full bg-primary" />
-                )}
-           </div>
-        </PopoverTrigger>
-        {tasksForDay.length > 0 && (
-          <PopoverContent className="w-80 p-2 space-y-2">
-            <p className="text-sm font-semibold px-2">{format(date, 'PPP')}</p>
-            {tasksForDay.map(task => (
-              <button
-                key={task.id}
-                onClick={() => onSelectTask(task)}
-                className="w-full text-left p-2 rounded-md hover:bg-accent text-sm"
-              >
-                <div className="flex items-center gap-2">
-                    <div className={cn("w-2 h-2 rounded-full", {
-                        "bg-green-500": task.status === 'done',
-                        "bg-blue-500": task.status === 'todo',
-                        "bg-yellow-500": task.status === 'in-progress',
-                        "bg-gray-400": task.status === 'backlog',
-                    })} />
-                    <span className="flex-1 truncate">{task.title}</span>
-                </div>
-              </button>
-            ))}
-          </PopoverContent>
-        )}
-      </Popover>
+        <div className="relative flex items-center justify-center h-full w-full">
+            <span>{format(date, "d")}</span>
+            {tasksForDay.length > 0 && (
+                <div className="absolute bottom-1 w-1.5 h-1.5 rounded-full bg-primary" />
+            )}
+        </div>
     )
   }
 
   return (
-    <Card>
-      <Calendar
-        mode="single"
-        month={month}
-        onMonthChange={setMonth}
-        className="p-0"
-        classNames={{
-            months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
-            month: "space-y-4 p-4",
-            caption: "flex justify-center pt-1 relative items-center",
-            caption_label: "text-sm font-medium",
-            nav: "space-x-1 flex items-center",
-            nav_button: cn(
-              buttonVariants({ variant: "outline" }),
-              "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100"
-            ),
-            nav_button_previous: "absolute left-1",
-            nav_button_next: "absolute right-1",
-            table: "w-full border-collapse space-y-1",
-            head_row: "flex",
-            head_cell: "text-muted-foreground rounded-md w-full font-normal text-[0.8rem]",
-            row: "flex w-full mt-2",
-            cell: "text-center text-sm p-0 relative [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20 h-16",
-            day: cn(
-              buttonVariants({ variant: "ghost" }),
-              "h-full w-full p-0 font-normal aria-selected:opacity-100 rounded-none"
-            ),
-            day_selected: "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
-            day_today: "bg-accent text-accent-foreground",
-            day_outside: "text-muted-foreground opacity-50",
-            day_disabled: "text-muted-foreground opacity-50",
-            day_hidden: "invisible",
-        }}
-        components={{
-          Day: DayWithTasks
-        }}
-      />
+    <Card className="md:grid md:grid-cols-3 md:divide-x">
+       <div className="p-4 md:col-span-2">
+            <Calendar
+                mode="single"
+                selected={date}
+                onSelect={setDate}
+                className="p-0"
+                components={{
+                    DayContent: DayWithTasks
+                }}
+            />
+       </div>
+      <div className="p-4 border-t md:border-t-0">
+          <h3 className="text-lg font-semibold mb-2">
+            Tasks for {date ? format(date, 'PPP') : '...'}
+          </h3>
+          {tasksForSelectedDate.length > 0 ? (
+            <div className="space-y-2">
+                {tasksForSelectedDate.map(task => (
+                <button
+                    key={task.id}
+                    onClick={() => onSelectTask(task)}
+                    className="w-full text-left p-2 rounded-md hover:bg-accent text-sm"
+                >
+                    <div className="flex items-center gap-2">
+                        <div className={cn("w-2 h-2 rounded-full", {
+                            "bg-green-500": task.status === 'done',
+                            "bg-blue-500": task.status === 'todo',
+                            "bg-yellow-500": task.status === 'in-progress',
+                            "bg-gray-400": task.status === 'backlog',
+                        })} />
+                        <span className="flex-1 truncate font-medium">{task.title}</span>
+                    </div>
+                </button>
+                ))}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">No tasks due on this day.</p>
+          )}
+      </div>
     </Card>
   )
 }
