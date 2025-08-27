@@ -81,7 +81,7 @@ const populateTask = async (taskData: RawTask): Promise<Task> => {
     const { teamId, assigneeId, ...rest } = taskData;
     
     // Fetch team, assignee, and comments in parallel
-    const [team, assignee, comments] = await Promise.all([
+    const [team, assigneeResult, comments] = await Promise.all([
         getTeam(teamId),
         assigneeId ? getUser(assigneeId) : Promise.resolve(undefined),
         getComments(taskData.id)
@@ -94,7 +94,7 @@ const populateTask = async (taskData: RawTask): Promise<Task> => {
     return {
         ...rest,
         team,
-        assignee,
+        assignee: assigneeResult || undefined,
         comments,
         createdAt: taskData.createdAt.toDate().toISOString()
     };
