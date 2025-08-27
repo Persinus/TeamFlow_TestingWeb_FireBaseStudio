@@ -72,7 +72,7 @@ export default function Sidebar() {
                 </div>
               </CollapsibleContent>
             </Collapsible>
-            <NavLink href="#" icon={Settings}>Settings</NavLink>
+            <NavLink href="/settings" icon={Settings}>Settings</NavLink>
           </nav>
         </div>
       </div>
