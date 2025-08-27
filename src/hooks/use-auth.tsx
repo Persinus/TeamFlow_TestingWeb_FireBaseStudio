@@ -10,16 +10,21 @@ import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 // Helper function to create a user profile in Firestore
 const createUserProfile = async (firebaseUser: FirebaseUser, name: string) => {
     const userRef = doc(db, 'users', firebaseUser.uid);
-    const userProfile: Omit<User, 'id' | 'password'> = {
-        name,
-        email: firebaseUser.email || '',
-        avatar: `https://picsum.photos/seed/${firebaseUser.uid}/40/40`,
-        expertise: 'New Member',
-        currentWorkload: 0,
-        createdAt: serverTimestamp(),
-    };
-    await setDoc(userRef, userProfile);
-    return { id: firebaseUser.uid, ...userProfile } as User;
+    const userSnap = await getDoc(userRef);
+    // Create profile only if it doesn't exist
+    if (!userSnap.exists()) {
+        const userProfile: Omit<User, 'id' | 'password'> = {
+            name,
+            email: firebaseUser.email || '',
+            avatar: `https://picsum.photos/seed/${firebaseUser.uid}/40/40`,
+            expertise: name === 'Admin' ? 'Project Overlord' : 'New Member',
+            currentWorkload: 0,
+            createdAt: serverTimestamp(),
+        };
+        await setDoc(userRef, userProfile);
+        return { id: firebaseUser.uid, ...userProfile } as User;
+    }
+    return { id: userSnap.id, ...userSnap.data() } as User;
 };
 
 
@@ -47,9 +52,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 if (userSnap.exists()) {
                     setUser({ id: userSnap.id, ...userSnap.data() } as User);
                 } else {
-                    // Handle case where user exists in Auth but not Firestore
-                    // This could happen if Firestore document creation failed during registration
-                    setUser(null);
+                    // This case handles a rare situation where an auth user might exist
+                    // without a corresponding Firestore profile. We can try creating one.
+                    const name = firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'User';
+                    const newUser = await createUserProfile(firebaseUser, name);
+                    setUser(newUser);
                 }
             } else {
                 setUser(null);
@@ -72,7 +79,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }, [user, loading, pathname, router]);
 
     const login = async (email: string, pass: string): Promise<void> => {
-        await signInWithEmailAndPassword(auth, email, pass);
+        try {
+            await signInWithEmailAndPassword(auth, email, pass);
+        } catch (error: any) {
+            // If the admin user fails to log in, it might be because the account doesn't exist yet.
+            // Let's try to create it.
+            if (email === 'admin@teamflow.com' && error.code === 'auth/invalid-credential') {
+                try {
+                    const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
+                    await createUserProfile(userCredential.user, 'Admin');
+                    // No need to call signIn again, createUserWithEmailAndPassword signs the user in.
+                } catch (registerError) {
+                    // If registration also fails (e.g., password too weak), re-throw the original login error.
+                    throw error;
+                }
+            } else {
+                // For any other user or error, just re-throw.
+                throw error;
+            }
+        }
     };
 
     const logout = async () => {
