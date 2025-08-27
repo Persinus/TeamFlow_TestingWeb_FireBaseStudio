@@ -286,7 +286,7 @@ export default function TeamDetailPage() {
               className="flex-1 p-4 sm:p-6 md:p-8"
             >
               <div className="space-y-8">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-4">
                   <div>
                     <h1 className="text-3xl font-bold tracking-tight">{team.tenNhom}</h1>
                     <p className="text-muted-foreground">{team.moTa}</p>
@@ -567,5 +567,3 @@ export default function TeamDetailPage() {
     </div>
   );
 }
-
-    

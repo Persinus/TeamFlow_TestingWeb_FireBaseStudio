@@ -164,7 +164,10 @@ export default function SettingsPage() {
                         className="flex-1 p-4 sm:p-6 md:p-8"
                     >
                         <div className="max-w-4xl mx-auto space-y-8">
-                            <h1 className="text-3xl font-bold tracking-tight">Cài đặt</h1>
+                            <div className="mb-6">
+                                <h1 className="text-3xl font-bold tracking-tight">Cài đặt</h1>
+                                <p className="text-muted-foreground">Quản lý hồ sơ, giao diện và các tùy chọn khác của bạn.</p>
+                            </div>
                             
                             <Card>
                                 <form onSubmit={handleProfileUpdate}>
