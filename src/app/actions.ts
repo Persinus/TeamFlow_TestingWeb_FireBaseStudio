@@ -1,7 +1,9 @@
+
 "use server";
 
 import { suggestTaskAssignee } from "@/ai/flows/suggest-task-assignee";
 import type { SuggestTaskAssigneeInput } from "@/ai/flows/suggest-task-assignee";
+import { getAllTags as apiGetAllTags } from "@/lib/data";
 
 export async function getAssigneeSuggestion(input: SuggestTaskAssigneeInput) {
     try {
@@ -12,3 +14,9 @@ export async function getAssigneeSuggestion(input: SuggestTaskAssigneeInput) {
         return { success: false, error: "Failed to get AI suggestion." };
     }
 }
+
+export async function getAllTags() {
+    return apiGetAllTags();
+}
+
+    

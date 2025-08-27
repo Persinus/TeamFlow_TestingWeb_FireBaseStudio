@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React, { useState } from 'react';
@@ -13,13 +12,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
-import { getAssigneeSuggestion } from '@/app/actions';
+import { getAssigneeSuggestion, getAllTags } from '@/app/actions';
 import type { Task, User, Team } from '@/types';
 import { Wand2, Calendar as CalendarIcon } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Calendar } from './ui/calendar';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
+import { MultiSelect } from './ui/multi-select';
 
 interface CreateTaskSheetProps {
   children: React.ReactNode;
@@ -36,13 +36,22 @@ const taskSchema = z.object({
   status: z.enum(['todo', 'in-progress', 'backlog', 'done']),
   startDate: z.date().optional(),
   dueDate: z.date().optional(),
-  tags: z.string().optional(), // Changed to a single string for parsing
+  tags: z.array(z.string()).optional(),
 });
 
 export default function CreateTaskSheet({ children, onCreateTask, users, teams }: CreateTaskSheetProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isSuggesting, setIsSuggesting] = useState(false);
   const { toast } = useToast();
+  const [availableTags, setAvailableTags] = React.useState<string[]>([]);
+
+  React.useEffect(() => {
+    async function fetchTags() {
+      const tags = await getAllTags();
+      setAvailableTags(tags);
+    }
+    fetchTags();
+  }, []);
 
   const form = useForm<z.infer<typeof taskSchema>>({
     resolver: zodResolver(taskSchema),
@@ -50,7 +59,7 @@ export default function CreateTaskSheet({ children, onCreateTask, users, teams }
       title: '',
       description: '',
       status: 'todo',
-      tags: ''
+      tags: []
     },
   });
 
@@ -88,12 +97,11 @@ export default function CreateTaskSheet({ children, onCreateTask, users, teams }
   };
 
   const onSubmit = async (values: z.infer<typeof taskSchema>) => {
-    const tagsArray = values.tags ? values.tags.split(',').map(s => s.trim()).filter(Boolean) : [];
     await onCreateTask({
       ...values,
       startDate: values.startDate?.toISOString(),
       dueDate: values.dueDate?.toISOString(),
-      tags: tagsArray,
+      tags: values.tags || [],
     });
     form.reset();
     setIsOpen(false);
@@ -294,14 +302,24 @@ export default function CreateTaskSheet({ children, onCreateTask, users, teams }
                 </FormItem>
               )}
             />
-             <FormField
+            <FormField
               control={form.control}
               name="tags"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Tags</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g. bug, feature, ui" {...field} />
+                    <MultiSelect
+                        options={availableTags.map(tag => ({ value: tag, label: tag }))}
+                        value={field.value ?? []}
+                        onChange={field.onChange}
+                        onCreate={(value) => {
+                            const newTag = { value, label: value };
+                            setAvailableTags(prev => [...prev, value]);
+                            field.onChange([...(field.value ?? []), newTag.value]);
+                        }}
+                        placeholder="Select or create tags..."
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
