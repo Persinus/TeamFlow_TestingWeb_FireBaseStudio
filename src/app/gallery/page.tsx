@@ -2,8 +2,6 @@
 "use client";
 
 import React, { Suspense, useState, useEffect, useCallback } from 'react';
-import { Canvas } from '@react-three/fiber';
-import { OrbitControls, Environment, Text } from '@react-three/drei';
 import { motion } from 'framer-motion';
 
 import Sidebar from '@/components/sidebar';
@@ -15,9 +13,9 @@ import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
-import Artwork from '@/components/gallery-artwork';
 import TaskDetailsSheet from '@/components/task-details-sheet';
 import { Card } from '@/components/ui/card';
+import GalleryCanvas from '@/components/gallery-canvas';
 
 function GallerySkeleton() {
     return (
@@ -98,28 +96,7 @@ export default function GalleryPage() {
                         {loading ? <GallerySkeleton /> : (
                             <Card className="w-full h-[600px]">
                                 <Suspense fallback={<GallerySkeleton />}>
-                                    <Canvas camera={{ position: [0, 2, 12], fov: 60 }}>
-                                        <ambientLight intensity={0.5} />
-                                        <pointLight position={[10, 10, 10]} />
-                                        <Environment preset="city" />
-                                        
-                                        <Text position={[0, 3, 0]} fontSize={0.6} color="white" anchorX="center" anchorY="middle">
-                                            Thành tựu của Đội
-                                        </Text>
-
-                                        <group>
-                                            {completedTasks.map((task, index) => (
-                                                <Artwork 
-                                                    key={task.id} 
-                                                    task={task} 
-                                                    position={[(index % 8 - 3.5) * 2.5, Math.floor(index / 8) * -3, 0]}
-                                                    onSelectTask={setSelectedTask}
-                                                />
-                                            ))}
-                                        </group>
-                                        
-                                        <OrbitControls enableZoom={true} enablePan={true} />
-                                    </Canvas>
+                                    <GalleryCanvas completedTasks={completedTasks} onSelectTask={setSelectedTask} />
                                 </Suspense>
                             </Card>
                         )}
