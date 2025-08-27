@@ -107,15 +107,15 @@ export default function TaskCard({ task, onSelectTask, isDragging }: TaskCardPro
                     </div>
                 )}
             </CardContent>
-            <CardFooter className="flex justify-between text-sm text-muted-foreground pt-2">
+            <CardFooter className="flex justify-between text-sm text-muted-foreground pt-2 min-h-[36px] items-center">
                 <div className="flex items-center gap-2">
                 </div>
-                {deadlineInfo.text && (
+                {deadlineInfo.text ? (
                     <div className={cn("flex items-center gap-1.5", deadlineInfo.className)}>
                         {deadlineInfo.cardBorderClass.includes('destructive') ? <AlertCircle className="h-4 w-4" /> : <CalendarIcon className="h-4 w-4" />}
                         <span>{deadlineInfo.text}</span>
                     </div>
-                )}
+                ) : <div>&nbsp;</div>}
             </CardFooter>
         </div>
         </Card>
