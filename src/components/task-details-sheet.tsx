@@ -23,7 +23,7 @@ import { Badge } from './ui/badge';
 import { MultiSelect } from './ui/multi-select';
 import { getAllTags } from '@/app/actions';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from './ui/alert-dialog';
-import { Dialog, DialogClose } from './ui/dialog';
+import { Dialog } from './ui/dialog';
 import { DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from './ui/dialog';
 
 
@@ -44,12 +44,11 @@ const taskSchema = z.object({
   nhomId: z.string().min(1, 'Đội là bắt buộc'),
   ngayBatDau: z.date().optional(),
   ngayHetHan: z.date().optional(),
-  // tags are handled outside the form now
   loaiCongViec: z.enum(['Tính năng', 'Lỗi', 'Công việc']),
   doUuTien: z.enum(['Cao', 'Trung bình', 'Thấp']),
 });
 
-type TaskFormData = Omit<z.infer<typeof taskSchema>, 'tags'>;
+type TaskFormData = z.infer<typeof taskSchema>;
 
 const getTagColor = (tagName: string) => {
     let hash = 0;
@@ -87,7 +86,6 @@ export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onU
   const [isDeleting, setIsDeleting] = useState(false);
   const { toast } = useToast();
   
-  // State for tag management
   const [isTagDialogOpen, setTagDialogOpen] = useState(false);
   const [availableTags, setAvailableTags] = useState<string[]>([]);
   const [pendingTags, setPendingTags] = useState<string[]>([]);
@@ -117,10 +115,9 @@ export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onU
         loaiCongViec: task.loaiCongViec,
         doUuTien: task.doUuTien,
       });
-      // Initialize pendingTags when task changes
       setPendingTags(task.tags || []);
     }
-  }, [task, form, isEditing]); // Rerun when editing starts to have fresh data
+  }, [task, form, isEditing]);
   
   const assignee = useMemo(() => users.find(u => u.id === task?.nguoiThucHienId), [task, users]);
   const team = useMemo(() => teams.find(t => t.id === task?.nhomId), [task, teams]);
@@ -130,7 +127,6 @@ export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onU
   const onSubmit = async (data: TaskFormData) => {
     setIsUpdating(true);
     try {
-      // Use the pendingTags state as the source of truth for tags
       const finalTaskData = {
         id: task.id,
         ...data,
@@ -162,7 +158,7 @@ export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onU
     setIsDeleting(true);
     try {
         await onDeleteTask(task.id);
-        onOpenChange(false); // Close sheet on successful delete
+        onOpenChange(false);
         toast({
             title: 'Đã xóa công việc',
             description: `"${task.tieuDe}" đã được xóa vĩnh viễn.`,
@@ -183,9 +179,6 @@ export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onU
     const newTag = value.trim();
     if (newTag && !availableTags.includes(newTag)) {
         setAvailableTags(prev => [...prev, newTag]);
-        setPendingTags(prev => [...prev, newTag]);
-    } else if (newTag && !pendingTags.includes(newTag)) {
-        setPendingTags(prev => [...prev, newTag]);
     }
   }
 
@@ -274,20 +267,11 @@ export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onU
                                     <SelectItem value="Cao">Cao</SelectItem><SelectItem value="Trung bình">Trung bình</SelectItem><SelectItem value="Thấp">Thấp</SelectItem>
                                 </SelectContent></Select><FormMessage /></FormItem>
                             )} />
-                        </div>
 
-                         <FormItem>
-                             <FormLabel>Thẻ</FormLabel>
-                             <div className="flex items-center gap-2">
-                                <div className="flex-1 p-2 border rounded-md min-h-10 flex flex-wrap gap-1 items-center">
-                                    {pendingTags.length > 0 ? (
-                                        pendingTags.map(tag => <Badge key={tag} variant="secondary">{tag}</Badge>)
-                                    ) : (
-                                        <span className="text-sm text-muted-foreground">Không có thẻ nào được chọn.</span>
-                                    )}
-                                </div>
+                            <FormItem>
+                                <FormLabel>Thẻ</FormLabel>
                                 <Dialog open={isTagDialogOpen} onOpenChange={setTagDialogOpen}>
-                                    <Button type="button" variant="outline" onClick={() => setTagDialogOpen(true)}>Chỉnh sửa thẻ</Button>
+                                    <Button type="button" variant="outline" className="w-full justify-start" onClick={() => setTagDialogOpen(true)}>Chỉnh sửa thẻ</Button>
                                     <DialogContent>
                                         <DialogHeader>
                                             <DialogTitle>Chỉnh sửa thẻ cho công việc</DialogTitle>
@@ -307,8 +291,15 @@ export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onU
                                         </DialogFooter>
                                     </DialogContent>
                                 </Dialog>
-                             </div>
-                         </FormItem>
+                                <div className="mt-2 flex flex-wrap gap-1">
+                                     {pendingTags.length > 0 ? (
+                                        pendingTags.map(tag => <Badge key={tag} variant="secondary">{tag}</Badge>)
+                                    ) : (
+                                        <span className="text-sm text-muted-foreground">Không có thẻ.</span>
+                                    )}
+                                </div>
+                            </FormItem>
+                        </div>
                          
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <FormField control={form.control} name="ngayBatDau" render={({ field }) => (
