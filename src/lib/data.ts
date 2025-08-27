@@ -77,7 +77,7 @@ type RawTask = Omit<Task, 'id' | 'team' | 'assignee' | 'comments' | 'createdAt'>
 }
 
 // Helper to populate task details
-const populateTask = async (taskData: RawTask): Promise<Task> => {
+const populateTask = async (taskData: RawTask): Promise<Task | null> => {
     const { teamId, assigneeId, ...rest } = taskData;
     
     // Fetch team, assignee, and comments in parallel
@@ -87,8 +87,10 @@ const populateTask = async (taskData: RawTask): Promise<Task> => {
         getComments(taskData.id)
     ]);
 
+    // If a team is deleted but tasks still exist, gracefully handle it
     if (!team) {
-        throw new Error(`Team with ID ${teamId} not found for task ${taskData.id}`);
+        console.warn(`Task ${taskData.id} references a deleted team ${teamId}. Skipping task.`);
+        return null;
     }
 
     return {
@@ -103,8 +105,11 @@ const populateTask = async (taskData: RawTask): Promise<Task> => {
 export const getTasks = async (): Promise<Task[]> => {
     const tasksCol = collection(db, 'tasks');
     const taskSnapshot = await getDocs(tasksCol);
-    const tasks = taskSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as RawTask));
-    return Promise.all(tasks.map(populateTask));
+    const rawTasks = taskSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as RawTask));
+    const populatedTasks = await Promise.all(rawTasks.map(populateTask));
+
+    // Filter out any tasks that failed to populate (e.g., due to a deleted team)
+    return populatedTasks.filter((task): task is Task => task !== null);
 };
 
 export const getTask = async(id: string): Promise<Task | null> => {
@@ -120,7 +125,8 @@ export const getTasksByTeam = async(teamId: string): Promise<Task[]> => {
     const q = query(tasksCol, where("teamId", "==", teamId));
     const taskSnapshot = await getDocs(q);
     const tasks = taskSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as RawTask));
-    return Promise.all(tasks.map(populateTask));
+    const populatedTasks = await Promise.all(tasks.map(populateTask));
+    return populatedTasks.filter((task): task is Task => task !== null);
 }
 
 

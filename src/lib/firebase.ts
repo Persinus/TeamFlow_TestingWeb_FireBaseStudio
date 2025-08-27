@@ -1,11 +1,16 @@
 import { initializeApp, getApps, getApp, FirebaseApp } from "firebase/app";
 import { getAuth, Auth } from "firebase/auth";
 import {
-  getFirestore,
-  Firestore,
-  enableIndexedDbPersistence
+  initializeFirestore,
+  persistentLocalCache,
+  persistentMultipleTabManager,
+  doc,
+  getDocFromCache,
+  getDocFromServer,
+  Firestore
 } from "firebase/firestore";
 
+// Firebase config
 const firebaseConfig = {
   apiKey: "AIzaSyCwVsMeLVj1ThpPomLxP5FmQovZtIXjID0",
   authDomain: "teamflow-82414.firebaseapp.com",
@@ -19,18 +24,49 @@ const firebaseConfig = {
 // Initialize Firebase
 const app: FirebaseApp = getApps().length ? getApp() : initializeApp(firebaseConfig);
 const auth: Auth = getAuth(app);
-const db: Firestore = getFirestore(app);
 
-// Enable persistence on the client side
+// ✅ Firestore with new persistence API
+let db: Firestore;
 if (typeof window !== "undefined") {
-  enableIndexedDbPersistence(db)
-    .catch((err) => {
-      if (err.code === 'failed-precondition') {
-        console.warn('Firebase persistence failed: Multiple tabs open, persistence can only be enabled in one tab at a time.');
-      } else if (err.code === 'unimplemented') {
-        console.warn('Firebase persistence failed: The current browser does not support all of the features required to enable persistence.');
-      }
-    });
+  db = initializeFirestore(app, {
+    localCache: persistentLocalCache({
+      tabManager: persistentMultipleTabManager(), // Cho phép nhiều tab
+    }),
+  });
+} else {
+  db = initializeFirestore(app, {}); // server-side không cần cache
 }
+
+/**
+ * Example service function: getTask by id
+ */
+export const getTask = async (taskId: string) => {
+  const taskRef = doc(db, "tasks", taskId);
+
+  // Thử cache trước
+  try {
+    const cachedSnap = await getDocFromCache(taskRef);
+    if (cachedSnap.exists()) {
+      console.log("✅ Lấy từ cache");
+      return { id: cachedSnap.id, ...cachedSnap.data() };
+    }
+  } catch (err) {
+    console.warn("⚠️ Không có trong cache:", err);
+  }
+
+  // Nếu không có thì fallback server
+  try {
+    const serverSnap = await getDocFromServer(taskRef);
+    if (serverSnap.exists()) {
+      console.log("🌐 Lấy từ server");
+      return { id: serverSnap.id, ...serverSnap.data() };
+    }
+  } catch (err) {
+    console.error("❌ Không thể lấy từ server:", err);
+    throw err;
+  }
+
+  return null;
+};
 
 export { app, auth, db };
