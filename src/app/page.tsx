@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
@@ -18,6 +19,9 @@ import { createPortal } from 'react-dom';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
+import { Button } from '@/components/ui/button';
+import { LayoutGrid, CalendarDays } from 'lucide-react';
+import CalendarView from '@/components/calendar-view';
 
 
 const columns: { id: TaskStatus; title: string }[] = [
@@ -81,8 +85,9 @@ export default function DashboardPage() {
   const [teams, setTeams] = useState<Team[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
-  const [filters, setFilters] = useState<{ assignee: string; team: string, search: string }>({ assignee: 'all', team: 'all', search: '' });
+  const [filters, setFilters] = useState<{ assignee: string; team: string; search: string }>({ assignee: 'all', team: 'all', search: '' });
 
+  const [viewMode, setViewMode] = useState<'board' | 'calendar'>('board');
   const [activeId, setActiveId] = useState<string | null>(null);
   const [overId, setOverId] = useState<string | null>(null);
   const sensors = useSensors(useSensor(PointerSensor));
@@ -130,7 +135,7 @@ export default function DashboardPage() {
       }
 
       const teamMatch = filters.team === 'all' || task.team.id === filters.team;
-      const searchMatch = filters.search === '' || task.title.toLowerCase().includes(filters.search.toLowerCase());
+      const searchMatch = filters.search === '' || task.title.toLowerCase().includes(filters.search.toLowerCase()) || (task.tags && task.tags.some(t => t.toLowerCase().includes(filters.search.toLowerCase())));
       return assigneeMatch && teamMatch && searchMatch;
     });
   }, [tasks, filters]);
@@ -239,13 +244,23 @@ export default function DashboardPage() {
               transition={{ duration: 0.5 }}
               className="flex-1 p-4 sm:p-6 md:p-8 overflow-x-auto"
             >
-              <div className="mb-6">
-                <h1 className="text-3xl font-bold tracking-tight">Project Dashboard</h1>
-                <p className="text-muted-foreground">Drag and drop tasks to change their status.</p>
+              <div className="mb-6 flex justify-between items-center">
+                <div>
+                  <h1 className="text-3xl font-bold tracking-tight">Project Dashboard</h1>
+                  <p className="text-muted-foreground">{viewMode === 'board' ? "Drag and drop tasks to change their status." : "View tasks by their due dates."}</p>
+                </div>
+                 <div className="flex items-center gap-2 rounded-lg bg-background p-1 shadow-sm">
+                    <Button variant={viewMode === 'board' ? 'secondary' : 'ghost'} size="icon" onClick={() => setViewMode('board')} aria-label="Board View">
+                        <LayoutGrid className="h-5 w-5" />
+                    </Button>
+                     <Button variant={viewMode === 'calendar' ? 'secondary' : 'ghost'} size="icon" onClick={() => setViewMode('calendar')} aria-label="Calendar View">
+                        <CalendarDays className="h-5 w-5" />
+                    </Button>
+                </div>
               </div>
               {loading ? (
                 <BoardSkeleton />
-              ) : (
+              ) : viewMode === 'board' ? (
                 <DndContext 
                   sensors={sensors}
                   onDragStart={handleDragStart}
@@ -273,6 +288,8 @@ export default function DashboardPage() {
                      document.body
                   )}
                 </DndContext>
+              ) : (
+                <CalendarView tasks={filteredTasks} onSelectTask={setSelectedTask} />
               )}
             </motion.main>
         </SidebarInset>

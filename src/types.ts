@@ -1,4 +1,5 @@
 
+
 export interface User {
   id: string;
   name: string;
@@ -46,4 +47,6 @@ export interface Task {
   createdAt: string; // ISO string
   startDate?: string; // ISO string
   dueDate?: string; // ISO string
+  tags?: string[];
 }
+

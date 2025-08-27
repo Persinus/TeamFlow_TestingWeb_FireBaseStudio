@@ -1,4 +1,5 @@
 
+
 import type { User, Team, Task, Comment, TaskStatus, TeamMemberRole } from '@/types';
 import { addDays, subDays } from 'date-fns';
 
@@ -31,14 +32,14 @@ const MOCK_COMMENTS: { [taskId: string]: Comment[] } = {
 };
 
 let MOCK_TASKS_RAW: Omit<Task, 'team' | 'comments' | 'assignee'>[] = [
-  { id: 'task-1', title: 'Design new dashboard layout', description: 'Create mockups and prototypes for the v2 dashboard.', status: 'todo', teamId: 'team-frontend', assigneeId: 'user-diana', createdAt: new Date().toISOString(), startDate: new Date().toISOString(), dueDate: addDays(new Date(), 7).toISOString() },
-  { id: 'task-2', title: 'Implement user authentication API', description: 'Set up JWT-based authentication endpoints.', status: 'in-progress', teamId: 'team-backend', assigneeId: 'user-clark', createdAt: new Date().toISOString(), startDate: subDays(new Date(), 2).toISOString(), dueDate: addDays(new Date(), 5).toISOString() },
-  { id: 'task-3', title: 'Set up CI/CD pipeline', description: 'Configure GitHub Actions for automated testing and deployment.', status: 'done', teamId: 'team-infra', assigneeId: 'user-barry', createdAt: new Date().toISOString(), startDate: subDays(new Date(), 10).toISOString(), dueDate: subDays(new Date(), 5).toISOString() },
-  { id: 'task-4', title: 'Develop landing page components', description: 'Build reusable React components for the marketing site.', status: 'in-progress', teamId: 'team-frontend', assigneeId: 'user-admin', createdAt: new Date().toISOString(), startDate: subDays(new Date(), 1).toISOString(), dueDate: addDays(new Date(), 2).toISOString() }, // Due soon
-  { id: 'task-5', title: 'Refactor database schema', description: 'Optimize Firestore queries and data structures.', status: 'todo', teamId: 'team-backend', assigneeId: 'user-bruce', createdAt: new Date().toISOString(), dueDate: addDays(new Date(), 14).toISOString() },
-  { id: 'task-6', title: 'User profile page design', description: 'Design the user settings and profile page.', status: 'backlog', teamId: 'team-frontend', createdAt: new Date().toISOString() },
-  { id: 'task-7', title: 'Fix login button style on mobile', description: 'The login button is not rendering correctly on small screens.', status: 'todo', teamId: 'team-frontend', assigneeId: 'user-bruce', createdAt: new Date().toISOString(), startDate: subDays(new Date(), 4).toISOString(), dueDate: subDays(new Date(), 1).toISOString() }, // Overdue
-  { id: 'task-8', title: 'Write API documentation', description: 'Create comprehensive documentation for all public API endpoints.', status: 'backlog', teamId: 'team-backend', createdAt: new Date().toISOString() },
+  { id: 'task-1', title: 'Design new dashboard layout', description: 'Create mockups and prototypes for the v2 dashboard.', status: 'todo', teamId: 'team-frontend', assigneeId: 'user-diana', createdAt: new Date().toISOString(), startDate: new Date().toISOString(), dueDate: addDays(new Date(), 7).toISOString(), tags: ['design', 'UI/UX'] },
+  { id: 'task-2', title: 'Implement user authentication API', description: 'Set up JWT-based authentication endpoints.', status: 'in-progress', teamId: 'team-backend', assigneeId: 'user-clark', createdAt: new Date().toISOString(), startDate: subDays(new Date(), 2).toISOString(), dueDate: addDays(new Date(), 5).toISOString(), tags: ['backend', 'security'] },
+  { id: 'task-3', title: 'Set up CI/CD pipeline', description: 'Configure GitHub Actions for automated testing and deployment.', status: 'done', teamId: 'team-infra', assigneeId: 'user-barry', createdAt: new Date().toISOString(), startDate: subDays(new Date(), 10).toISOString(), dueDate: subDays(new Date(), 5).toISOString(), tags: ['devops', 'CI/CD'] },
+  { id: 'task-4', title: 'Develop landing page components', description: 'Build reusable React components for the marketing site.', status: 'in-progress', teamId: 'team-frontend', assigneeId: 'user-admin', createdAt: new Date().toISOString(), startDate: subDays(new Date(), 1).toISOString(), dueDate: addDays(new Date(), 2).toISOString(), tags: ['frontend', 'feature'] }, // Due soon
+  { id: 'task-5', title: 'Refactor database schema', description: 'Optimize Firestore queries and data structures.', status: 'todo', teamId: 'team-backend', assigneeId: 'user-bruce', createdAt: new Date().toISOString(), dueDate: addDays(new Date(), 14).toISOString(), tags: ['backend', 'database', 'refactor'] },
+  { id: 'task-6', title: 'User profile page design', description: 'Design the user settings and profile page.', status: 'backlog', teamId: 'team-frontend', createdAt: new Date().toISOString(), tags: ['design'] },
+  { id: 'task-7', title: 'Fix login button style on mobile', description: 'The login button is not rendering correctly on small screens.', status: 'todo', teamId: 'team-frontend', assigneeId: 'user-bruce', createdAt: new Date().toISOString(), startDate: subDays(new Date(), 4).toISOString(), dueDate: subDays(new Date(), 1).toISOString(), tags: ['bug', 'frontend', 'mobile'] }, // Overdue
+  { id: 'task-8', title: 'Write API documentation', description: 'Create comprehensive documentation for all public API endpoints.', status: 'backlog', teamId: 'team-backend', createdAt: new Date().toISOString(), tags: ['documentation'] },
 ];
 
 
@@ -109,8 +110,7 @@ export const removeTeamMember = async (teamId: string, userId: string): Promise<
 
 export const updateTeamMemberRole = async (teamId: string, userId: string, role: TeamMemberRole): Promise<void> => {
     await simulateDelay(200);
-    const team = MOCK_TEAMS.find(t => t.id === teamId);
-    const member = team?.members.find(m => m.id === userId);
+    const team = MOCK_TEAMS.find(t => m.id === userId);
     if (member) {
         member.role = role;
     }
@@ -121,6 +121,12 @@ export const getTasks = async (): Promise<Task[]> => {
     await simulateDelay(100);
     return MOCK_TASKS_RAW.map(populateTask).filter((t): t is Task => t !== null);
 };
+
+export const getTasksByAssignee = async (assigneeId: string): Promise<Task[]> => {
+    await simulateDelay(100);
+    const userTasks = MOCK_TASKS_RAW.filter(t => t.assigneeId === assigneeId);
+    return userTasks.map(populateTask).filter((t): t is Task => t !== null);
+}
 
 export const getTask = async (id: string): Promise<Task | undefined> => {
     await simulateDelay(50);

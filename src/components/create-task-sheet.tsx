@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useState } from 'react';
@@ -35,6 +36,7 @@ const taskSchema = z.object({
   status: z.enum(['todo', 'in-progress', 'backlog', 'done']),
   startDate: z.date().optional(),
   dueDate: z.date().optional(),
+  tags: z.string().optional(),
 });
 
 export default function CreateTaskSheet({ children, onCreateTask, users, teams }: CreateTaskSheetProps) {
@@ -48,6 +50,7 @@ export default function CreateTaskSheet({ children, onCreateTask, users, teams }
       title: '',
       description: '',
       status: 'todo',
+      tags: ''
     },
   });
 
@@ -89,6 +92,7 @@ export default function CreateTaskSheet({ children, onCreateTask, users, teams }
       ...values,
       startDate: values.startDate?.toISOString(),
       dueDate: values.dueDate?.toISOString(),
+      tags: values.tags ? values.tags.split(',').map(tag => tag.trim()).filter(Boolean) : [],
     });
     form.reset();
     setIsOpen(false);
@@ -261,7 +265,7 @@ export default function CreateTaskSheet({ children, onCreateTask, users, teams }
                 )}
                 />
             </div>
-            <FormField
+             <FormField
               control={form.control}
               name="assigneeId"
               render={({ field }) => (
@@ -285,6 +289,19 @@ export default function CreateTaskSheet({ children, onCreateTask, users, teams }
                             <Wand2 className={`h-4 w-4 ${isSuggesting ? 'animate-spin' : ''}`} />
                         </Button>
                    </div>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+             <FormField
+              control={form.control}
+              name="tags"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Tags</FormLabel>
+                  <FormControl>
+                    <Input placeholder="e.g. bug, feature, ui" {...field} />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}

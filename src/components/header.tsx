@@ -1,8 +1,9 @@
 
+
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Menu, Search, Moon, Sun } from 'lucide-react';
+import { Menu, Search, Moon, Sun, User as UserIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -67,6 +68,7 @@ export default function Header({ users, teams, filters, setFilters, onCreateTask
   }
 
   const navigateToSettings = () => router.push('/settings');
+  const navigateToProfile = () => router.push('/profile');
 
 
   return (
@@ -94,7 +96,7 @@ export default function Header({ users, teams, filters, setFilters, onCreateTask
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             type="search"
-            placeholder="Search tasks by title..."
+            placeholder="Search tasks by title or tag..."
             className="w-full rounded-lg bg-muted pl-8 md:w-[200px] lg:w-[320px]"
             value={filters.search}
             onChange={handleSearchChange}
@@ -144,6 +146,10 @@ export default function Header({ users, teams, filters, setFilters, onCreateTask
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>My Account</DropdownMenuLabel>
             <DropdownMenuSeparator />
+             <DropdownMenuItem onClick={navigateToProfile} className="gap-2">
+              <UserIcon className="h-4 w-4" />
+              <span>Profile</span>
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={navigateToSettings}>Settings</DropdownMenuItem>
             <DropdownMenuItem onClick={toggleTheme} className="gap-2">
               {theme === 'light' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
