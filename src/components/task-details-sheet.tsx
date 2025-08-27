@@ -176,12 +176,12 @@ export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onU
                                 <FormControl>
                                    <MultiSelect
                                         options={availableTags.map(tag => ({ value: tag, label: tag }))}
-                                        value={field.value || []}
+                                        value={field.value ?? []}
                                         onChange={field.onChange}
                                         onCreate={(value) => {
                                             const newTag = { value, label: value };
                                             setAvailableTags(prev => [...prev, value]);
-                                            field.onChange([...(field.value || []), newTag.value]);
+                                            field.onChange([...(field.value ?? []), newTag.value]);
                                         }}
                                         placeholder="Select or create tags..."
                                         
