@@ -78,7 +78,7 @@ export function MobileSidebar({ teams, onTeamChange }: SidebarProps) {
       </SidebarContent>
        <SidebarFooter className="p-2">
         <ManageTeamsDialog open={isManageTeamsOpen} onOpenChange={setManageTeamsOpen} teams={teams} onTeamsUpdate={onTeamChange}>
-             <Button variant="ghost" className="w-full justify-start gap-3 p-2 text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
+             <Button variant="ghost" className="w-full justify-start gap-3 p-2 text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
                 <Settings className="h-5 w-5" />
                 <span>Manage Teams</span>
              </Button>
@@ -138,7 +138,7 @@ export default function Sidebar({ teams, onTeamChange }: SidebarProps) {
         </SidebarContent>
         <SidebarFooter>
            <ManageTeamsDialog open={isManageTeamsOpen} onOpenChange={setManageTeamsOpen} teams={teams} onTeamsUpdate={onTeamChange}>
-             <SidebarMenuButton tooltip="Manage Teams" className="w-full">
+             <SidebarMenuButton tooltip="Manage Teams" className="w-full text-sidebar-foreground">
                 <Settings />
                 <span>Manage Teams</span>
              </SidebarMenuButton>
