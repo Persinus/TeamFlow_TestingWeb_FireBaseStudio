@@ -13,22 +13,33 @@ const firebaseConfig = {
   "appId": "1:1042024713505:web:b84afd310f30cfc8290260"
 };
 
-let app: FirebaseApp | null = null;
-let auth: Auth | null = null;
-let db: Firestore | null = null;
+let app: FirebaseApp;
+let auth: Auth;
+let db: Firestore;
 
-try {
-  app = getApps().length ? getApp() : initializeApp(firebaseConfig);
-  auth = getAuth(app);
-  
-  // Use initializeFirestore to enable persistence
-  db = initializeFirestore(app, {
-    localCache: enableIndexedDbPersistence()
-  });
-
-} catch (error) {
-  console.error("Firebase initialization failed:", error);
-  // Handle the error appropriately in a real app
+if (typeof window !== 'undefined' && !getApps().length) {
+    // Client-side execution
+    try {
+        app = initializeApp(firebaseConfig);
+        auth = getAuth(app);
+        // Use initializeFirestore to enable persistence, but only once.
+        db = initializeFirestore(app, {
+            localCache: enableIndexedDbPersistence()
+        });
+    } catch (error) {
+        console.error("Firebase client initialization failed:", error);
+    }
+} else if (getApps().length) {
+    // Re-use existing app instance (client or server)
+    app = getApp();
+    auth = getAuth(app);
+    db = getFirestore(app);
+} else {
+    // Server-side execution
+    app = initializeApp(firebaseConfig);
+    auth = getAuth(app);
+    db = getFirestore(app);
 }
+
 
 export { app, auth, db };
