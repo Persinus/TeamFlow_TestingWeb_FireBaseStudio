@@ -14,9 +14,9 @@ import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { teams } from '@/lib/data';
 
-const NavLink = ({ href, children, icon: Icon, badge }: { href: string; children: React.ReactNode; icon: React.ElementType; badge?: string | number; }) => {
+const NavLink = ({ href, children, icon: Icon, badge, exact = false }: { href: string; children: React.ReactNode; icon: React.ElementType; badge?: string | number; exact?: boolean; }) => {
   const pathname = usePathname();
-  const isActive = pathname === href;
+  const isActive = exact ? pathname === href : pathname.startsWith(href);
   return (
     <Link
       href={href}
@@ -33,7 +33,8 @@ const NavLink = ({ href, children, icon: Icon, badge }: { href: string; children
 };
 
 export default function Sidebar() {
-  const [isTeamsOpen, setIsTeamsOpen] = React.useState(true);
+  const pathname = usePathname();
+  const [isTeamsOpen, setIsTeamsOpen] = React.useState(pathname.startsWith('/teams'));
 
   return (
     <aside className="hidden border-r bg-background lg:block lg:w-64">
@@ -46,10 +47,10 @@ export default function Sidebar() {
         </div>
         <div className="flex-1 overflow-auto py-2">
           <nav className="grid items-start px-4 text-sm font-medium">
-            <NavLink href="/" icon={Home}>Dashboard</NavLink>
+            <NavLink href="/" icon={Home} exact>Dashboard</NavLink>
              <Collapsible open={isTeamsOpen} onOpenChange={setIsTeamsOpen}>
               <CollapsibleTrigger className="w-full">
-                <div className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary">
+                <div className={cn("flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary", isTeamsOpen && "text-primary")}>
                   <Users className="h-4 w-4" />
                   Teams
                   <Badge className="ml-auto flex h-6 w-6 shrink-0 items-center justify-center rounded-full">
@@ -63,8 +64,11 @@ export default function Sidebar() {
                   {teams.map(team => (
                     <Link
                       key={team.id}
-                      href="#"
-                      className="block rounded-md px-3 py-1.5 text-muted-foreground hover:bg-muted hover:text-primary"
+                      href={`/teams/${team.id}`}
+                      className={cn(
+                        "block rounded-md px-3 py-1.5 text-muted-foreground hover:bg-muted hover:text-primary",
+                        pathname === `/teams/${team.id}` && "bg-muted text-primary font-semibold"
+                        )}
                     >
                       {team.name}
                     </Link>
