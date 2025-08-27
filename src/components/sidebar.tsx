@@ -3,7 +3,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { Home, Settings, Users, ChevronDown, PlusCircle, HelpCircle, LayoutDashboard, GalleryVertical } from 'lucide-react';
+import { Home, Settings, Users, ChevronDown, PlusCircle, HelpCircle, LayoutDashboard } from 'lucide-react';
 import { Logo } from '@/components/icons';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -81,7 +81,6 @@ export function MobileSidebar({ teams, onTeamChange }: SidebarProps) {
                     </div>
                 )}
             </SidebarGroup>
-            <NavLink href="/gallery" icon={GalleryVertical} tooltip="Phòng trưng bày">Phòng trưng bày</NavLink>
             <NavLink href="/settings" icon={Settings}>Cài đặt</NavLink>
         </SidebarMenu>
       </SidebarContent>
@@ -147,7 +146,6 @@ export default function Sidebar({ teams, onTeamChange }: SidebarProps) {
                         </div>
                     )}
                 </SidebarGroup>
-                <NavLink href="/gallery" icon={GalleryVertical} tooltip="Phòng trưng bày">Phòng trưng bày</NavLink>
                 <NavLink href="/settings" icon={Settings} tooltip="Cài đặt">Cài đặt</NavLink>
             </SidebarMenu>
         </SidebarContent>
