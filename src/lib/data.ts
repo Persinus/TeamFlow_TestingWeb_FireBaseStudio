@@ -7,10 +7,29 @@ export const users: User[] = [
   { id: 'user-4', name: 'Diana Prince', avatar: 'https://picsum.photos/seed/diana/40/40', expertise: 'Project Management, Agile Methodologies', currentWorkload: 4, phone: '456-789-0123', dob: '1985-03-22' },
 ];
 
-export const teams: Team[] = [
-  { id: 'team-1', name: 'Frontend Wizards' },
-  { id: 'team-2', name: 'Backend Brigade' },
-  { id: 'team-3', name: 'Infra Avengers' },
+export let teams: Team[] = [
+  { 
+    id: 'team-1', 
+    name: 'Frontend Wizards',
+    members: [
+      { id: 'user-1', role: 'leader' },
+      { id: 'user-4', role: 'member' },
+    ]
+  },
+  { 
+    id: 'team-2', 
+    name: 'Backend Brigade',
+    members: [
+      { id: 'user-2', role: 'leader' },
+    ]
+  },
+  { 
+    id: 'team-3', 
+    name: 'Infra Avengers',
+    members: [
+      { id: 'user-3', role: 'leader' },
+    ]
+  },
 ];
 
 const now = new Date();

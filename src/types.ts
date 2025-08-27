@@ -1,4 +1,5 @@
 
+
 export interface User {
   id: string;
   name: string;
@@ -11,9 +12,17 @@ export interface User {
   password?: string; // In a real app, you'd never store this in the frontend
 }
 
+export type TeamMemberRole = 'leader' | 'member';
+
+export interface TeamMember {
+  id: string; // Corresponds to User ID
+  role: TeamMemberRole;
+}
+
 export interface Team {
-  id: string;
+  id:string;
   name: string;
+  members: TeamMember[];
 }
 
 export interface Comment {

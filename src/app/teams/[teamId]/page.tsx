@@ -1,10 +1,10 @@
 
 "use client";
 
-import React, { useMemo, use, useEffect } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { notFound, useRouter } from 'next/navigation';
-import { initialTasks, users, teams } from '@/lib/data';
-import type { Task, TaskStatus } from '@/types';
+import { initialTasks, users, teams as allTeams } from '@/lib/data';
+import type { Task, TaskStatus, User, TeamMemberRole } from '@/types';
 import Sidebar from '@/components/sidebar';
 import Header from '@/components/header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,6 +15,12 @@ import { PieChart, Pie, Cell, Tooltip } from 'recharts';
 import { Badge } from '@/components/ui/badge';
 import TaskCard from '@/components/task-card';
 import { useAuth } from '@/hooks/use-auth';
+import { Button } from '@/components/ui/button';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { MoreHorizontal, UserPlus, Crown, Trash2, Shield } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useToast } from '@/hooks/use-toast';
 
 
 const statusColors = {
@@ -24,9 +30,14 @@ const statusColors = {
   done: 'hsl(var(--chart-2))',
 };
 
-export default function TeamDetailPage({ params: paramsProp }: { params: { teamId: string } }) {
+export default function TeamDetailPage({ params }: { params: { teamId: string } }) {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const { toast } = useToast();
+
+  const [teams, setTeams] = useState(allTeams);
+  const [isAddMemberOpen, setAddMemberOpen] = useState(false);
+  const [userToAdd, setUserToAdd] = useState('');
 
   useEffect(() => {
     if (!loading && !user) {
@@ -34,29 +45,29 @@ export default function TeamDetailPage({ params: paramsProp }: { params: { teamI
     }
   }, [user, loading, router]);
   
-  const params = use(Promise.resolve(paramsProp));
   const { teamId } = params;
 
-  const team = useMemo(() => teams.find(t => t.id === teamId), [teamId]);
+  const team = useMemo(() => teams.find(t => t.id === teamId), [teamId, teams]);
   
   // Dummy handlers for filters and task creation for Header component
   const [filters, setFilters] = React.useState({ assignee: 'all', team: 'all', search: '' });
   const handleCreateTask = (newTaskData: Omit<Task, 'id' | 'comments'>) => {};
   const [selectedTask, setSelectedTask] = React.useState<Task | null>(null);
 
-
   const teamMembers = useMemo(() => {
-    // This is a simplified logic. In a real app, you'd have a proper team-member relationship.
-    // Here we'll just find tasks for this team and get the assignees.
-    const memberIds = new Set<string>();
-    initialTasks.forEach(task => {
-      if (task.team.id === teamId && task.assignee) {
-        memberIds.add(task.assignee.id);
-      }
-    });
-    return users.filter(u => memberIds.has(u.id));
-  }, [teamId]);
+    if (!team) return [];
+    return team.members.map(member => {
+      const user = users.find(u => u.id === member.id);
+      return { ...user, role: member.role };
+    }).filter(Boolean) as (User & { role: TeamMemberRole })[];
+  }, [team]);
   
+  const usersNotInTeam = useMemo(() => {
+      if (!team) return [];
+      const memberIds = new Set(team.members.map(m => m.id));
+      return users.filter(u => !memberIds.has(u.id));
+  }, [team]);
+
   const teamTasks = useMemo(() => {
     return initialTasks.filter(task => task.team.id === teamId);
   }, [teamId]);
@@ -81,7 +92,52 @@ export default function TeamDetailPage({ params: paramsProp }: { params: { teamI
       .map(([name, value]) => ({ name, value, fill: statusColors[name as TaskStatus] }))
       .filter(item => item.value > 0);
   }, [teamTasks]);
-  
+
+  const handleAddMember = () => {
+    if (!userToAdd || !team) return;
+    const updatedTeams = teams.map(t => {
+      if (t.id === team.id) {
+        return { ...t, members: [...t.members, { id: userToAdd, role: 'member' as TeamMemberRole }] };
+      }
+      return t;
+    });
+    setTeams(updatedTeams);
+    toast({ title: 'Member Added', description: `${users.find(u => u.id === userToAdd)?.name} has been added to the team.` });
+    setAddMemberOpen(false);
+    setUserToAdd('');
+  };
+
+  const handleRemoveMember = (memberId: string) => {
+    if (!team) return;
+    const memberToRemove = users.find(u => u.id === memberId);
+    const updatedTeams = teams.map(t => {
+        if (t.id === team.id) {
+            return { ...t, members: t.members.filter(m => m.id !== memberId) };
+        }
+        return t;
+    });
+    setTeams(updatedTeams);
+    toast({ variant: 'destructive', title: 'Member Removed', description: `${memberToRemove?.name} has been removed from the team.` });
+  };
+
+  const handleChangeRole = (memberId: string, newRole: TeamMemberRole) => {
+    if (!team) return;
+    const memberToUpdate = users.find(u => u.id === memberId);
+    const updatedTeams = teams.map(t => {
+        if (t.id === team.id) {
+            // Ensure there's always at least one leader
+            if (newRole === 'member' && t.members.filter(m => m.role === 'leader').length === 1 && t.members.find(m => m.id === memberId)?.role === 'leader') {
+                toast({ variant: 'destructive', title: 'Action Denied', description: 'A team must have at least one leader.' });
+                return t;
+            }
+            return { ...t, members: t.members.map(m => m.id === memberId ? { ...m, role: newRole } : m) };
+        }
+        return t;
+    });
+    setTeams(updatedTeams);
+    toast({ title: 'Role Updated', description: `${memberToUpdate?.name} is now a ${newRole}.` });
+};
+
   if (loading || !user) {
     return <div className="flex h-screen items-center justify-center">Loading...</div>;
   }
@@ -154,9 +210,38 @@ export default function TeamDetailPage({ params: paramsProp }: { params: { teamI
                 </CardContent>
               </Card>
               <Card>
-                <CardHeader>
-                  <CardTitle>Team Members</CardTitle>
-                   <CardDescription>There are {teamMembers.length} members in this team.</CardDescription>
+                <CardHeader className="flex flex-row items-center justify-between">
+                    <div>
+                        <CardTitle>Team Members</CardTitle>
+                        <CardDescription>There are {teamMembers.length} members in this team.</CardDescription>
+                    </div>
+                    <AlertDialog open={isAddMemberOpen} onOpenChange={setAddMemberOpen}>
+                        <AlertDialogTrigger asChild>
+                            <Button size="icon"><UserPlus className="h-4 w-4" /></Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>Add Member to {team.name}</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    Select a user to add to the team. They will be added as a 'member'.
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <Select onValueChange={setUserToAdd} value={userToAdd}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select a user" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {usersNotInTeam.map(u => (
+                                        <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={handleAddMember} disabled={!userToAdd}>Add Member</AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {teamMembers.map(member => (
@@ -165,10 +250,45 @@ export default function TeamDetailPage({ params: paramsProp }: { params: { teamI
                           <AvatarImage src={member.avatar} alt={member.name} />
                           <AvatarFallback>{member.name.substring(0,2).toUpperCase()}</AvatarFallback>
                       </Avatar>
-                      <div>
-                        <p className="font-semibold">{member.name}</p>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                           <p className="font-semibold">{member.name}</p>
+                           {member.role === 'leader' && <Crown className="h-4 w-4 text-amber-500" />}
+                        </div>
                         <p className="text-xs text-muted-foreground">{member.expertise}</p>
                       </div>
+                      <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon"><MoreHorizontal className="h-4 w-4"/></Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent>
+                              {member.role === 'member' && (
+                                <DropdownMenuItem onClick={() => handleChangeRole(member.id, 'leader')}><Crown className="mr-2 h-4 w-4" /> Make Leader</DropdownMenuItem>
+                              )}
+                               {member.role === 'leader' && (
+                                <DropdownMenuItem onClick={() => handleChangeRole(member.id, 'member')}><Shield className="mr-2 h-4 w-4" /> Make Member</DropdownMenuItem>
+                              )}
+                              <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive focus:text-destructive">
+                                        <Trash2 className="mr-2 h-4 w-4" /> Remove
+                                    </DropdownMenuItem>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                      <AlertDialogHeader>
+                                          <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                          <AlertDialogDescription>
+                                              This will permanently remove {member.name} from the team. This action cannot be undone.
+                                          </AlertDialogDescription>
+                                      </AlertDialogHeader>
+                                      <AlertDialogFooter>
+                                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                          <AlertDialogAction onClick={() => handleRemoveMember(member.id)} className="bg-destructive hover:bg-destructive/90">Remove</AlertDialogAction>
+                                      </AlertDialogFooter>
+                                  </AlertDialogContent>
+                              </AlertDialog>
+                          </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
                   ))}
                 </CardContent>
