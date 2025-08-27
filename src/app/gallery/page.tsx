@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { Suspense, useState, useEffect, useCallback } from 'react';
@@ -15,7 +14,6 @@ import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import TaskDetailsSheet from '@/components/task-details-sheet';
-import { Card } from '@/components/ui/card';
 
 const GalleryCanvas = dynamic(() => import('@/components/gallery-canvas'), {
     ssr: false,
@@ -99,13 +97,13 @@ export default function GalleryPage() {
                             <p className="text-muted-foreground">Một không gian 3D để nhìn lại các công việc đã hoàn thành của đội bạn.</p>
                         </div>
 
-                        {loading ? <GallerySkeleton /> : (
-                            <Card className="w-full h-[600px]">
+                        <div className="w-full h-[600px] rounded-lg overflow-hidden border bg-card text-card-foreground shadow-sm">
+                             {loading ? <GallerySkeleton /> : (
                                 <Suspense fallback={<GallerySkeleton />}>
                                     <GalleryCanvas completedTasks={completedTasks} onSelectTask={setSelectedTask} />
                                 </Suspense>
-                            </Card>
-                        )}
+                            )}
+                        </div>
                     </motion.main>
                 </SidebarInset>
             </div>

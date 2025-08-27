@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { Suspense } from 'react';
@@ -15,6 +14,7 @@ interface GalleryCanvasProps {
 export default function GalleryCanvas({ completedTasks, onSelectTask }: GalleryCanvasProps) {
     return (
         <Canvas camera={{ position: [0, 2, 12], fov: 60 }}>
+            <color attach="background" args={["hsl(var(--card))"]} />
             <ambientLight intensity={1.5} />
             <pointLight position={[10, 10, 10]} />
             <Environment preset="city" />
