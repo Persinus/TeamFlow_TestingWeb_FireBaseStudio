@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Menu, Search, Moon, Sun, User as UserIcon, LogOut, Settings as SettingsIcon } from 'lucide-react';
+import { Menu, Search, Moon, Sun, User as UserIcon, LogOut, Settings as SettingsIcon, HelpCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -32,9 +32,10 @@ interface HeaderProps {
   filters: { assignee: string; team: string; search: string };
   setFilters: React.Dispatch<React.SetStateAction<{ assignee: string; team: string; search: string }>>;
   onCreateTask: (newTaskData: Omit<Task, 'id' | 'nhom' | 'nguoiThucHien' | 'ngayTao'>) => Promise<void>;
+  onShowTour?: () => void;
 }
 
-export default function Header({ users, teams, filters, setFilters, onCreateTask }: HeaderProps) {
+export default function Header({ users, teams, filters, setFilters, onCreateTask, onShowTour }: HeaderProps) {
   const [theme, setTheme] = useState('light');
   const { user, logout } = useAuth();
   const { toast } = useToast();
@@ -139,6 +140,12 @@ export default function Header({ users, teams, filters, setFilters, onCreateTask
         <CreateTaskSheet onCreateTask={onCreateTask} users={users} teams={teams}>
           <Button>Tạo công việc</Button>
         </CreateTaskSheet>
+
+        {onShowTour && (
+            <Button variant="outline" size="icon" onClick={onShowTour} aria-label="Hướng dẫn sử dụng">
+                <HelpCircle className="h-5 w-5" />
+            </Button>
+        )}
         
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

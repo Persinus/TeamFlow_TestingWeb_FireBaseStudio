@@ -8,6 +8,7 @@ import Sidebar from '@/components/sidebar';
 import Header from '@/components/header';
 import TaskCard from '@/components/task-card';
 import TaskDetailsSheet from '@/components/task-details-sheet';
+import TourGuide from '@/components/tour-guide';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
@@ -91,6 +92,8 @@ export default function DashboardPage() {
   const [overId, setOverId] = useState<string | null>(null);
   const sensors = useSensors(useSensor(PointerSensor));
   const activeTask = useMemo(() => tasks.find(t => t.id === activeId), [tasks, activeId]);
+
+  const [isTourOpen, setIsTourOpen] = useState(false);
 
   const fetchData = useCallback(async () => {
     try {
@@ -229,7 +232,8 @@ export default function DashboardPage() {
           teams={teams} 
           filters={filters} 
           setFilters={setFilters} 
-          onCreateTask={handleCreateTask} 
+          onCreateTask={handleCreateTask}
+          onShowTour={() => setIsTourOpen(true)}
         />
         <SidebarInset>
             <motion.main 
@@ -298,6 +302,7 @@ export default function DashboardPage() {
             onDeleteTask={handleDeleteTask}
         />
       )}
+      <TourGuide open={isTourOpen} onOpenChange={setIsTourOpen} />
     </div>
   );
 }
