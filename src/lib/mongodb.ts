@@ -1,5 +1,7 @@
 
+
 import mongoose from 'mongoose';
+import { seedDatabase } from '@/app/actions';
 
 const MONGODB_URI = process.env.MONGODB_URI;
 
@@ -32,7 +34,9 @@ async function connectToDatabase() {
       bufferCommands: false,
     };
 
-    cached.promise = mongoose.connect(MONGODB_URI!, opts).then((mongoose) => {
+    cached.promise = mongoose.connect(MONGODB_URI!, opts).then(async (mongoose) => {
+      // Seed the database only if the connection is new
+      await seedDatabase();
       return mongoose;
     });
   }
