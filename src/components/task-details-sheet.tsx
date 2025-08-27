@@ -88,18 +88,6 @@ export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onU
 
   const form = useForm<TaskFormData>({
     resolver: zodResolver(taskSchema),
-    defaultValues: {
-      tieuDe: task?.tieuDe || '',
-      moTa: task?.moTa || '',
-      trangThai: task?.trangThai || 'Cần làm',
-      nguoiThucHienId: task?.nguoiThucHienId || undefined,
-      nhomId: task?.nhomId || '',
-      ngayBatDau: safeParseDate(task?.ngayBatDau),
-      ngayHetHan: safeParseDate(task?.ngayHetHan),
-      tags: task?.tags || [],
-      loaiCongViec: task?.loaiCongViec || 'Công việc',
-      doUuTien: task?.doUuTien || 'Trung bình',
-    }
   });
   
   useEffect(() => {
@@ -167,9 +155,9 @@ export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onU
         await onDeleteTask(task.id);
         onOpenChange(false); // Close sheet on successful delete
         toast({
-            variant: 'destructive',
             title: 'Đã xóa công việc',
             description: `"${task.tieuDe}" đã được xóa vĩnh viễn.`,
+            variant: "destructive"
         });
     } catch (error) {
         toast({
@@ -183,11 +171,14 @@ export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onU
   }
 
   const handleCreateTag = (value: string) => {
-    if (!availableTags.some(t => t.toLowerCase() === value.toLowerCase())) {
+    const lowercasedValue = value.toLowerCase();
+    if (!availableTags.some(t => t.toLowerCase() === lowercasedValue)) {
         setAvailableTags(prev => [...prev, value]);
     }
     const currentTags = form.getValues('tags') || [];
-    form.setValue('tags', [...currentTags, value]);
+     if (!currentTags.some(t => t.toLowerCase() === lowercasedValue)) {
+      form.setValue('tags', [...currentTags, value]);
+    }
   }
 
   const formatDate = (date: string | Date | undefined) => {
