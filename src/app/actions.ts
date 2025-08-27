@@ -88,19 +88,21 @@ const populateTask = (task: any): Task => {
         trangThai: taskObj.trangThai,
         loaiCongViec: taskObj.loaiCongViec,
         doUuTien: taskObj.doUuTien,
-        nhomId: taskObj.nhomId ? taskObj.nhomId.toString() : '',
-        nguoiThucHienId: taskObj.nguoiThucHienId ? taskObj.nguoiThucHienId.toString() : undefined,
+        nhomId: taskObj.nhomId ? (typeof taskObj.nhomId === 'object' ? taskObj.nhomId._id.toString() : taskObj.nhomId.toString()) : '',
+        nguoiThucHienId: taskObj.nguoiThucHienId ? (typeof taskObj.nguoiThucHienId === 'object' ? taskObj.nguoiThucHienId._id.toString() : taskObj.nguoiThucHienId.toString()) : undefined,
         ngayTao: taskObj.ngayTao,
         ngayBatDau: taskObj.ngayBatDau,
         ngayHetHan: taskObj.ngayHetHan,
         tags: taskObj.tags || [],
     };
-    if (taskObj.populated('nhomId')) {
+
+    if (taskObj.nhomId && typeof taskObj.nhomId === 'object') {
         populatedTask.nhom = populateTeam(taskObj.nhomId);
     }
-    if (taskObj.populated('nguoiThucHienId')) {
+    if (taskObj.nguoiThucHienId && typeof taskObj.nguoiThucHienId === 'object') {
         populatedTask.nguoiThucHien = populateUser(taskObj.nguoiThucHienId);
     }
+
     return populatedTask;
 };
 
