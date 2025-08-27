@@ -21,15 +21,20 @@ let db: Firestore;
 if (typeof window !== 'undefined') {
     // Client-side execution
     if (!getApps().length) {
+        app = initializeApp(firebaseConfig);
+        auth = getAuth(app);
         try {
-            app = initializeApp(firebaseConfig);
-            auth = getAuth(app);
             // Use initializeFirestore to enable persistence, but only once.
             db = initializeFirestore(app, {
                 localCache: enableIndexedDbPersistence()
             });
         } catch (error) {
-            console.error("Firebase client initialization failed:", error);
+            // Firestore with persistence might already be initialized in a race condition
+            // If so, we can ignore the error and get the existing instance.
+            if ((error as any).code !== 'failed-precondition') {
+                 console.error("Firebase client initialization failed:", error);
+            }
+            db = getFirestore(app);
         }
     } else {
         // Re-use existing app instance
