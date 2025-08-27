@@ -2,7 +2,7 @@
 
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import { notFound, useRouter, useParams } from 'next/navigation';
-import { getTeam, getUsers, getTasksByTeam, addTeamMember, removeTeamMember, updateTeamMemberRole } from '@/lib/data';
+import { getTeam, getUsers, getTasksByTeam, addTeamMember, removeTeamMember, updateTeamMemberRole, getTeams } from '@/lib/data';
 import type { Task, TaskStatus, User, Team, TeamMemberRole } from '@/types';
 import Sidebar from '@/components/sidebar';
 import Header from '@/components/header';
@@ -22,6 +22,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { SidebarInset } from '@/components/ui/sidebar';
 import { Skeleton } from '@/components/ui/skeleton';
+import TaskDetailsSheet from '@/components/task-details-sheet';
 
 const statusColors = {
   backlog: 'hsl(var(--muted-foreground))',
@@ -39,20 +40,24 @@ export default function TeamDetailPage() {
 
   const [team, setTeam] = useState<Team | null>(null);
   const [allUsers, setAllUsers] = useState<User[]>([]);
+  const [allTeams, setAllTeams] = useState<Team[]>([]);
   const [teamTasks, setTeamTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [isAddMemberOpen, setAddMemberOpen] = useState(false);
   const [userToAdd, setUserToAdd] = useState('');
+  const [selectedTask, setSelectedTask] = React.useState<Task | null>(null);
+
 
   const fetchData = useCallback(async () => {
     if (!teamId) return;
     try {
         setLoading(true);
-        const [teamData, usersData, tasksData] = await Promise.all([
+        const [teamData, usersData, tasksData, allTeamsData] = await Promise.all([
             getTeam(teamId),
             getUsers(),
-            getTasksByTeam(teamId)
+            getTasksByTeam(teamId),
+            getTeams()
         ]);
 
         if (!teamData) {
@@ -63,6 +68,7 @@ export default function TeamDetailPage() {
         setTeam(teamData);
         setAllUsers(usersData);
         setTeamTasks(tasksData);
+        setAllTeams(allTeamsData);
     } catch (error) {
         console.error("Failed to fetch team data:", error);
         toast({ variant: 'destructive', title: 'Error', description: 'Failed to load team data.' });
@@ -72,16 +78,19 @@ export default function TeamDetailPage() {
   }, [teamId, toast]);
 
   useEffect(() => {
+    if (!authLoading && !user) {
+        router.push('/login');
+    }
     if (!authLoading && user) {
       fetchData();
     }
-  }, [authLoading, user, fetchData]);
+  }, [authLoading, user, router, fetchData]);
 
   const teamMembers = useMemo(() => {
     if (!team) return [];
     return team.members.map(member => {
-      const user = allUsers.find(u => u.id === member.id);
-      return { ...user, role: member.role };
+      const userDetails = allUsers.find(u => u.id === member.id);
+      return userDetails ? { ...userDetails, role: member.role } : null;
     }).filter(Boolean) as (User & { role: TeamMemberRole })[];
   }, [team, allUsers]);
   
@@ -114,18 +123,27 @@ export default function TeamDetailPage() {
 
   const handleAddMember = async () => {
     if (!userToAdd || !team) return;
-    await addTeamMember(team.id, userToAdd);
-    toast({ title: 'Member Added', description: `${allUsers.find(u => u.id === userToAdd)?.name} has been added to the team.` });
-    setAddMemberOpen(false);
-    setUserToAdd('');
-    fetchData(); // Refetch
+    try {
+        await addTeamMember(team.id, userToAdd);
+        toast({ title: 'Member Added', description: `${allUsers.find(u => u.id === userToAdd)?.name} has been added to the team.` });
+        fetchData(); // Refetch
+    } catch (error) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Failed to add member.' });
+    } finally {
+        setAddMemberOpen(false);
+        setUserToAdd('');
+    }
   };
 
   const handleRemoveMember = async (memberId: string) => {
     if (!team) return;
-    await removeTeamMember(team.id, memberId);
-    toast({ variant: 'destructive', title: 'Member Removed', description: `${allUsers.find(u => u.id === memberId)?.name} has been removed from the team.` });
-    fetchData(); // Refetch
+    try {
+        await removeTeamMember(team.id, memberId);
+        toast({ variant: 'destructive', title: 'Member Removed', description: `${allUsers.find(u => u.id === memberId)?.name} has been removed from the team.` });
+        fetchData(); // Refetch
+    } catch (error) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Failed to remove member.' });
+    }
   };
 
   const handleChangeRole = async (memberId: string, newRole: TeamMemberRole) => {
@@ -134,15 +152,18 @@ export default function TeamDetailPage() {
         toast({ variant: 'destructive', title: 'Action Denied', description: 'A team must have at least one leader.' });
         return;
     }
-    await updateTeamMemberRole(team.id, memberId, newRole);
-    toast({ title: 'Role Updated', description: `${allUsers.find(u => u.id === memberId)?.name} is now a ${newRole}.` });
-    fetchData(); // Refetch
+    try {
+        await updateTeamMemberRole(team.id, memberId, newRole);
+        toast({ title: 'Role Updated', description: `${allUsers.find(u => u.id === memberId)?.name} is now a ${newRole}.` });
+        fetchData(); // Refetch
+    } catch (error) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Failed to update role.' });
+    }
   };
 
   // Dummy handlers for Header
   const [filters, setFilters] = React.useState({ assignee: 'all', team: 'all', search: '' });
   const handleCreateTask = async (newTaskData: Omit<Task, 'id' | 'comments'>) => {};
-  const [selectedTask, setSelectedTask] = React.useState<Task | null>(null);
 
   if (authLoading || loading || !user) {
     return (
@@ -150,14 +171,22 @@ export default function TeamDetailPage() {
             <Sidebar teams={[]} />
             <div className="flex flex-1 flex-col">
                 <Header users={[]} teams={[]} filters={filters} setFilters={setFilters} onCreateTask={handleCreateTask as any} />
-                <main className="flex-1 p-4 sm:p-6 md:p-8">
-                    <Skeleton className="h-8 w-48 mb-8" />
-                    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                        <Card><CardHeader><Skeleton className="h-6 w-32 mb-2" /><Skeleton className="h-4 w-40" /></CardHeader><CardContent><Skeleton className="h-10 w-full" /></CardContent></Card>
-                        <Card><CardHeader><Skeleton className="h-6 w-32 mb-2" /><Skeleton className="h-4 w-40" /></CardHeader><CardContent><Skeleton className="h-48 w-48 mx-auto rounded-full" /></CardContent></Card>
-                        <Card><CardHeader><Skeleton className="h-6 w-32 mb-2" /><Skeleton className="h-4 w-40" /></CardHeader><CardContent className="space-y-4"><Skeleton className="h-10 w-full" /><Skeleton className="h-10 w-full" /><Skeleton className="h-10 w-full" /></CardContent></Card>
-                    </div>
-                </main>
+                <SidebarInset>
+                    <main className="flex-1 p-4 sm:p-6 md:p-8">
+                        <Skeleton className="h-8 w-48 mb-8" />
+                        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                            <Card><CardHeader><Skeleton className="h-6 w-32 mb-2" /><Skeleton className="h-4 w-40" /></CardHeader><CardContent><Skeleton className="h-24 w-full" /></CardContent></Card>
+                            <Card><CardHeader><Skeleton className="h-6 w-32 mb-2" /><Skeleton className="h-4 w-40" /></CardHeader><CardContent><div className="flex justify-center items-center h-48"><Skeleton className="h-36 w-36 mx-auto rounded-full" /></div></CardContent></Card>
+                            <Card><CardHeader><Skeleton className="h-6 w-32 mb-2" /><Skeleton className="h-4 w-40" /></CardHeader><CardContent className="space-y-4"><Skeleton className="h-10 w-full" /><Skeleton className="h-10 w-full" /><Skeleton className="h-10 w-full" /></CardContent></Card>
+                        </div>
+                         <Skeleton className="h-8 w-48 mt-8 mb-4" />
+                         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                            <Skeleton className="h-36 w-full rounded-lg" />
+                            <Skeleton className="h-36 w-full rounded-lg" />
+                            <Skeleton className="h-36 w-full rounded-lg" />
+                         </div>
+                    </main>
+                </SidebarInset>
             </div>
         </div>
     );
@@ -169,9 +198,9 @@ export default function TeamDetailPage() {
   
   return (
     <div className="flex min-h-screen w-full flex-col lg:flex-row bg-muted/40">
-      <Sidebar teams={[]} />
+      <Sidebar teams={allTeams} />
       <div className="flex flex-1 flex-col">
-        <Header users={allUsers} teams={[]} filters={filters} setFilters={setFilters} onCreateTask={handleCreateTask as any} />
+        <Header users={allUsers} teams={allTeams} filters={filters} setFilters={setFilters} onCreateTask={handleCreateTask as any} />
         <SidebarInset>
             <main className="flex-1 p-4 sm:p-6 md:p-8">
               <div className="space-y-8">
@@ -232,7 +261,7 @@ export default function TeamDetailPage() {
                     </CardContent>
                   </Card>
                   <Card>
-                    <CardHeader className="flex flex-row items-center justify-between">
+                    <CardHeader className="flex flex-row items-center justify-between pb-2">
                         <div>
                             <CardTitle>Team Members</CardTitle>
                             <CardDescription>There are {teamMembers.length} members in this team.</CardDescription>
@@ -279,6 +308,7 @@ export default function TeamDetailPage() {
                             </div>
                             <p className="text-xs text-muted-foreground">{member.expertise}</p>
                           </div>
+                          { user.id !== member.id && (
                           <DropdownMenu>
                               <DropdownMenuTrigger asChild>
                                   <Button variant="ghost" size="icon"><MoreHorizontal className="h-4 w-4"/></Button>
@@ -311,6 +341,7 @@ export default function TeamDetailPage() {
                                   </AlertDialog>
                               </DropdownMenuContent>
                           </DropdownMenu>
+                          )}
                         </div>
                       ))}
                     </CardContent>
@@ -323,12 +354,22 @@ export default function TeamDetailPage() {
                     {teamTasks.map(task => (
                       <TaskCard key={task.id} task={task} onSelectTask={setSelectedTask} />
                     ))}
+                     {teamTasks.length === 0 && <p className="text-muted-foreground col-span-full">No tasks found for this team.</p>}
                   </div>
                 </div>
               </div>
             </main>
         </SidebarInset>
       </div>
+      {selectedTask && (
+        <TaskDetailsSheet
+            task={selectedTask}
+            onOpenChange={(isOpen) => !isOpen && setSelectedTask(null)}
+            onUpdateTask={() => {}}
+            onAddComment={() => {}}
+            onStatusChange={() => {}}
+        />
+       )}
     </div>
   );
 }

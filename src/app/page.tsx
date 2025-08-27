@@ -32,6 +32,7 @@ function BoardSkeleton() {
           <div className="flex flex-col gap-4">
             <Skeleton className="h-36 w-full rounded-lg" />
             <Skeleton className="h-36 w-full rounded-lg" />
+            <Skeleton className="h-36 w-full rounded-lg" />
           </div>
         </div>
       ))}
@@ -70,10 +71,13 @@ export default function DashboardPage() {
   }, []);
 
   useEffect(() => {
+    if (!authLoading && !user) {
+      router.push('/login');
+    }
     if (!authLoading && user) {
       fetchData();
     }
-  }, [authLoading, user, fetchData]);
+  }, [authLoading, user, router, fetchData]);
 
 
   const filteredTasks = useMemo(() => {
@@ -100,30 +104,44 @@ export default function DashboardPage() {
   };
   
   const handleStatusChange = async (taskId: string, newStatus: TaskStatus) => {
-    setTasks(prevTasks => prevTasks.map(task => 
+    // Optimistic update
+    const originalTasks = tasks;
+    const updatedTasks = tasks.map(task => 
       task.id === taskId ? { ...task, status: newStatus } : task
-    ));
-    setSelectedTask(prev => prev && prev.id === taskId ? {...prev, status: newStatus} : prev);
-    await updateTaskStatus(taskId, newStatus);
+    );
+    setTasks(updatedTasks);
+    if (selectedTask?.id === taskId) {
+      setSelectedTask(prev => prev ? {...prev, status: newStatus} : null);
+    }
+
+    try {
+        await updateTaskStatus(taskId, newStatus);
+    } catch(error) {
+        // Revert on failure
+        setTasks(originalTasks);
+        console.error("Failed to update status:", error);
+    }
   };
 
   const handleAddComment = async (taskId: string, commentContent: string) => {
     if (!user) return;
     await apiAddComment(taskId, commentContent, user.id);
+    
     // Refetch task to show new comment
-    const updatedTask = tasks.find(t => t.id === taskId);
-    if(updatedTask) {
-      const newComment = {
-        id: `comment-${Date.now()}`,
-        author: user,
-        content: commentContent,
-        createdAt: new Date().toISOString(),
-      };
-      const newTask = { ...updatedTask, comments: [...(updatedTask.comments || []), newComment]};
-      setTasks(tasks.map(t => t.id === taskId ? newTask : t));
-      if (selectedTask?.id === taskId) {
-        setSelectedTask(newTask);
-      }
+    const taskToUpdate = tasks.find(t => t.id === taskId);
+    if(taskToUpdate) {
+        const newComment = {
+            id: `comment-${Date.now()}`, // Temporary ID
+            author: user, // Optimistically use current user
+            content: commentContent,
+            createdAt: new Date().toISOString(),
+        };
+        const updatedTask = { ...taskToUpdate, comments: [...(taskToUpdate.comments || []), newComment]};
+        
+        setTasks(tasks.map(t => t.id === taskId ? updatedTask : t));
+        if (selectedTask?.id === taskId) {
+            setSelectedTask(updatedTask);
+        }
     }
   };
 
@@ -173,13 +191,15 @@ export default function DashboardPage() {
             </main>
         </SidebarInset>
       </div>
-      <TaskDetailsSheet
-        task={selectedTask}
-        onOpenChange={(isOpen) => !isOpen && setSelectedTask(null)}
-        onUpdateTask={handleUpdateTask}
-        onAddComment={handleAddComment}
-        onStatusChange={handleStatusChange}
-      />
+      {selectedTask && (
+        <TaskDetailsSheet
+            task={selectedTask}
+            onOpenChange={(isOpen) => !isOpen && setSelectedTask(null)}
+            onUpdateTask={handleUpdateTask}
+            onAddComment={handleAddComment}
+            onStatusChange={handleStatusChange}
+        />
+      )}
     </div>
   );
 }

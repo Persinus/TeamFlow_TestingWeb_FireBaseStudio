@@ -1,4 +1,4 @@
-import { FieldValue } from "firebase/firestore";
+import { Timestamp } from "firebase/firestore";
 
 export interface User {
   id: string;
@@ -9,8 +9,7 @@ export interface User {
   currentWorkload: number;
   phone?: string;
   dob?: string; // Date of birth
-  createdAt?: FieldValue;
-  // No password stored here, it's managed by Firebase Auth
+  createdAt?: Timestamp;
 }
 
 export type TeamMemberRole = 'leader' | 'member';
@@ -24,14 +23,14 @@ export interface Team {
   id:string;
   name: string;
   members: TeamMember[];
-  createdAt?: FieldValue;
+  createdAt?: Timestamp;
 }
 
 export interface Comment {
   id: string;
   author: User; // Keep the nested user object for display purposes
   content: string;
-  createdAt: string; // Keep as ISO string for date-fns formatting
+  createdAt: string; // ISO string for date-fns formatting
 }
 
 export type TaskStatus = 'todo' | 'in-progress' | 'done' | 'backlog';
@@ -45,6 +44,6 @@ export interface Task {
   assignee?: User; // Keep for FE convenience, will be populated
   teamId: string; // Store only the ID
   team: Team; // Keep for FE convenience, will be populated
-  comments?: Comment[]; // Comments will be a subcollection
-  createdAt?: FieldValue;
+  comments: Comment[]; // Comments will be a subcollection
+  createdAt: string; // ISO string
 }

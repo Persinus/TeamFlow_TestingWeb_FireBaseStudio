@@ -1,6 +1,6 @@
 import { db } from './firebase';
-import { collection, getDocs, doc, getDoc, addDoc, updateDoc, deleteDoc, writeBatch, serverTimestamp, query, where } from 'firebase/firestore';
-import type { User, Team, Task, Comment } from '@/types';
+import { collection, getDocs, doc, getDoc, addDoc, updateDoc, deleteDoc, writeBatch, serverTimestamp, query, where, Timestamp } from 'firebase/firestore';
+import type { User, Team, Task, Comment, TeamMember, TaskStatus } from '@/types';
 
 // USER FUNCTIONS
 export const getUsers = async (): Promise<User[]> => {
@@ -10,6 +10,7 @@ export const getUsers = async (): Promise<User[]> => {
 };
 
 export const getUser = async (id: string): Promise<User | null> => {
+    if (!id) return null;
     const userRef = doc(db, 'users', id);
     const userSnap = await getDoc(userRef);
     if (!userSnap.exists()) return null;
@@ -36,6 +37,11 @@ export const addTeamMember = async (teamId: string, userId: string): Promise<voi
     const teamSnap = await getDoc(teamRef);
     if (teamSnap.exists()) {
         const teamData = teamSnap.data() as Team;
+        // Avoid adding duplicate members
+        if (teamData.members.some(member => member.id === userId)) {
+            console.log("User already in the team.");
+            return;
+        }
         const newMembers = [...teamData.members, { id: userId, role: 'member' }];
         await updateDoc(teamRef, { members: newMembers });
     }
@@ -63,26 +69,41 @@ export const updateTeamMemberRole = async (teamId: string, userId: string, role:
 
 
 // TASK FUNCTIONS
+type RawTask = Omit<Task, 'id' | 'team' | 'assignee' | 'comments' | 'createdAt'> & {
+    id: string;
+    teamId: string;
+    assigneeId?: string;
+    createdAt: Timestamp;
+}
+
 // Helper to populate task details
-const populateTask = async (taskData: Omit<Task, 'team' | 'assignee' | 'comments'> & {id: string}): Promise<Task> => {
+const populateTask = async (taskData: RawTask): Promise<Task> => {
     const { teamId, assigneeId, ...rest } = taskData;
     
-    const team = await getTeam(teamId);
-    const assignee = assigneeId ? await getUser(assigneeId) : undefined;
-    const comments = await getComments(taskData.id);
+    // Fetch team, assignee, and comments in parallel
+    const [team, assignee, comments] = await Promise.all([
+        getTeam(teamId),
+        assigneeId ? getUser(assigneeId) : Promise.resolve(undefined),
+        getComments(taskData.id)
+    ]);
+
+    if (!team) {
+        throw new Error(`Team with ID ${teamId} not found for task ${taskData.id}`);
+    }
 
     return {
         ...rest,
-        team: team!,
+        team,
         assignee,
-        comments
+        comments,
+        createdAt: taskData.createdAt.toDate().toISOString()
     };
 };
 
 export const getTasks = async (): Promise<Task[]> => {
     const tasksCol = collection(db, 'tasks');
     const taskSnapshot = await getDocs(tasksCol);
-    const tasks = taskSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as any));
+    const tasks = taskSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as RawTask));
     return Promise.all(tasks.map(populateTask));
 };
 
@@ -91,19 +112,19 @@ export const getTask = async(id: string): Promise<Task | null> => {
     const taskSnap = await getDoc(taskRef);
     if (!taskSnap.exists()) return null;
 
-    return populateTask({id: taskSnap.id, ...taskSnap.data()} as any);
+    return populateTask({id: taskSnap.id, ...taskSnap.data()} as RawTask);
 }
 
 export const getTasksByTeam = async(teamId: string): Promise<Task[]> => {
     const tasksCol = collection(db, 'tasks');
     const q = query(tasksCol, where("teamId", "==", teamId));
     const taskSnapshot = await getDocs(q);
-    const tasks = taskSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as any));
+    const tasks = taskSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as RawTask));
     return Promise.all(tasks.map(populateTask));
 }
 
 
-export const addTask = async (taskData: Omit<Task, 'id' | 'team' | 'comments' | 'assignee'> & { teamId: string, assigneeId?: string }): Promise<string> => {
+export const addTask = async (taskData: Omit<Task, 'id' | 'team' | 'comments' | 'assignee' | 'createdAt'> & { teamId: string, assigneeId?: string }): Promise<string> => {
     const tasksCol = collection(db, 'tasks');
     const docRef = await addDoc(tasksCol, {
         ...taskData,
@@ -117,7 +138,7 @@ export const updateTask = async (taskId: string, updates: Partial<Task>): Promis
     await updateDoc(taskRef, updates);
 };
 
-export const updateTaskStatus = async (taskId: string, status: Task['status']): Promise<void> => {
+export const updateTaskStatus = async (taskId: string, status: TaskStatus): Promise<void> => {
     const taskRef = doc(db, 'tasks', taskId);
     await updateDoc(taskRef, { status });
 }
@@ -125,16 +146,35 @@ export const updateTaskStatus = async (taskId: string, status: Task['status']): 
 // COMMENT FUNCTIONS
 export const getComments = async (taskId: string): Promise<Comment[]> => {
     const commentsCol = collection(db, 'tasks', taskId, 'comments');
-    const commentSnapshot = await getDocs(commentsCol);
+    const q = query(commentsCol);
+    const commentSnapshot = await getDocs(q);
     
     const comments = await Promise.all(commentSnapshot.docs.map(async (doc) => {
         const commentData = doc.data();
         const author = await getUser(commentData.authorId);
+
+        // Handle cases where author might be deleted
+        if (!author) {
+            return {
+                 id: doc.id, 
+                content: commentData.content,
+                author: {
+                    id: 'deleted-user',
+                    name: 'Deleted User',
+                    email: '',
+                    avatar: '',
+                    expertise: '',
+                    currentWorkload: 0,
+                },
+                createdAt: (commentData.createdAt as Timestamp)?.toDate().toISOString() || new Date().toISOString(),
+            } as Comment;
+        }
+
         return { 
             id: doc.id, 
-            ...commentData,
-            author: author!,
-            createdAt: commentData.createdAt.toDate().toISOString()
+            content: commentData.content,
+            author: author,
+            createdAt: (commentData.createdAt as Timestamp).toDate().toISOString()
         } as Comment;
     }));
 

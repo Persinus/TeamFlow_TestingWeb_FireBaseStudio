@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { CalendarIcon, Moon, Sun,Smile } from 'lucide-react';
-import type { Task } from '@/types';
+import type { Task, Team } from '@/types';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
@@ -19,12 +19,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import { SidebarInset } from '@/components/ui/sidebar';
+import { getTeams } from '@/lib/data';
 
 
 export default function SettingsPage() {
     const { user, loading } = useAuth();
     const router = useRouter();
 
+    const [teams, setTeams] = useState<Team[]>([]);
     const [theme, setTheme] = useState('light');
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
@@ -33,13 +35,17 @@ export default function SettingsPage() {
     const [dob, setDob] = useState<Date | undefined>(undefined);
 
     useEffect(() => {
+        if (!loading && !user) {
+            router.push('/login');
+        }
         if (!loading && user) {
             setName(user.name);
             setEmail(user.email);
             setPhone(user.phone || '');
             setDob(user.dob ? new Date(user.dob) : undefined);
+            getTeams().then(setTeams);
         }
-    }, [user, loading]);
+    }, [user, loading, router]);
 
     useEffect(() => {
         const storedTheme = localStorage.getItem('theme') || 'light';
@@ -64,9 +70,9 @@ export default function SettingsPage() {
 
     return (
         <div className="flex min-h-screen w-full flex-col lg:flex-row bg-muted/40">
-            <Sidebar teams={[]} />
+            <Sidebar teams={teams} />
             <div className="flex flex-1 flex-col">
-                <Header users={[]} teams={[]} filters={filters} setFilters={setFilters} onCreateTask={handleCreateTask} />
+                <Header users={[]} teams={teams} filters={filters} setFilters={setFilters} onCreateTask={handleCreateTask} />
                 <SidebarInset>
                     <main className="flex-1 p-4 sm:p-6 md:p-8">
                         <div className="max-w-4xl mx-auto space-y-8">
