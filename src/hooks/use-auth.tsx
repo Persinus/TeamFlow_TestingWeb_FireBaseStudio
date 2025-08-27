@@ -167,13 +167,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }, []);
 
     useEffect(() => {
-        if (!loading && auth) {
-            const isAuthPage = pathname === '/login' || pathname === '/register';
-            if (!user && !isAuthPage) {
-                router.push('/login');
-            } else if (user && isAuthPage) {
-                router.push('/');
-            }
+        if (loading) return; // Wait for the initial auth check to complete
+
+        const isAuthPage = pathname === '/login' || pathname === '/register';
+        
+        if (!user && !isAuthPage) {
+            router.push('/login');
+        } else if (user && isAuthPage) {
+            router.push('/');
         }
     }, [user, loading, pathname, router]);
 
