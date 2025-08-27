@@ -24,7 +24,8 @@ const statusColors = {
 };
 
 export default function TeamDetailPage({ params }: { params: { teamId: string } }) {
-  const team = teams.find(t => t.id === params.teamId);
+  const { teamId } = params;
+  const team = teams.find(t => t.id === teamId);
   
   // Dummy handlers for filters and task creation for Header component
   const [filters, setFilters] = React.useState({ assignee: 'all', team: 'all', search: '' });
@@ -37,16 +38,16 @@ export default function TeamDetailPage({ params }: { params: { teamId: string } 
     // Here we'll just find tasks for this team and get the assignees.
     const memberIds = new Set<string>();
     initialTasks.forEach(task => {
-      if (task.team.id === params.teamId && task.assignee) {
+      if (task.team.id === teamId && task.assignee) {
         memberIds.add(task.assignee.id);
       }
     });
     return users.filter(u => memberIds.has(u.id));
-  }, [params.teamId]);
+  }, [teamId]);
   
   const teamTasks = useMemo(() => {
-    return initialTasks.filter(task => task.team.id === params.teamId);
-  }, [params.teamId]);
+    return initialTasks.filter(task => task.team.id === teamId);
+  }, [teamId]);
   
   const progress = useMemo(() => {
     if (teamTasks.length === 0) return 0;
@@ -172,4 +173,3 @@ export default function TeamDetailPage({ params }: { params: { teamId: string } 
     </div>
   );
 }
-
