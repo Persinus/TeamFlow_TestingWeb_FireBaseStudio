@@ -1,10 +1,11 @@
 
+
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import type { User } from '@/types';
-import { MOCK_USERS } from '@/lib/data';
+import { MOCK_USERS, updateUser as apiUpdateUser } from '@/lib/data';
 
 const adminUser = MOCK_USERS.find(u => u.email === 'admin@teamflow.com');
 if (!adminUser) {
@@ -17,6 +18,7 @@ interface AuthContextType {
     login: (email: string, pass: string) => Promise<void>;
     logout: () => void;
     register: (name: string, email: string, pass:string) => Promise<void>;
+    updateUser: (updatedUser: User) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -32,6 +34,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const storedUser = sessionStorage.getItem('mockUser');
         if (storedUser) {
             setUser(JSON.parse(storedUser));
+        } else {
+            // If no user in session, set default admin user for demo purposes
+            sessionStorage.setItem('mockUser', JSON.stringify(adminUser));
+            setUser(adminUser);
         }
         setLoading(false);
     }, []);
@@ -52,10 +58,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
        setLoading(true);
        await new Promise(resolve => setTimeout(resolve, 500)); // Simulate network latency
 
-       if (email.toLowerCase() === 'admin@teamflow.com' && pass === 'Admin@1234') {
-           const loggedInUser = adminUser;
-           setUser(loggedInUser);
-           sessionStorage.setItem('mockUser', JSON.stringify(loggedInUser));
+       const foundUser = MOCK_USERS.find(u => u.email.toLowerCase() === email.toLowerCase());
+
+       if (foundUser && pass === 'Admin@1234') { // Using a generic password for mock
+           setUser(foundUser);
+           sessionStorage.setItem('mockUser', JSON.stringify(foundUser));
        } else {
            setLoading(false);
            throw new Error("Invalid credentials");
@@ -75,8 +82,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         console.log(`Mock registration for: ${name}, ${email}`);
         await new Promise(resolve => setTimeout(resolve, 500));
     };
+
+    const updateUser = (updatedUser: User) => {
+        setUser(updatedUser);
+        sessionStorage.setItem('mockUser', JSON.stringify(updatedUser));
+    };
     
-    const value = { user, loading, login, logout, register };
+    const value = { user, loading, login, logout, register, updateUser };
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
