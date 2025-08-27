@@ -50,6 +50,16 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const createMockUser = (): User => ({
+    id: 'mock-user-id',
+    name: 'Guest User',
+    email: 'guest@teamflow.com',
+    avatar: 'https://picsum.photos/seed/guest/40/40',
+    expertise: 'App Tester',
+    currentWorkload: 0,
+});
+
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
@@ -70,7 +80,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                     setUser(newUser);
                 }
             } else {
-                setUser(null);
+                // Temporarily provide a mock user to bypass login
+                setUser(createMockUser());
             }
             setLoading(false);
         });
@@ -79,14 +90,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }, []);
 
     useEffect(() => {
-        if (!loading) {
-            const isAuthPage = pathname === '/login' || pathname === '/register';
-            if (!user && !isAuthPage) {
-                router.push('/login');
-            } else if (user && isAuthPage) {
-                router.push('/');
-            }
-        }
+        // Temporarily disable auth redirection
+        // if (!loading) {
+        //     const isAuthPage = pathname === '/login' || pathname === '/register';
+        //     if (!user && !isAuthPage) {
+        //         router.push('/login');
+        //     } else if (user && isAuthPage) {
+        //         router.push('/');
+        //     }
+        // }
     }, [user, loading, pathname, router]);
 
     const login = async (email: string, pass: string): Promise<void> => {
