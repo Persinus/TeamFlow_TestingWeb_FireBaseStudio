@@ -51,7 +51,7 @@ const getTagColor = (tagName: string) => {
         hash = tagName.charCodeAt(i) + ((hash << 5) - hash);
     }
     const h = hash % 360;
-    return `hsl(${h}, 40%, 85%)`; // Using HSL for better color control: low saturation, high lightness
+    return `hsl(${h}, 40%, 85%)`;
 };
 
 const DetailRow = ({ icon: Icon, label, value }: { icon: React.ElementType, label: string, value: React.ReactNode }) => (
@@ -170,27 +170,7 @@ export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onU
                          <FormField control={form.control} name="description" render={({ field }) => (
                             <FormItem><FormLabel>Description</FormLabel><FormControl><Textarea className="min-h-[100px]" {...field} /></FormControl><FormMessage /></FormItem>
                          )} />
-                         <FormField control={form.control} name="tags" render={({ field }) => (
-                             <FormItem>
-                                <FormLabel>Tags</FormLabel>
-                                <FormControl>
-                                   <MultiSelect
-                                        options={availableTags.map(tag => ({ value: tag, label: tag }))}
-                                        value={field.value ?? []}
-                                        onChange={field.onChange}
-                                        onCreate={(value) => {
-                                            const newTag = { value, label: value };
-                                            setAvailableTags(prev => [...prev, value]);
-                                            field.onChange([...(field.value ?? []), newTag.value]);
-                                        }}
-                                        placeholder="Select or create tags..."
-                                        
-                                    />
-                                </FormControl>
-                                <FormMessage />
-                             </FormItem>
-                         )} />
-
+                         
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                            <FormField control={form.control} name="status" render={({ field }) => (
                                 <FormItem><FormLabel>Status</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl><SelectContent>
@@ -210,6 +190,26 @@ export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onU
                                 </SelectContent></Select><FormMessage /></FormItem>
                             )} />
                         </div>
+                        <FormField control={form.control} name="tags" render={({ field }) => (
+                            <FormItem>
+                               <FormLabel>Tags</FormLabel>
+                               <FormControl>
+                                  <MultiSelect
+                                       options={availableTags.map(tag => ({ value: tag, label: tag }))}
+                                       value={field.value ?? []}
+                                       onChange={field.onChange}
+                                       onCreate={(value) => {
+                                           const newTag = { value, label: value };
+                                           setAvailableTags(prev => [...prev, value]);
+                                           field.onChange([...(field.value ?? []), newTag.value]);
+                                       }}
+                                       placeholder="Select or create tags..."
+                                       
+                                   />
+                               </FormControl>
+                               <FormMessage />
+                            </FormItem>
+                        )} />
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <FormField control={form.control} name="startDate" render={({ field }) => (
                                 <FormItem className="flex flex-col"><FormLabel>Start Date</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant="outline" className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
@@ -237,6 +237,3 @@ export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onU
     </Sheet>
   );
 }
-
-
-    

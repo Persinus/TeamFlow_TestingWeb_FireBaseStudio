@@ -36,7 +36,7 @@ const taskSchema = z.object({
   status: z.enum(['todo', 'in-progress', 'backlog', 'done']),
   startDate: z.date().optional(),
   dueDate: z.date().optional(),
-  tags: z.array(z.string()).optional(),
+  tags: z.string().optional(), // Changed to a single string for parsing
 });
 
 export default function CreateTaskSheet({ children, onCreateTask, users, teams }: CreateTaskSheetProps) {
@@ -50,7 +50,7 @@ export default function CreateTaskSheet({ children, onCreateTask, users, teams }
       title: '',
       description: '',
       status: 'todo',
-      tags: []
+      tags: ''
     },
   });
 
@@ -88,11 +88,12 @@ export default function CreateTaskSheet({ children, onCreateTask, users, teams }
   };
 
   const onSubmit = async (values: z.infer<typeof taskSchema>) => {
+    const tagsArray = values.tags ? values.tags.split(',').map(s => s.trim()).filter(Boolean) : [];
     await onCreateTask({
       ...values,
       startDate: values.startDate?.toISOString(),
       dueDate: values.dueDate?.toISOString(),
-      tags: values.tags,
+      tags: tagsArray,
     });
     form.reset();
     setIsOpen(false);
@@ -174,7 +175,7 @@ export default function CreateTaskSheet({ children, onCreateTask, users, teams }
                         <FormControl>
                             <SelectTrigger>
                             <SelectValue placeholder="Assign to a team" />
-                            </SelectTrigger>
+                            </Trigger>
                         </FormControl>
                         <SelectContent>
                             {teams.map(team => (
@@ -300,7 +301,7 @@ export default function CreateTaskSheet({ children, onCreateTask, users, teams }
                 <FormItem>
                   <FormLabel>Tags</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g. bug, feature, ui" {...field} value={field.value?.join(', ') || ''} onChange={e => field.onChange(e.target.value.split(',').map(s => s.trim()))} />
+                    <Input placeholder="e.g. bug, feature, ui" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
