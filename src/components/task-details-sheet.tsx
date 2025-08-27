@@ -88,7 +88,18 @@ export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onU
 
   const form = useForm<TaskFormData>({
     resolver: zodResolver(taskSchema),
-    defaultValues: {}
+    defaultValues: {
+      tieuDe: task?.tieuDe || '',
+      moTa: task?.moTa || '',
+      trangThai: task?.trangThai || 'Cần làm',
+      nguoiThucHienId: task?.nguoiThucHienId || undefined,
+      nhomId: task?.nhomId || '',
+      ngayBatDau: safeParseDate(task?.ngayBatDau),
+      ngayHetHan: safeParseDate(task?.ngayHetHan),
+      tags: task?.tags || [],
+      loaiCongViec: task?.loaiCongViec || 'Công việc',
+      doUuTien: task?.doUuTien || 'Trung bình',
+    }
   });
   
   useEffect(() => {
@@ -99,6 +110,7 @@ export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onU
     fetchTags();
   }, []);
 
+  // Only reset the form when the task ID changes (a new task is selected)
   useEffect(() => {
     if (task) {
       form.reset({
@@ -113,9 +125,8 @@ export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onU
         loaiCongViec: task.loaiCongViec,
         doUuTien: task.doUuTien,
       });
-      setIsEditing(false); // Reset to view mode whenever a new task is selected
     }
-  }, [task, form]);
+  }, [task?.id, form]);
   
   const assignee = useMemo(() => users.find(u => u.id === task?.nguoiThucHienId), [task, users]);
   const team = useMemo(() => teams.find(t => t.id === task?.nhomId), [task, teams]);
@@ -169,6 +180,14 @@ export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onU
     } finally {
         setIsDeleting(false);
     }
+  }
+
+  const handleCreateTag = (value: string) => {
+    if (!availableTags.some(t => t.toLowerCase() === value.toLowerCase())) {
+        setAvailableTags(prev => [...prev, value]);
+    }
+    const currentTags = form.getValues('tags') || [];
+    form.setValue('tags', [...currentTags, value]);
   }
 
   const formatDate = (date: string | Date | undefined) => {
@@ -258,27 +277,25 @@ export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onU
                                 </SelectContent></Select><FormMessage /></FormItem>
                             )} />
                         </div>
-                        <FormField control={form.control} name="tags" render={({ field }) => (
-                            <FormItem>
-                               <FormLabel>Thẻ</FormLabel>
-                               <FormControl>
-                                  <MultiSelect
-                                       options={availableTags.map(tag => ({ value: tag, label: tag }))}
-                                       value={field.value ?? []}
-                                       onChange={field.onChange}
-                                       onCreate={(value) => {
-                                           if (!availableTags.includes(value)) {
-                                               setAvailableTags(prev => [...prev, value]);
-                                           }
-                                           field.onChange([...(field.value ?? []), value]);
-                                       }}
-                                       placeholder="Chọn hoặc tạo thẻ..."
-                                       
-                                   />
-                               </FormControl>
-                               <FormMessage />
-                            </FormItem>
-                        )} />
+                        <FormField
+                            control={form.control}
+                            name="tags"
+                            render={({ field }) => (
+                                <FormItem>
+                                <FormLabel>Thẻ</FormLabel>
+                                <FormControl>
+                                    <MultiSelect
+                                        options={availableTags.map(tag => ({ value: tag, label: tag }))}
+                                        value={field.value ?? []}
+                                        onChange={field.onChange}
+                                        onCreate={handleCreateTag}
+                                        placeholder="Chọn hoặc tạo thẻ..."
+                                    />
+                                </FormControl>
+                                <FormMessage />
+                                </FormItem>
+                            )}
+                        />
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <FormField control={form.control} name="ngayBatDau" render={({ field }) => (
                                 <FormItem className="flex flex-col"><FormLabel>Ngày bắt đầu</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant="outline" className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
