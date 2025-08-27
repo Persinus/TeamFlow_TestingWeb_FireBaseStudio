@@ -24,7 +24,7 @@ const statusColors = {
 };
 
 export default function TeamDetailPage({ params: paramsProp }: { params: { teamId: string } }) {
-  const params = use(Promise.resolve(paramsProp));
+  const params = use(paramsProp);
   const { teamId } = params;
 
   const team = useMemo(() => teams.find(t => t.id === teamId), [teamId]);
