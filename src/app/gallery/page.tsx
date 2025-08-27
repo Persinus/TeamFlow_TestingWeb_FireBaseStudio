@@ -1,0 +1,150 @@
+
+"use client";
+
+import React, { Suspense, useState, useEffect, useCallback } from 'react';
+import { Canvas } from '@react-three/fiber';
+import { OrbitControls, Environment, Text } from '@react-three/drei';
+import { motion } from 'framer-motion';
+
+import Sidebar from '@/components/sidebar';
+import Header from '@/components/header';
+import { SidebarInset } from '@/components/ui/sidebar';
+import type { Task, Team } from '@/types';
+import { getTasks, getTeams, addTask } from '@/app/actions';
+import { useAuth } from '@/hooks/use-auth';
+import { useRouter } from 'next/navigation';
+import { useToast } from '@/hooks/use-toast';
+import { Skeleton } from '@/components/ui/skeleton';
+import Artwork from '@/components/gallery-artwork';
+import TaskDetailsSheet from '@/components/task-details-sheet';
+
+function GallerySkeleton() {
+    return (
+        <div className="w-full h-[600px] bg-muted rounded-lg flex items-center justify-center">
+            <div className="text-center">
+                <p className="text-lg font-semibold text-muted-foreground">Đang tải phòng trưng bày 3D...</p>
+                <Skeleton className="h-4 w-48 mt-2 mx-auto" />
+            </div>
+        </div>
+    )
+}
+
+
+export default function GalleryPage() {
+    const { user, loading: authLoading } = useAuth();
+    const router = useRouter();
+    const { toast } = useToast();
+
+    const [completedTasks, setCompletedTasks] = useState<Task[]>([]);
+    const [teams, setTeams] = useState<Team[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+
+    const fetchData = useCallback(async () => {
+        setLoading(true);
+        try {
+            const [tasksData, teamsData] = await Promise.all([getTasks(), getTeams()]);
+            setCompletedTasks(tasksData.filter(t => t.trangThai === 'Hoàn thành'));
+            setTeams(teamsData);
+        } catch (error) {
+            toast({ variant: 'destructive', title: 'Lỗi', description: 'Không thể tải dữ liệu cho phòng trưng bày.' });
+        } finally {
+            setLoading(false);
+        }
+    }, [toast]);
+    
+    useEffect(() => {
+        if (!authLoading && !user) {
+            router.push('/login');
+        }
+        if (!authLoading && user) {
+            fetchData();
+        }
+    }, [user, authLoading, router, fetchData]);
+
+    const handleCreateTask = async (newTaskData: Omit<Task, 'id' | 'nhom' | 'nguoiThucHien' | 'ngayTao'>) => {
+        await addTask(newTaskData);
+        fetchData();
+    };
+    
+    const handleUpdateTask = async () => {
+        await fetchData();
+        setSelectedTask(null);
+    }
+    
+    const handleDeleteTask = async () => {
+        await fetchData();
+        setSelectedTask(null);
+    }
+
+    return (
+        <div className="flex min-h-screen w-full flex-col lg:flex-row bg-background">
+            <Sidebar teams={teams} onTeamChange={fetchData} />
+            <div className="flex flex-1 flex-col">
+                <Header onCreateTask={handleCreateTask} />
+                <SidebarInset>
+                    <motion.main
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5 }}
+                        className="flex-1 p-4 sm:p-6 md:p-8"
+                    >
+                        <div className="mb-6">
+                            <h1 className="text-3xl font-bold tracking-tight">Phòng trưng bày Thành tựu</h1>
+                            <p className="text-muted-foreground">Một không gian 3D để nhìn lại các công việc đã hoàn thành của đội bạn.</p>
+                        </div>
+
+                        {loading ? <GallerySkeleton /> : (
+                            <Card className="w-full h-[600px]">
+                                <Suspense fallback={<GallerySkeleton />}>
+                                    <Canvas camera={{ position: [0, 2, 12], fov: 60 }}>
+                                        <ambientLight intensity={0.5} />
+                                        <pointLight position={[10, 10, 10]} />
+                                        <Environment preset="city" />
+                                        
+                                        <Text position={[0, 3, 0]} fontSize={0.6} color="white" anchorX="center" anchorY="middle">
+                                            Thành tựu của Đội
+                                        </Text>
+
+                                        <group>
+                                            {completedTasks.map((task, index) => (
+                                                <Artwork 
+                                                    key={task.id} 
+                                                    task={task} 
+                                                    position={[(index % 8 - 3.5) * 2.5, Math.floor(index / 8) * -3, 0]}
+                                                    onSelectTask={setSelectedTask}
+                                                />
+                                            ))}
+                                        </group>
+                                        
+                                        <OrbitControls enableZoom={true} enablePan={true} />
+                                    </Canvas>
+                                </Suspense>
+                            </Card>
+                        )}
+                    </motion.main>
+                </SidebarInset>
+            </div>
+             {selectedTask && (
+                <TaskDetailsSheet
+                    task={selectedTask}
+                    users={[]}
+                    teams={teams}
+                    onOpenChange={(isOpen) => !isOpen && setSelectedTask(null)}
+                    onUpdateTask={handleUpdateTask}
+                    onDeleteTask={handleDeleteTask}
+                />
+            )}
+        </div>
+    );
+}
+
+// Add a simple Card component for placeholder
+const Card = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(({ className, ...props }, ref) => (
+    <div
+        ref={ref}
+        className={`bg-card text-card-foreground border rounded-lg shadow-sm ${className}`}
+        {...props}
+    />
+));
+Card.displayName = "Card";
