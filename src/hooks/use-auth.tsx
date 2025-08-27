@@ -10,6 +10,7 @@ import { doc, setDoc, getDoc, serverTimestamp, updateDoc, collection, writeBatch
 
 // Helper function to create a user profile in Firestore
 const createUserProfile = async (firebaseUser: FirebaseUser, name: string): Promise<User> => {
+    if (!db) throw new Error("Firestore is not initialized");
     const userRef = doc(db, 'users', firebaseUser.uid);
     const userSnap = await getDoc(userRef);
     
@@ -38,6 +39,7 @@ const createUserProfile = async (firebaseUser: FirebaseUser, name: string): Prom
 
 // One-time function to create initial data if it doesn't exist
 const seedInitialData = async (adminUserId: string) => {
+    if (!db) throw new Error("Firestore is not initialized");
     const usersQuery = query(collection(db, 'users'));
     const usersSnapshot = await getDocs(usersQuery);
 
@@ -138,6 +140,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const pathname = usePathname();
 
     useEffect(() => {
+        if (!auth || !db) {
+            setLoading(false);
+            console.warn("Firebase not initialized, authentication is disabled.");
+            return;
+        }
+
         const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
             if (firebaseUser) {
                 const userRef = doc(db, 'users', firebaseUser.uid);
@@ -145,7 +153,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 if (userSnap.exists()) {
                     setUser({ id: userSnap.id, ...userSnap.data() } as User);
                 } else {
-                    // This might happen if a user is created in Auth but not in Firestore yet
                     const name = firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'New User';
                     const newUserProfile = await createUserProfile(firebaseUser, name);
                     setUser(newUserProfile);
@@ -160,7 +167,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }, []);
 
     useEffect(() => {
-        if (!loading) {
+        if (!loading && auth) {
             const isAuthPage = pathname === '/login' || pathname === '/register';
             if (!user && !isAuthPage) {
                 router.push('/login');
@@ -171,19 +178,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }, [user, loading, pathname, router]);
 
     const login = async (email: string, pass: string): Promise<void> => {
+       if (!auth) throw new Error("Authentication is not available.");
        await signInWithEmailAndPassword(auth, email, pass);
     };
 
     const logout = async () => {
+        if (!auth) return;
         await firebaseSignOut(auth);
         setUser(null);
         router.push('/login');
     };
 
     const register = async (name: string, email: string, pass: string): Promise<void> => {
+        if (!auth || !db) throw new Error("Authentication is not available.");
         const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
         const newUser = await createUserProfile(userCredential.user, name);
-        // Special case for seeding data if the admin registers
         if (email.toLowerCase() === 'admin@teamflow.com') {
             await updateDoc(doc(db, 'users', newUser.id), { expertise: 'Project Overlord' });
             await seedInitialData(newUser.id);
