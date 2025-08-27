@@ -10,6 +10,7 @@ import TaskDetailsSheet from '@/components/task-details-sheet';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
+import { SidebarInset } from '@/components/ui/sidebar';
 
 const columns: { id: TaskStatus; title: string }[] = [
   { id: 'backlog', title: 'Backlog' },
@@ -110,23 +111,25 @@ export default function DashboardPage() {
       <Sidebar />
       <div className="flex flex-1 flex-col">
         <Header filters={filters} setFilters={setFilters} onCreateTask={handleCreateTask} />
-        <main className="flex-1 p-4 sm:p-6 md:p-8 overflow-x-auto">
-            <div className="grid min-w-[1200px] grid-cols-4 gap-6">
-              {columns.map(column => (
-                <div key={column.id} className="flex h-full flex-col gap-4">
-                  <div className="flex items-center justify-between rounded-lg bg-background p-3 shadow-sm">
-                    <h2 className="font-semibold text-foreground">{column.title}</h2>
-                    <Badge variant="secondary" className="rounded-full">{tasksByStatus[column.id].length}</Badge>
-                  </div>
-                  <div className="flex flex-col gap-4">
-                    {tasksByStatus[column.id].map(task => (
-                      <TaskCard key={task.id} task={task} onSelectTask={setSelectedTask} />
-                    ))}
-                  </div>
+        <SidebarInset>
+            <main className="flex-1 p-4 sm:p-6 md:p-8 overflow-x-auto">
+                <div className="grid min-w-[1200px] grid-cols-4 gap-6">
+                  {columns.map(column => (
+                    <div key={column.id} className="flex h-full flex-col gap-4">
+                      <div className="flex items-center justify-between rounded-lg bg-background p-3 shadow-sm">
+                        <h2 className="font-semibold text-foreground">{column.title}</h2>
+                        <Badge variant="secondary" className="rounded-full">{tasksByStatus[column.id].length}</Badge>
+                      </div>
+                      <div className="flex flex-col gap-4">
+                        {tasksByStatus[column.id].map(task => (
+                          <TaskCard key={task.id} task={task} onSelectTask={setSelectedTask} />
+                        ))}
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-        </main>
+            </main>
+        </SidebarInset>
       </div>
       <TaskDetailsSheet
         task={selectedTask}

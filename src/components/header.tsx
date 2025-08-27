@@ -12,13 +12,13 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import CreateTaskSheet from '@/components/create-task-sheet';
 import { users, teams } from '@/lib/data';
 import type { Task } from '@/types';
-import Sidebar from './sidebar';
+import Sidebar, { SidebarTrigger } from './sidebar';
 import { useAuth } from '@/hooks/use-auth';
 
 interface HeaderProps {
@@ -51,6 +51,7 @@ export default function Header({ filters, setFilters, onCreateTask }: HeaderProp
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6">
       <div className="flex w-full items-center gap-4">
+        <SidebarTrigger className="hidden lg:flex" />
         <Sheet>
             <SheetTrigger asChild>
                 <Button variant="outline" size="icon" className="shrink-0 lg:hidden">
@@ -59,9 +60,6 @@ export default function Header({ filters, setFilters, onCreateTask }: HeaderProp
                 </Button>
             </SheetTrigger>
             <SheetContent side="left" className="w-64 p-0">
-                <SheetHeader>
-                  <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
-                </SheetHeader>
                 <Sidebar />
             </SheetContent>
         </Sheet>
