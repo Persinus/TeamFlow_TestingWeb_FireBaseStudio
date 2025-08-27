@@ -3,7 +3,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Menu, Search, Moon, Sun, User as UserIcon } from 'lucide-react';
+import { Menu, Search, Moon, Sun, User as UserIcon, LogOut, Settings as SettingsIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -25,6 +25,7 @@ import { Logo } from './icons';
 import Link from 'next/link';
 import { useToast } from '../hooks/use-toast';
 import { useRouter } from 'next/navigation';
+import { cn } from '@/lib/utils';
 
 interface HeaderProps {
   users: User[];
@@ -52,7 +53,13 @@ export default function Header({ users, teams, filters, setFilters, onCreateTask
     setTheme(newTheme);
     localStorage.setItem('theme', newTheme);
     document.documentElement.classList.toggle('dark', newTheme === 'dark');
+    document.documentElement.style.colorScheme = newTheme;
   };
+  
+  useEffect(() => {
+    const root = document.documentElement;
+    root.style.colorScheme = theme;
+  }, [theme]);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFilters(f => ({ ...f, search: e.target.value }));
@@ -72,7 +79,7 @@ export default function Header({ users, teams, filters, setFilters, onCreateTask
 
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6">
+    <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background/95 backdrop-blur-sm px-4 md:px-6">
       <div className="flex w-full items-center gap-4">
         
         <Sheet>
@@ -86,7 +93,7 @@ export default function Header({ users, teams, filters, setFilters, onCreateTask
                 <SheetHeader>
                     <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
                 </SheetHeader>
-                <MobileSidebar teams={teams} onTeamCreated={() => {
+                <MobileSidebar teams={teams} onTeamChange={() => {
                   // This is a dummy handler for mobile, page reload will fetch new teams.
                 }}/>
             </SheetContent>
@@ -97,7 +104,7 @@ export default function Header({ users, teams, filters, setFilters, onCreateTask
           <Input
             type="search"
             placeholder="Search tasks by title or tag..."
-            className="w-full rounded-lg bg-muted pl-8 md:w-[200px] lg:w-[320px]"
+            className="w-full rounded-lg bg-secondary pl-8 md:w-[200px] lg:w-[320px]"
             value={filters.search}
             onChange={handleSearchChange}
           />
@@ -105,7 +112,7 @@ export default function Header({ users, teams, filters, setFilters, onCreateTask
         
         <div className="flex items-center gap-2">
             <Select value={filters.assignee} onValueChange={(value) => setFilters(f => ({...f, assignee: value}))}>
-                <SelectTrigger className="w-[150px] hidden md:flex">
+                <SelectTrigger className={cn("w-[150px] hidden md:flex", filters.assignee !== 'all' && 'text-primary border-primary')}>
                     <SelectValue placeholder="Filter by assignee" />
                 </SelectTrigger>
                 <SelectContent>
@@ -118,7 +125,7 @@ export default function Header({ users, teams, filters, setFilters, onCreateTask
                 </SelectContent>
             </Select>
             <Select value={filters.team} onValueChange={(value) => setFilters(f => ({...f, team: value}))}>
-                <SelectTrigger className="w-[150px] hidden md:flex">
+                <SelectTrigger className={cn("w-[150px] hidden md:flex", filters.team !== 'all' && 'text-primary border-primary')}>
                     <SelectValue placeholder="Filter by team" />
                 </SelectTrigger>
                 <SelectContent>
@@ -131,7 +138,7 @@ export default function Header({ users, teams, filters, setFilters, onCreateTask
         </div>
 
         <CreateTaskSheet onCreateTask={onCreateTask} users={users} teams={teams}>
-          <Button className="bg-primary text-primary-foreground hover:bg-primary/90">Create Task</Button>
+          <Button>Create Task</Button>
         </CreateTaskSheet>
         
         <DropdownMenu>
@@ -150,13 +157,19 @@ export default function Header({ users, teams, filters, setFilters, onCreateTask
               <UserIcon className="h-4 w-4" />
               <span>Profile</span>
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={navigateToSettings}>Settings</DropdownMenuItem>
+            <DropdownMenuItem onClick={navigateToSettings} className="gap-2">
+              <SettingsIcon className="h-4 w-4" />
+              <span>Settings</span>
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={toggleTheme} className="gap-2">
               {theme === 'light' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
               <span>{theme === 'light' ? 'Dark' : 'Light'} Mode</span>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleLogout}>Logout</DropdownMenuItem>
+            <DropdownMenuItem onClick={handleLogout} className="gap-2">
+              <LogOut className="h-4 w-4" />
+              <span>Logout</span>
+              </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

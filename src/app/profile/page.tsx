@@ -10,7 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import { SidebarInset } from '@/components/ui/sidebar';
-import { getTeams, getUsers, getTasksByAssignee, addTask, Task, updateTask } from '@/lib/data';
+import { getTeams, getUsers, getTasksByAssignee, addTask, Task, updateTask, deleteTeam, updateTeam } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
 import TaskCard from '@/components/task-card';
@@ -96,8 +96,8 @@ export default function ProfilePage() {
     
     if (authLoading || pageLoading || !user) {
         return (
-            <div className="flex min-h-screen w-full flex-col lg:flex-row bg-muted/40">
-                <Sidebar teams={teams} onTeamCreated={() => user && fetchData(user.id)} />
+            <div className="flex min-h-screen w-full flex-col lg:flex-row bg-background">
+                <Sidebar teams={teams} onTeamChange={() => user && fetchData(user.id)} />
                 <div className="flex flex-1 flex-col">
                     <Header users={users} teams={teams} filters={filters} setFilters={setFilters} onCreateTask={handleCreateTask} />
                     <SidebarInset>
@@ -111,8 +111,8 @@ export default function ProfilePage() {
     }
 
     return (
-        <div className="flex min-h-screen w-full flex-col lg:flex-row bg-muted/40">
-            <Sidebar teams={teams} onTeamCreated={() => fetchData(user.id)} />
+        <div className="flex min-h-screen w-full flex-col lg:flex-row bg-background">
+            <Sidebar teams={teams} onTeamChange={() => fetchData(user.id)} />
             <div className="flex flex-1 flex-col">
                 <Header users={users} teams={teams} filters={filters} setFilters={setFilters} onCreateTask={handleCreateTask} />
                 <SidebarInset>

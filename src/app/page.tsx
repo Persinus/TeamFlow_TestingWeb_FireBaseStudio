@@ -37,9 +37,9 @@ function DroppableColumn({ id, title, children, isDragOver }: { id: string; titl
   return (
     <motion.div
       ref={setNodeRef}
-      className={cn("flex h-full flex-col gap-4 rounded-lg transition-colors", isDragOver ? "bg-accent/20" : "")}
+      className={cn("flex h-full flex-col gap-4 rounded-lg transition-colors", isDragOver ? "bg-primary/10" : "")}
     >
-      <div className="flex items-center justify-between rounded-lg bg-background p-3 shadow-sm">
+      <div className="flex items-center justify-between rounded-lg bg-card p-3 shadow-sm border">
         <h2 className="font-semibold text-foreground">{title}</h2>
         <Badge variant="secondary" className="rounded-full">{React.Children.count(children)}</Badge>
       </div>
@@ -59,7 +59,7 @@ function BoardSkeleton() {
     <div className="grid min-w-[1200px] grid-cols-4 gap-6">
       {columns.map(column => (
         <div key={column.id} className="flex h-full flex-col gap-4">
-          <div className="flex items-center justify-between rounded-lg bg-background p-3 shadow-sm">
+          <div className="flex items-center justify-between rounded-lg bg-card p-3 shadow-sm border">
             <Skeleton className="h-6 w-24" />
             <Skeleton className="h-6 w-6 rounded-full" />
           </div>
@@ -215,8 +215,8 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="flex min-h-screen w-full flex-col lg:flex-row bg-muted/40 dark:bg-zinc-900/40">
-      <Sidebar teams={teams} onTeamCreated={fetchData} />
+    <div className="flex min-h-screen w-full flex-col lg:flex-row bg-background">
+      <Sidebar teams={teams} onTeamChange={fetchData} />
       <div className="flex flex-1 flex-col">
         <Header 
           users={users} 
@@ -237,7 +237,7 @@ export default function DashboardPage() {
                   <h1 className="text-3xl font-bold tracking-tight">Project Dashboard</h1>
                   <p className="text-muted-foreground">{viewMode === 'board' ? "Drag and drop tasks to change their status." : "View tasks by their due dates."}</p>
                 </div>
-                 <div className="flex items-center gap-2 rounded-lg bg-background p-1 shadow-sm">
+                 <div className="flex items-center gap-2 rounded-lg bg-card border p-1 shadow-sm">
                     <Button variant={viewMode === 'board' ? 'secondary' : 'ghost'} size="icon" onClick={() => setViewMode('board')} aria-label="Board View">
                         <LayoutGrid className="h-5 w-5" />
                     </Button>

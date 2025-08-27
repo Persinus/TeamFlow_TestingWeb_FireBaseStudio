@@ -4,7 +4,7 @@ import type { User, Team, Task, TaskStatus, TeamMemberRole } from '@/types';
 import { addDays, subDays } from 'date-fns';
 
 // Mock Data - Expanded to 10 users with 'micah' avatar set
-export const MOCK_USERS: User[] = [
+export let MOCK_USERS: User[] = [
   { id: 'user-admin', name: 'Admin User', email: 'admin@teamflow.com', avatar: `https://api.dicebear.com/7.x/micah/svg?seed=Admin`, expertise: 'Project Overlord', currentWorkload: 1, phone: '123-456-7890', dob: '1990-01-01' },
   { id: 'user-bruce', name: 'Bruce Wayne', email: 'bruce@teamflow.com', avatar: `https://api.dicebear.com/7.x/micah/svg?seed=Bruce`, expertise: 'Frontend Development', currentWorkload: 2, phone: '123-456-7891', dob: '1985-05-27' },
   { id: 'user-clark', name: 'Clark Kent', email: 'clark@teamflow.com', avatar: `https://api.dicebear.com/7.x/micah/svg?seed=Clark`, expertise: 'Backend Development', currentWorkload: 1, phone: '123-456-7892', dob: '1988-06-18' },
@@ -99,6 +99,21 @@ export const createTeam = async (teamData: Pick<Team, 'name' | 'description'>, l
     MOCK_TEAMS.push(newTeam);
     return newId;
 };
+
+export const updateTeam = async (teamId: string, teamData: Partial<Pick<Team, 'name' | 'description'>>): Promise<void> => {
+    await simulateDelay(100);
+    const teamIndex = MOCK_TEAMS.findIndex(t => t.id === teamId);
+    if (teamIndex !== -1) {
+        MOCK_TEAMS[teamIndex] = { ...MOCK_TEAMS[teamIndex], ...teamData };
+    }
+}
+
+export const deleteTeam = async (teamId: string): Promise<void> => {
+    await simulateDelay(200);
+    MOCK_TEAMS = MOCK_TEAMS.filter(t => t.id !== teamId);
+    // Also need to handle tasks associated with the deleted team, e.g., unassign or delete them.
+    // For this mock, we'll just leave them, but they might not render correctly.
+}
 
 export const addTeamMember = async (teamId: string, userId: string): Promise<void> => {
     await simulateDelay(200);

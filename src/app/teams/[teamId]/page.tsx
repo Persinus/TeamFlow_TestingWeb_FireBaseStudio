@@ -28,8 +28,8 @@ import TaskDetailsSheet from '@/components/task-details-sheet';
 
 const statusColors = {
   backlog: 'hsl(var(--muted-foreground))',
-  todo: 'hsl(var(--primary))',
-  'in-progress': 'hsl(var(--accent))',
+  todo: 'hsl(var(--chart-1))',
+  'in-progress': 'hsl(var(--chart-3))',
   done: 'hsl(var(--chart-2))',
 };
 
@@ -177,15 +177,14 @@ export default function TeamDetailPage() {
   const [filters, setFilters] = React.useState({ assignee: 'all', team: 'all', search: '' });
   const handleCreateTask = async (newTaskData: Omit<Task, 'id' | 'team' | 'assignee' | 'createdAt'>) => {};
   const handleTeamCreated = async () => {
-    // This will just refetch all teams, and the sidebar will update.
     const teams = await getTeams();
     setAllTeams(teams);
   }
 
   if (authLoading || loading || !user) {
     return (
-        <div className="flex min-h-screen w-full flex-col lg:flex-row bg-muted/40">
-            <Sidebar teams={[]} onTeamCreated={() => {}}/>
+        <div className="flex min-h-screen w-full flex-col lg:flex-row bg-background">
+            <Sidebar teams={[]} onTeamChange={() => {}}/>
             <div className="flex flex-1 flex-col">
                 <Header users={[]} teams={[]} filters={filters} setFilters={setFilters} onCreateTask={handleCreateTask as any} />
                 <SidebarInset>
@@ -214,8 +213,8 @@ export default function TeamDetailPage() {
   }
   
   return (
-    <div className="flex min-h-screen w-full flex-col lg:flex-row bg-muted/40">
-      <Sidebar teams={allTeams} onTeamCreated={handleTeamCreated} />
+    <div className="flex min-h-screen w-full flex-col lg:flex-row bg-background">
+      <Sidebar teams={allTeams} onTeamChange={handleTeamCreated} />
       <div className="flex flex-1 flex-col">
         <Header users={allUsers} teams={allTeams} filters={filters} setFilters={setFilters} onCreateTask={handleCreateTask as any} />
         <SidebarInset>

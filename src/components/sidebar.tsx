@@ -6,15 +6,13 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { Home, Settings, Users, ChevronDown, PlusCircle } from 'lucide-react';
 import { Logo } from '@/components/icons';
-import { Badge } from '@/components/ui/badge';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import type { Team } from '@/types';
 import { Sidebar as RootSidebar, SidebarHeader, SidebarContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarGroup, useSidebar, SidebarFooter } from '@/components/ui/sidebar';
-import CreateTeamDialog from './create-team-dialog'; // We will create this
-import { useAuth } from '@/hooks/use-auth';
+import ManageTeamsDialog from './manage-teams-dialog';
 
-const NavLink = ({ href, children, icon: Icon, badge, exact = false, tooltip }: { href: string; children: React.ReactNode; icon: React.ElementType; badge?: string | number; exact?: boolean; tooltip?: string; }) => {
+const NavLink = ({ href, children, icon: Icon, exact = false, tooltip }: { href: string; children: React.ReactNode; icon: React.ElementType; exact?: boolean; tooltip?: string; }) => {
   const pathname = usePathname();
   const isActive = exact ? pathname === href : pathname.startsWith(href);
   return (
@@ -23,7 +21,6 @@ const NavLink = ({ href, children, icon: Icon, badge, exact = false, tooltip }: 
             <Link href={href}>
                 <Icon />
                 <span>{children}</span>
-                {badge && <Badge className="ml-auto flex h-6 w-6 shrink-0 items-center justify-center rounded-full">{badge}</Badge>}
             </Link>
         </SidebarMenuButton>
     </SidebarMenuItem>
@@ -32,22 +29,21 @@ const NavLink = ({ href, children, icon: Icon, badge, exact = false, tooltip }: 
 
 interface SidebarProps {
   teams: Team[];
-  onTeamCreated: () => void;
+  onTeamChange: () => void;
 }
 
 
-export function MobileSidebar({ teams, onTeamCreated }: SidebarProps) {
+export function MobileSidebar({ teams, onTeamChange }: SidebarProps) {
   const pathname = usePathname();
-  const { user } = useAuth();
   const [isTeamsOpen, setIsTeamsOpen] = React.useState(pathname.startsWith('/teams'));
-  const [isCreateTeamOpen, setCreateTeamOpen] = useState(false);
+  const [isManageTeamsOpen, setManageTeamsOpen] = useState(false);
 
   return (
     <div className="flex h-full w-full flex-col">
        <SidebarHeader>
         <Link href="/" className="flex items-center gap-2 font-semibold">
             <Logo className="h-6 w-6 text-primary" />
-            <span className="text-lg">TeamFlow</span>
+            <span className="text-lg text-sidebar-foreground">TeamFlow</span>
           </Link>
       </SidebarHeader>
       <SidebarContent>
@@ -66,43 +62,48 @@ export function MobileSidebar({ teams, onTeamCreated }: SidebarProps) {
                             key={team.id}
                             href={`/teams/${team.id}`}
                             className={cn(
-                                "block rounded-md px-3 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-primary",
-                                pathname === `/teams/${team.id}` && "bg-muted text-primary font-semibold"
+                                "block rounded-md px-3 py-1.5 text-sm text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                                pathname === `/teams/${team.id}` && "bg-sidebar-accent text-sidebar-accent-foreground font-semibold"
                                 )}
                             >
                             {team.name}
                             </Link>
                         ))}
-                         <CreateTeamDialog open={isCreateTeamOpen} onOpenChange={setCreateTeamOpen} onTeamCreated={onTeamCreated}>
-                            <button onClick={() => setCreateTeamOpen(true)} className="flex items-center gap-2 rounded-md px-3 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-primary">
-                                <PlusCircle className="h-4 w-4" />
-                                Create Team
-                            </button>
-                        </CreateTeamDialog>
                     </div>
                 )}
             </SidebarGroup>
             <NavLink href="/settings" icon={Settings}>Settings</NavLink>
         </SidebarMenu>
       </SidebarContent>
+       <SidebarFooter className="p-2">
+        <ManageTeamsDialog open={isManageTeamsOpen} onOpenChange={setManageTeamsOpen} teams={teams} onTeamsUpdate={onTeamChange}>
+             <Button variant="ghost" className="w-full justify-start gap-3 p-2 text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
+                <Settings className="h-5 w-5" />
+                <span>Manage Teams</span>
+             </Button>
+        </ManageTeamsDialog>
+         <div className="flex items-center gap-3 p-2">
+             <Logo className="h-7 w-7 text-primary" />
+             <span className="font-semibold text-sidebar-foreground">TeamFlow</span>
+         </div>
+       </SidebarFooter>
     </div>
   );
 }
 
 
-export default function Sidebar({ teams, onTeamCreated }: SidebarProps) {
+export default function Sidebar({ teams, onTeamChange }: SidebarProps) {
   const pathname = usePathname();
   const [isTeamsOpen, setIsTeamsOpen] = React.useState(pathname.startsWith('/teams'));
   const { state } = useSidebar();
-  const [isCreateTeamOpen, setCreateTeamOpen] = useState(false);
-
+  const [isManageTeamsOpen, setManageTeamsOpen] = useState(false);
 
   return (
     <RootSidebar collapsible="icon" className="hidden lg:flex flex-col">
       <SidebarHeader>
         <Link href="/" className="flex items-center gap-2 font-semibold">
-            <Logo className="h-6 w-6 text-primary" />
-            {state === 'expanded' && <span className="text-lg">TeamFlow</span>}
+            <Logo className="h-8 w-8 text-primary" />
+            {state === 'expanded' && <span className="text-lg text-sidebar-foreground">TeamFlow</span>}
           </Link>
       </SidebarHeader>
         <SidebarContent>
@@ -121,25 +122,31 @@ export default function Sidebar({ teams, onTeamCreated }: SidebarProps) {
                                 key={team.id}
                                 href={`/teams/${team.id}`}
                                 className={cn(
-                                    "block rounded-md px-3 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-primary",
-                                    pathname === `/teams/${team.id}` && "bg-muted text-primary font-semibold"
+                                    "block rounded-md px-3 py-1.5 text-sm text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                                    pathname === `/teams/${team.id}` && "bg-sidebar-accent text-sidebar-accent-foreground font-semibold"
                                     )}
                                 >
                                 {team.name}
                                 </Link>
                             ))}
-                            <CreateTeamDialog open={isCreateTeamOpen} onOpenChange={setCreateTeamOpen} onTeamCreated={onTeamCreated}>
-                                <button className="flex items-center gap-2 rounded-md px-3 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-primary mt-1">
-                                    <PlusCircle className="h-4 w-4" />
-                                    <span>Create Team</span>
-                                </button>
-                            </CreateTeamDialog>
                         </div>
                     )}
                 </SidebarGroup>
                 <NavLink href="/settings" icon={Settings} tooltip="Settings">Settings</NavLink>
             </SidebarMenu>
         </SidebarContent>
+        <SidebarFooter>
+           <ManageTeamsDialog open={isManageTeamsOpen} onOpenChange={setManageTeamsOpen} teams={teams} onTeamsUpdate={onTeamChange}>
+             <SidebarMenuButton tooltip="Manage Teams" className="w-full">
+                <Settings />
+                <span>Manage Teams</span>
+             </SidebarMenuButton>
+           </ManageTeamsDialog>
+            <div className={cn("flex items-center gap-2 p-2 text-sidebar-foreground", state === 'collapsed' && 'justify-center')}>
+                <Logo className="h-7 w-7 text-primary flex-shrink-0" />
+                {state === 'expanded' && <span className="font-semibold text-sm">TeamFlow v1.0</span>}
+            </div>
+        </SidebarFooter>
     </RootSidebar>
   );
 }

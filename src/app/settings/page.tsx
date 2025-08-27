@@ -27,7 +27,7 @@ import { motion } from 'framer-motion';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 
 // Get a list of unique avatar URLs from the mock data
-const availableAvatars = MOCK_USERS.map(u => u.avatar);
+const availableAvatars = MOCK_USERS.map(u => u.avatar).filter((v, i, a) => a.indexOf(v) === i);
 
 
 export default function SettingsPage() {
@@ -144,8 +144,8 @@ export default function SettingsPage() {
     }
 
     return (
-        <div className="flex min-h-screen w-full flex-col lg:flex-row bg-muted/40">
-            <Sidebar teams={teams} onTeamCreated={fetchData} />
+        <div className="flex min-h-screen w-full flex-col lg:flex-row bg-background">
+            <Sidebar teams={teams} onTeamChange={fetchData} />
             <div className="flex flex-1 flex-col">
                 <Header users={users} teams={teams} filters={filters} setFilters={setFilters} onCreateTask={handleCreateTask as any} />
                 <SidebarInset>
