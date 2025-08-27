@@ -9,12 +9,12 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import { SidebarInset } from '@/components/ui/sidebar';
-import { getTeams, getUsers, getTasksByAssignee, addTask, Task, updateTask, deleteTeam, updateTeam } from '@/lib/data';
+import { getTeams, getUsers, getTasksByAssignee, addTask, updateTask } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
 import TaskCard from '@/components/task-card';
 import TaskDetailsSheet from '@/components/task-details-sheet';
-import type { User, Team } from '@/types';
+import type { User, Team, Task } from '@/types';
 import { Skeleton } from '@/components/ui/skeleton';
 
 function ProfileSkeleton() {

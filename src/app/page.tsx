@@ -3,7 +3,7 @@
 "use client";
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { getTasks, updateTaskStatus, addTask as apiAddTask, getUsers, getTeams, updateTask } from '@/lib/data';
+import { getTasks, updateTaskStatus, addTask as apiAddTask, getUsers, getTeams, updateTask } from '@/app/actions';
 import type { Task, TaskStatus, User, Team } from '@/types';
 import Sidebar from '@/components/sidebar';
 import Header from '@/components/header';
@@ -106,10 +106,11 @@ export default function DashboardPage() {
       setTeams(teamsData);
     } catch (error) {
       console.error("Failed to fetch data:", error);
+      toast({ variant: 'destructive', title: 'Error', description: 'Failed to load dashboard data.' });
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [toast]);
 
   useEffect(() => {
     if (!authLoading && !user) {

@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
-import { createTeam, updateTeam, deleteTeam } from '@/lib/data';
+import { createTeam, updateTeam, deleteTeam } from '@/app/actions';
 import { Loader2, PlusCircle, Trash2, X, Save } from 'lucide-react';
 import type { Team } from '@/types';
 import { ScrollArea } from './ui/scroll-area';

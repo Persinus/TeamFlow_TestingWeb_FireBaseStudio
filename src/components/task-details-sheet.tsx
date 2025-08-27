@@ -22,7 +22,7 @@ import { CalendarIcon, Loader2, Pencil, User as UserIcon, Users, Tag, CheckSquar
 import { Separator } from './ui/separator';
 import { Badge } from './ui/badge';
 import { MultiSelect } from './ui/multi-select';
-import { getAllTags } from '@/lib/data';
+import { getAllTags } from '@/app/actions';
 
 interface TaskDetailsSheetProps {
   task: Task | null;

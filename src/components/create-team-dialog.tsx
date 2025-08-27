@@ -12,7 +12,7 @@ import { Textarea } from './ui/textarea';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
-import { createTeam } from '@/lib/data';
+import { createTeam } from '@/app/actions';
 import { Loader2 } from 'lucide-react';
 
 interface CreateTeamDialogProps {

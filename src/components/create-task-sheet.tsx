@@ -90,11 +90,17 @@ export default function CreateTaskSheet({ children, onCreateTask, users, teams }
     const selectedTeam = teams.find(t => t.id === teamId);
     if (!selectedTeam) return;
 
-    const teamMemberIds = new Set(selectedTeam.members.map(m => m.id));
-    const teamMembers = users.filter(u => teamMemberIds.has(u.id)).map(u => ({ name: u.name, expertise: u.expertise, currentWorkload: u.currentWorkload }));
+    const teamMemberDetails = selectedTeam.members.map(m => m.user) as User[];
+    
+    const teamMembersForSuggestion = teamMemberDetails.map(u => ({ 
+        name: u.name, 
+        expertise: u.expertise, 
+        currentWorkload: u.currentWorkload 
+    }));
+
 
     setIsSuggesting(true);
-    const result = await getAssigneeSuggestion({ taskDescription, teamMembers });
+    const result = await getAssigneeSuggestion({ taskDescription, teamMembers: teamMembersForSuggestion });
     setIsSuggesting(false);
 
     if (result.success && result.data) {

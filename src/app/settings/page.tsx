@@ -20,7 +20,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import { SidebarInset } from '@/components/ui/sidebar';
-import { getTeams, getUsers, addTask, updateUser as apiUpdateUser } from '@/lib/data';
+import { getTeams, getUsers, addTask, updateUser as apiUpdateUser } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';

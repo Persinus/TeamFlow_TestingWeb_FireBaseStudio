@@ -3,7 +3,7 @@
 
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import { notFound, useRouter, useParams } from 'next/navigation';
-import { getTeam, getUsers, getTasksByTeam, addTeamMember, removeTeamMember, updateTeamMemberRole, getTeams, updateTask } from '@/lib/data';
+import { getTeam, getUsers, getTasksByTeam, addTeamMember, removeTeamMember, updateTeamMemberRole, getTeams, updateTask } from '@/app/actions';
 import type { Task, TaskStatus, User, Team, TeamMemberRole } from '@/types';
 import Sidebar from '@/components/sidebar';
 import Header from '@/components/header';
@@ -90,7 +90,6 @@ export default function TeamDetailPage() {
   const teamMembers = useMemo(() => {
     if (!team) return [];
     return team.members.map(member => {
-        // @ts-ignore
       const userDetails = allUsers.find(u => u.id === (member.user as User)?.id || u.id === member.user);
       return userDetails ? { ...userDetails, role: member.role } : null;
     }).filter(Boolean) as (User & { role: TeamMemberRole })[];
@@ -98,9 +97,9 @@ export default function TeamDetailPage() {
   
   const usersNotInTeam = useMemo(() => {
       if (!team) return [];
-      const memberIds = new Set(team.members.map(m => (m.user as User)?.id || m.user as string));
+      const memberIds = new Set(teamMembers.map(m => m.id));
       return allUsers.filter(u => !memberIds.has(u.id));
-  }, [team, allUsers]);
+  }, [team, allUsers, teamMembers]);
 
   const progress = useMemo(() => {
     if (teamTasks.length === 0) return 0;

@@ -4,7 +4,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import type { User } from '@/types';
-import { updateUser as apiUpdateUser, getMockUserByEmail } from '@/lib/data';
+import { getMockUserByEmail, updateUser as apiUpdateUser } from '@/app/actions';
 import { MOCK_USERS } from '@/lib/mock-data';
 
 const adminUser = MOCK_USERS.find(u => u.email === 'admin@teamflow.com');
@@ -36,8 +36,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             setUser(JSON.parse(storedUser));
         } else {
             // If no user in session, set default admin user for demo purposes
-            sessionStorage.setItem('mockUser', JSON.stringify(adminUser));
-            setUser(adminUser);
+            getMockUserByEmail('admin@teamflow.com').then(adminUser => {
+                if (adminUser) {
+                    sessionStorage.setItem('mockUser', JSON.stringify(adminUser));
+                    setUser(adminUser);
+                }
+            })
         }
         setLoading(false);
     }, []);
@@ -58,8 +62,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
        setLoading(true);
        await new Promise(resolve => setTimeout(resolve, 500)); // Simulate network latency
 
-       // NOTE: This uses mock data for authentication. In a real application,
-       // you would replace this with a call to your database and password hashing.
        const foundUser = await getMockUserByEmail(email);
 
        if (foundUser && pass === 'Admin@1234') { // Using a generic password for mock/demo
