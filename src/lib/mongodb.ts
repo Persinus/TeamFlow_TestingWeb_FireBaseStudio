@@ -36,11 +36,11 @@ const seedDatabase = async () => {
     console.log('Seeding database...');
     try {
         // 1. Insert all mock users
-        await UserModel.insertMany(MOCK_USERS);
+        await UserModel.create(MOCK_USERS);
         console.log(`${MOCK_USERS.length} users created.`);
 
         // 2. Create a default team
-        const justiceLeagueTeam = new TeamModel({
+        const justiceLeagueTeam = await TeamModel.create({
             _id: 'team-justice-league-1',
             name: 'Justice League',
             description: 'The world\'s premier superhero team.',
@@ -50,7 +50,6 @@ const seedDatabase = async () => {
                 { user: 'user-diana', role: 'member' },
             ],
         });
-        await justiceLeagueTeam.save();
         console.log('Justice League team created.');
         
         // 3. Create some tasks for the team
@@ -61,7 +60,7 @@ const seedDatabase = async () => {
                 description: 'Upgrade the Batmobile with the latest tech. Focus on stealth and non-lethal weaponry.',
                 status: 'in-progress',
                 assignee: 'user-bruce',
-                team: 'team-justice-league-1',
+                team: justiceLeagueTeam._id,
                 tags: ['design', 'engineering'],
                 dueDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString() // 5 days from now
             },
@@ -71,7 +70,7 @@ const seedDatabase = async () => {
                 description: 'Get an exclusive interview with Lex Luthor about his recent "philanthropic" activities.',
                 status: 'todo',
                 assignee: 'user-clark',
-                team: 'team-justice-league-1',
+                team: justiceLeagueTeam._id,
                 tags: ['journalism', 'investigation'],
                  dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString() // 3 days from now
             },
@@ -81,11 +80,11 @@ const seedDatabase = async () => {
                 description: 'Translate the scrolls recovered from Themyscira to uncover potential threats.',
                 status: 'todo',
                 assignee: 'user-diana',
-                team: 'team-justice-league-1',
+                team: justiceLeagueTeam._id,
                 tags: ['research', 'translation'],
             }
         ];
-        await TaskModel.insertMany(tasksToCreate);
+        await TaskModel.create(tasksToCreate);
         console.log(`${tasksToCreate.length} tasks created.`);
         
         console.log('Database seeding completed successfully!');
