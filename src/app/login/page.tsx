@@ -30,7 +30,7 @@ export default function LoginPage() {
         e.preventDefault();
         try {
             await login(email, password);
-            router.push('/');
+            // The redirection is now handled by the useEffect in useAuth hook
         } catch (error: any) {
             toast({
                 variant: 'destructive',
