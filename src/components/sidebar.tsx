@@ -2,10 +2,8 @@
 
 import React from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { Home, Settings, Users, ChevronDown } from 'lucide-react';
 import { Logo } from '@/components/icons';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
   Collapsible,
@@ -76,16 +74,6 @@ export default function Sidebar() {
             </Collapsible>
             <NavLink href="#" icon={Settings}>Settings</NavLink>
           </nav>
-        </div>
-        <div className="mt-auto p-4">
-            <Image 
-                src="https://picsum.photos/200/260" 
-                alt="Placeholder image"
-                width={200}
-                height={260}
-                className="rounded-lg"
-                data-ai-hint="abstract art"
-            />
         </div>
       </div>
     </aside>
