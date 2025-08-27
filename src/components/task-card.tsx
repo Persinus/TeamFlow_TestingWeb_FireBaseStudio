@@ -38,10 +38,10 @@ export default function TaskCard({ task, onSelectTask, isDragging }: TaskCardPro
   } : undefined;
 
   const getDeadlineInfo = () => {
-      if (!task.dueDate) return { text: null, className: '', cardBorderClass: '' };
+      if (!task.ngayHetHan) return { text: null, className: '', cardBorderClass: '' };
       
       // The dueDate can be either a string (from serialization) or a Date object.
-      const dueDate = typeof task.dueDate === 'string' ? parseISO(task.dueDate) : task.dueDate;
+      const dueDate = typeof task.ngayHetHan === 'string' ? parseISO(task.ngayHetHan) : task.ngayHetHan;
 
       const now = new Date();
       const isOverdue = isBefore(dueDate, now);
@@ -83,18 +83,18 @@ export default function TaskCard({ task, onSelectTask, isDragging }: TaskCardPro
             <CardHeader className="pb-2 pr-8">
                 <div className="flex justify-between items-start mb-2">
                     <div className="flex-1 overflow-hidden">
-                    <CardTitle className="text-base font-semibold tracking-tight truncate">{task.title}</CardTitle>
+                    <CardTitle className="text-base font-semibold tracking-tight truncate">{task.tieuDe}</CardTitle>
                     </div>
-                    {task.assignee ? (
+                    {task.nguoiThucHien ? (
                         <Avatar className="h-8 w-8 ml-2 flex-shrink-0">
-                            <AvatarImage src={task.assignee.avatar} alt={task.assignee.name} />
-                            <AvatarFallback>{task.assignee.name.substring(0,2).toUpperCase()}</AvatarFallback>
+                            <AvatarImage src={task.nguoiThucHien.anhDaiDien} alt={task.nguoiThucHien.hoTen} />
+                            <AvatarFallback>{task.nguoiThucHien.hoTen.substring(0,2).toUpperCase()}</AvatarFallback>
                         </Avatar>
                     ) : (
                         <div className="h-8 w-8 ml-2 rounded-full bg-muted flex items-center justify-center text-muted-foreground text-xs flex-shrink-0">?</div>
                     )}
                 </div>
-                <p className="line-clamp-2 text-sm text-muted-foreground h-[40px]">{task.description}</p>
+                <p className="line-clamp-2 text-sm text-muted-foreground h-[40px]">{task.moTa}</p>
             </CardHeader>
             <CardContent className="py-2">
                 {task.tags && task.tags.length > 0 && (

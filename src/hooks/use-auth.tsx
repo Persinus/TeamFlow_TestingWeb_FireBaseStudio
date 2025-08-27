@@ -5,7 +5,6 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { useRouter, usePathname } from 'next/navigation';
 import type { User } from '@/types';
 import { verifyUserCredentials } from '@/app/actions';
-import { MOCK_USERS } from '@/lib/mock-data';
 
 interface AuthContextType {
     user: User | null;
@@ -13,7 +12,7 @@ interface AuthContextType {
     login: (email: string, pass: string) => Promise<void>;
     logout: () => void;
     register: (name: string, email: string, pass:string) => Promise<void>;
-    updateUser: (updatedUser: User) => void;
+    updateUser: (updatedUser: Partial<User>) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -26,7 +25,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     useEffect(() => {
         // Simulate checking for a logged-in user from a previous session
-        const storedUser = sessionStorage.getItem('mockUser');
+        const storedUser = sessionStorage.getItem('teamflow-user');
         if (storedUser) {
             setUser(JSON.parse(storedUser));
         }
@@ -48,10 +47,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const login = async (email: string, pass: string): Promise<void> => {
        setLoading(true);
        try {
-            const foundUser = await verifyUserCredentials({ email, password: pass });
+            const foundUser = await verifyUserCredentials({ email, matKhau: pass });
             if (foundUser) {
                 setUser(foundUser);
-                sessionStorage.setItem('mockUser', JSON.stringify(foundUser));
+                sessionStorage.setItem('teamflow-user', JSON.stringify(foundUser));
             } else {
                  throw new Error("Thông tin đăng nhập không hợp lệ");
             }
@@ -65,7 +64,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const logout = async () => {
         await new Promise(resolve => setTimeout(resolve, 200));
         setUser(null);
-        sessionStorage.removeItem('mockUser');
+        sessionStorage.removeItem('teamflow-user');
         router.push('/login');
     };
 
@@ -78,11 +77,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         throw new Error("Chức năng đăng ký chưa được triển khai đầy đủ.");
     };
 
-    const updateUser = (updatedUser: User) => {
+    const updateUser = (updatedUser: Partial<User>) => {
         setUser(prevUser => {
             if (!prevUser) return null;
             const newUser = {...prevUser, ...updatedUser};
-            sessionStorage.setItem('mockUser', JSON.stringify(newUser));
+            sessionStorage.setItem('teamflow-user', JSON.stringify(newUser));
             return newUser;
         });
     };

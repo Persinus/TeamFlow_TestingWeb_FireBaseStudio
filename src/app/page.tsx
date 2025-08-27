@@ -3,7 +3,7 @@
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { getTasks, updateTaskStatus, addTask as apiAddTask, getUsers, getTeams, updateTask, deleteTask as apiDeleteTask } from '@/app/actions';
-import type { Task, TaskStatus, User, Team } from '@/types';
+import type { Task, TrangThaiCongViec as TaskStatus, User, Team } from '@/types';
 import Sidebar from '@/components/sidebar';
 import Header from '@/components/header';
 import TaskCard from '@/components/task-card';
@@ -24,10 +24,10 @@ import CalendarView from '@/components/calendar-view';
 
 
 const columns: { id: TaskStatus; title: string }[] = [
-  { id: 'backlog', title: 'Tồn đọng' },
-  { id: 'todo', title: 'Cần làm' },
-  { id: 'in-progress', title: 'Đang làm' },
-  { id: 'done', title: 'Hoàn thành' },
+  { id: 'Tồn đọng', title: 'Tồn đọng' },
+  { id: 'Cần làm', title: 'Cần làm' },
+  { id: 'Đang tiến hành', title: 'Đang làm' },
+  { id: 'Hoàn thành', title: 'Hoàn thành' },
 ];
 
 
@@ -129,29 +129,29 @@ export default function DashboardPage() {
       if (filters.assignee === 'all') {
         assigneeMatch = true;
       } else if (filters.assignee === 'unassigned') {
-        assigneeMatch = !task.assigneeId;
+        assigneeMatch = !task.nguoiThucHienId;
       } else {
-        assigneeMatch = task.assignee?.id === filters.assignee;
+        assigneeMatch = task.nguoiThucHien?.id === filters.assignee;
       }
 
-      const teamMatch = filters.team === 'all' || task.team.id === filters.team;
-      const searchMatch = filters.search === '' || task.title.toLowerCase().includes(filters.search.toLowerCase()) || (task.tags && task.tags.some(t => t.toLowerCase().includes(filters.search.toLowerCase())));
+      const teamMatch = filters.team === 'all' || task.nhom?.id === filters.team;
+      const searchMatch = filters.search === '' || task.tieuDe.toLowerCase().includes(filters.search.toLowerCase()) || (task.tags && task.tags.some(t => t.toLowerCase().includes(filters.search.toLowerCase())));
       return assigneeMatch && teamMatch && searchMatch;
     });
   }, [tasks, filters]);
 
-  const handleCreateTask = async (newTaskData: Omit<Task, 'id' | 'team' | 'assignee' | 'createdAt'>) => {
+  const handleCreateTask = async (newTaskData: Omit<Task, 'id' | 'nhom' | 'nguoiThucHien' | 'ngayTao'>) => {
     await apiAddTask(newTaskData);
     fetchData(); 
   };
   
-  const handleUpdateTask = async (updatedTaskData: Omit<Task, 'team' | 'assignee'>) => {
+  const handleUpdateTask = async (updatedTaskData: Omit<Task, 'nhom' | 'nguoiThucHien'>) => {
     await updateTask(updatedTaskData.id, updatedTaskData);
     await fetchData(); // Refetch all data to ensure consistency
     setSelectedTask(prev => prev ? {...prev, ...updatedTaskData} : null); // Optimistically update selected task
     toast({
       title: "Công việc đã được cập nhật",
-      description: `"${updatedTaskData.title}" đã được cập nhật thành công.`
+      description: `"${updatedTaskData.tieuDe}" đã được cập nhật thành công.`
     });
   };
 
@@ -164,11 +164,11 @@ export default function DashboardPage() {
   const handleStatusChange = async (taskId: string, newStatus: TaskStatus) => {
     const originalTasks = tasks;
     const updatedTasks = tasks.map(task => 
-      task.id === taskId ? { ...task, status: newStatus } : task
+      task.id === taskId ? { ...task, trangThai: newStatus } : task
     );
     setTasks(updatedTasks);
     if (selectedTask?.id === taskId) {
-      setSelectedTask(prev => prev ? {...prev, status: newStatus} : null);
+      setSelectedTask(prev => prev ? {...prev, trangThai: newStatus} : null);
     }
 
     try {
@@ -181,7 +181,7 @@ export default function DashboardPage() {
   
   const tasksByStatus = useMemo(() => {
     return columns.reduce((acc, column) => {
-      acc[column.id] = filteredTasks.filter(task => task.status === column.id).sort((a,b) => a.title.localeCompare(b.title));
+      acc[column.id] = filteredTasks.filter(task => task.trangThai === column.id).sort((a,b) => a.tieuDe.localeCompare(b.tieuDe));
       return acc;
     }, {} as Record<TaskStatus, Task[]>);
   }, [filteredTasks]);
@@ -203,11 +203,11 @@ export default function DashboardPage() {
         const taskId = active.id as string;
         
         const task = tasks.find(t => t.id === taskId);
-        if (task && task.status !== newStatus && columns.some(c => c.id === newStatus)) {
+        if (task && task.trangThai !== newStatus && columns.some(c => c.id === newStatus)) {
             handleStatusChange(taskId, newStatus);
             toast({
               title: "Công việc đã được di chuyển",
-              description: `"${task.title}" đã được chuyển đến ${columns.find(c => c.id === newStatus)?.title}.`
+              description: `"${task.tieuDe}" đã được chuyển đến ${columns.find(c => c.id === newStatus)?.title}.`
             })
         }
     }

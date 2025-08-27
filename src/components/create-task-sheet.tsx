@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
 import { getAssigneeSuggestion, getAllTags } from '@/app/actions';
-import type { Task, User, Team } from '@/types';
+import type { Task, User, Team, DoUuTien, LoaiCongViec, TrangThaiCongViec } from '@/types';
 import { Wand2, Calendar as CalendarIcon } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Calendar } from './ui/calendar';
@@ -23,19 +23,21 @@ import { MultiSelect } from './ui/multi-select';
 
 interface CreateTaskSheetProps {
   children: React.ReactNode;
-  onCreateTask: (newTaskData: Omit<Task, 'id' | 'team' | 'assignee' | 'createdAt'>) => Promise<void>;
+  onCreateTask: (newTaskData: Omit<Task, 'id' | 'nhom' | 'nguoiThucHien' | 'ngayTao'>) => Promise<void>;
   users: User[];
   teams: Team[];
 }
 
 const taskSchema = z.object({
-  title: z.string().min(1, 'Tiêu đề là bắt buộc'),
-  description: z.string().optional(),
-  assigneeId: z.string().optional(),
-  teamId: z.string().min(1, 'Đội là bắt buộc'),
-  status: z.enum(['todo', 'in-progress', 'backlog', 'done']),
-  startDate: z.date().optional(),
-  dueDate: z.date().optional(),
+  tieuDe: z.string().min(1, 'Tiêu đề là bắt buộc'),
+  moTa: z.string().optional(),
+  nguoiThucHienId: z.string().optional(),
+  nhomId: z.string().min(1, 'Đội là bắt buộc'),
+  trangThai: z.enum(['Cần làm', 'Đang tiến hành', 'Hoàn thành', 'Tồn đọng']),
+  loaiCongViec: z.enum(['Tính năng', 'Lỗi', 'Công việc']),
+  doUuTien: z.enum(['Cao', 'Trung bình', 'Thấp']),
+  ngayBatDau: z.date().optional(),
+  ngayHetHan: z.date().optional(),
   tags: z.array(z.string()).optional(),
 });
 
@@ -59,16 +61,18 @@ export default function CreateTaskSheet({ children, onCreateTask, users, teams }
   const form = useForm<z.infer<typeof taskSchema>>({
     resolver: zodResolver(taskSchema),
     defaultValues: {
-      title: '',
-      description: '',
-      status: 'todo',
+      tieuDe: '',
+      moTa: '',
+      trangThai: 'Cần làm',
+      loaiCongViec: 'Công việc',
+      doUuTien: 'Trung bình',
       tags: []
     },
   });
   
   const handleSuggestAssignee = async () => {
-    const taskDescription = form.getValues('description');
-    const teamId = form.getValues('teamId');
+    const taskDescription = form.getValues('moTa');
+    const teamId = form.getValues('nhomId');
 
     if (!taskDescription) {
       toast({
@@ -90,12 +94,12 @@ export default function CreateTaskSheet({ children, onCreateTask, users, teams }
     const selectedTeam = teams.find(t => t.id === teamId);
     if (!selectedTeam) return;
 
-    const teamMemberDetails = selectedTeam.members.map(m => m.user) as User[];
+    const teamMemberDetails = selectedTeam.thanhVien.map(m => users.find(u => u.id === m.thanhVienId)).filter(Boolean) as User[];
     
     const teamMembersForSuggestion = teamMemberDetails.map(u => ({ 
-        name: u.name, 
-        expertise: u.expertise, 
-        currentWorkload: u.currentWorkload 
+        name: u.hoTen, 
+        expertise: u.chuyenMon, 
+        currentWorkload: u.taiCongViecHienTai
     }));
 
 
@@ -104,9 +108,9 @@ export default function CreateTaskSheet({ children, onCreateTask, users, teams }
     setIsSuggesting(false);
 
     if (result.success && result.data) {
-      const suggestedUser = users.find(u => u.name === result.data.suggestedAssignee);
+      const suggestedUser = users.find(u => u.hoTen === result.data.suggestedAssignee);
       if (suggestedUser) {
-        form.setValue('assigneeId', suggestedUser.id);
+        form.setValue('nguoiThucHienId', suggestedUser.id);
         toast({
           title: `Gợi ý: ${result.data.suggestedAssignee}`,
           description: result.data.reason,
@@ -124,16 +128,16 @@ export default function CreateTaskSheet({ children, onCreateTask, users, teams }
   const onSubmit = async (values: z.infer<typeof taskSchema>) => {
     await onCreateTask({
       ...values,
-      description: values.description ?? "",
-      startDate: values.startDate?.toISOString(),
-      dueDate: values.dueDate?.toISOString(),
+      moTa: values.moTa ?? "",
+      ngayBatDau: values.ngayBatDau,
+      ngayHetHan: values.ngayHetHan,
       tags: values.tags || [],
     });
     form.reset();
     setIsOpen(false);
     toast({
         title: "Đã tạo công việc",
-        description: `"${values.title}" đã được thêm vào bảng.`,
+        description: `"${values.tieuDe}" đã được thêm vào bảng.`,
     });
   };
 
@@ -151,7 +155,7 @@ export default function CreateTaskSheet({ children, onCreateTask, users, teams }
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
             <FormField
               control={form.control}
-              name="title"
+              name="tieuDe"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Tiêu đề</FormLabel>
@@ -164,7 +168,7 @@ export default function CreateTaskSheet({ children, onCreateTask, users, teams }
             />
             <FormField
               control={form.control}
-              name="description"
+              name="moTa"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Mô tả</FormLabel>
@@ -178,7 +182,7 @@ export default function CreateTaskSheet({ children, onCreateTask, users, teams }
              <div className="grid grid-cols-2 gap-4">
                 <FormField
                     control={form.control}
-                    name="status"
+                    name="trangThai"
                     render={({ field }) => (
                     <FormItem>
                         <FormLabel>Trạng thái</FormLabel>
@@ -189,10 +193,10 @@ export default function CreateTaskSheet({ children, onCreateTask, users, teams }
                             </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                            <SelectItem value="backlog">Tồn đọng</SelectItem>
-                            <SelectItem value="todo">Cần làm</SelectItem>
-                            <SelectItem value="in-progress">Đang làm</SelectItem>
-                            <SelectItem value="done">Hoàn thành</SelectItem>
+                            <SelectItem value="Tồn đọng">Tồn đọng</SelectItem>
+                            <SelectItem value="Cần làm">Cần làm</SelectItem>
+                            <SelectItem value="Đang tiến hành">Đang tiến hành</SelectItem>
+                            <SelectItem value="Hoàn thành">Hoàn thành</SelectItem>
                         </SelectContent>
                         </Select>
                         <FormMessage />
@@ -201,7 +205,7 @@ export default function CreateTaskSheet({ children, onCreateTask, users, teams }
                 />
               <FormField
                 control={form.control}
-                name="teamId"
+                name="nhomId"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Đội</FormLabel>
@@ -214,7 +218,7 @@ export default function CreateTaskSheet({ children, onCreateTask, users, teams }
                       <SelectContent>
                         {teams.map(team => (
                           <SelectItem key={team.id} value={team.id}>
-                            {team.name}
+                            {team.tenNhom}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -223,12 +227,57 @@ export default function CreateTaskSheet({ children, onCreateTask, users, teams }
                   </FormItem>
                 )}
               />
-
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+                 <FormField
+                    control={form.control}
+                    name="loaiCongViec"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Loại công việc</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                            <SelectTrigger>
+                            <SelectValue />
+                            </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                            <SelectItem value="Tính năng">Tính năng</SelectItem>
+                            <SelectItem value="Lỗi">Lỗi</SelectItem>
+                            <SelectItem value="Công việc">Công việc</SelectItem>
+                        </SelectContent>
+                        </Select>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+                 <FormField
+                    control={form.control}
+                    name="doUuTien"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Độ ưu tiên</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                            <SelectTrigger>
+                            <SelectValue />
+                            </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                            <SelectItem value="Cao">Cao</SelectItem>
+                            <SelectItem value="Trung bình">Trung bình</SelectItem>
+                            <SelectItem value="Thấp">Thấp</SelectItem>
+                        </SelectContent>
+                        </Select>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
             </div>
             <div className="grid grid-cols-2 gap-4">
                 <FormField
                 control={form.control}
-                name="startDate"
+                name="ngayBatDau"
                 render={({ field }) => (
                     <FormItem className="flex flex-col">
                     <FormLabel>Ngày bắt đầu</FormLabel>
@@ -266,7 +315,7 @@ export default function CreateTaskSheet({ children, onCreateTask, users, teams }
                 />
                 <FormField
                 control={form.control}
-                name="dueDate"
+                name="ngayHetHan"
                 render={({ field }) => (
                     <FormItem className="flex flex-col">
                     <FormLabel>Ngày hết hạn</FormLabel>
@@ -305,7 +354,7 @@ export default function CreateTaskSheet({ children, onCreateTask, users, teams }
             </div>
              <FormField
               control={form.control}
-              name="assigneeId"
+              name="nguoiThucHienId"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Người được giao</FormLabel>
@@ -319,7 +368,7 @@ export default function CreateTaskSheet({ children, onCreateTask, users, teams }
                             <SelectContent>
                                 <SelectItem value="unassigned">Chưa giao</SelectItem>
                                 {users.map(user => (
-                                    <SelectItem key={user.id} value={user.id}>{user.name}</SelectItem>
+                                    <SelectItem key={user.id} value={user.id}>{user.hoTen}</SelectItem>
                                 ))}
                             </SelectContent>
                         </Select>

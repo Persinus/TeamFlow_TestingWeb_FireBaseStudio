@@ -20,18 +20,18 @@ import CreateTaskSheet from '@/components/create-task-sheet';
 import type { Task, User, Team } from '@/types';
 import { MobileSidebar } from './sidebar';
 import { useAuth } from '@/hooks/use-auth';
-import { Logo } from './icons';
 import Link from 'next/link';
 import { useToast } from '../hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import { Logo } from './icons';
 
 interface HeaderProps {
   users: User[];
   teams: Team[];
   filters: { assignee: string; team: string; search: string };
   setFilters: React.Dispatch<React.SetStateAction<{ assignee: string; team: string; search: string }>>;
-  onCreateTask: (newTaskData: Omit<Task, 'id' | 'comments' | 'team' | 'assignee' | 'createdAt'>) => Promise<void>;
+  onCreateTask: (newTaskData: Omit<Task, 'id' | 'nhom' | 'nguoiThucHien' | 'ngayTao'>) => Promise<void>;
 }
 
 export default function Header({ users, teams, filters, setFilters, onCreateTask }: HeaderProps) {
@@ -42,7 +42,7 @@ export default function Header({ users, teams, filters, setFilters, onCreateTask
 
 
   useEffect(() => {
-    const storedTheme = localStorage.getItem('theme') || 'light';
+    const storedTheme = typeof window !== "undefined" ? localStorage.getItem('theme') || 'light' : 'light';
     setTheme(storedTheme);
     document.documentElement.classList.toggle('dark', storedTheme === 'dark');
   }, []);
@@ -119,7 +119,7 @@ export default function Header({ users, teams, filters, setFilters, onCreateTask
                     <SelectItem value="unassigned">Chưa được giao</SelectItem>
                     <SelectSeparator />
                     {users.map(user => (
-                        <SelectItem key={user.id} value={user.id}>{user.name}</SelectItem>
+                        <SelectItem key={user.id} value={user.id}>{user.hoTen}</SelectItem>
                     ))}
                 </SelectContent>
             </Select>
@@ -130,7 +130,7 @@ export default function Header({ users, teams, filters, setFilters, onCreateTask
                 <SelectContent>
                     <SelectItem value="all">Tất cả các đội</SelectItem>
                     {teams.map(team => (
-                        <SelectItem key={team.id} value={team.id}>{team.name}</SelectItem>
+                        <SelectItem key={team.id} value={team.id}>{team.tenNhom}</SelectItem>
                     ))}
                 </SelectContent>
             </Select>
@@ -144,8 +144,8 @@ export default function Header({ users, teams, filters, setFilters, onCreateTask
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="rounded-full">
               <Avatar className="h-8 w-8">
-                <AvatarImage src={user?.avatar} alt={user?.name} data-ai-hint="woman face" />
-                <AvatarFallback>{user?.name?.substring(0,2).toUpperCase() || 'U'}</AvatarFallback>
+                <AvatarImage src={user?.anhDaiDien} alt={user?.hoTen} data-ai-hint="woman face" />
+                <AvatarFallback>{user?.hoTen?.substring(0,2).toUpperCase() || 'U'}</AvatarFallback>
               </Avatar>
             </Button>
           </DropdownMenuTrigger>

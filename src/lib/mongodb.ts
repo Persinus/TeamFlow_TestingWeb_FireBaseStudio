@@ -35,100 +35,71 @@ const seedDatabase = async () => {
             return;
         }
 
-        console.log('Seeding database with IT-oriented Vietnamese data...');
+        console.log('Seeding database with 3 new users...');
         
         // Hash the default password
         const hashedPassword = await bcrypt.hash('Admin@1234', 10);
 
         // 1. Insert all mock users with their specific IDs and hashed password
-        const usersToCreate = MOCK_USERS.map(({ id, name, avatar, expertise, email, phone, dob, currentWorkload }) => ({
-             _id: id,
-             hoTen: name,
-             email: email,
+        const usersToCreate = MOCK_USERS.map((user) => ({
+             _id: `user-${user.hoTen.toLowerCase().replace(/\s/g, '')}`,
+             ...user,
              matKhau: hashedPassword,
-             anhDaiDien: avatar,
-             chuyenMon: expertise,
-             taiCongViecHienTai: currentWorkload || 0,
-             soDienThoai: phone,
-             ngaySinh: dob,
         }));
-        await UserModel.insertMany(usersToCreate, { ordered: false });
-        console.log(`${MOCK_USERS.length} users created.`);
+        await UserModel.insertMany(usersToCreate);
+        const createdUsers = await UserModel.find();
+        console.log(`${createdUsers.length} users created.`);
+
 
         // 2. Create default teams
-        const coreTeam = new TeamModel({
-            _id: 'team-core-backend-1',
-            tenNhom: 'Core Backend',
-            moTa: 'Phát triển và bảo trì các dịch vụ lõi của hệ thống.',
-            thanhVien: [
-                { thanhVienId: 'user-clark', vaiTro: 'Trưởng nhóm' },
-                { thanhVienId: 'user-victor', vaiTro: 'Thành viên' },
-                { thanhVienId: 'user-barry', vaiTro: 'Thành viên' },
-            ],
-        });
-        await coreTeam.save();
-
         const frontendTeam = new TeamModel({
             _id: 'team-frontend-ui-1',
             tenNhom: 'Frontend UI',
             moTa: 'Xây dựng giao diện người dùng và trải nghiệm người dùng.',
             thanhVien: [
-                { thanhVienId: 'user-bruce', vaiTro: 'Trưởng nhóm' },
-                { thanhVienId: 'user-diana', vaiTro: 'Thành viên' },
-                { thanhVienId: 'user-harley', vaiTro: 'Thành viên' },
+                { thanhVienId: createdUsers.find(u => u.hoTen === 'Bruce Wayne')?._id, vaiTro: 'Trưởng nhóm' },
+                { thanhVienId: createdUsers.find(u => u.hoTen === 'Diana Prince')?._id, vaiTro: 'Thành viên' },
             ],
         });
         await frontendTeam.save();
 
-        console.log('2 default teams created.');
+        console.log('1 default team created.');
         
         // 3. Create some tasks for the teams
         const tasksToCreate = [
             {
                 _id: 'task-1',
-                tieuDe: 'Xây dựng API xác thực người dùng (JWT)',
-                moTa: 'Thiết kế và triển khai endpoint cho việc đăng nhập, đăng ký và refresh token sử dụng JSON Web Tokens.',
+                tieuDe: 'Xây dựng trang Dashboard',
+                moTa: 'Thiết kế và triển khai trang dashboard chính với các cột Kanban.',
                 trangThai: 'Đang tiến hành',
                 loaiCongViec: 'Tính năng',
                 doUuTien: 'Cao',
-                nguoiThucHienId: 'user-clark',
-                nhomId: coreTeam._id,
-                tags: ['api', 'security', 'jwt'],
+                nguoiThucHienId: createdUsers.find(u => u.hoTen === 'Bruce Wayne')?._id,
+                nhomId: frontendTeam._id,
+                tags: ['dashboard', 'kanban', 'ui'],
                 ngayHetHan: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
             },
             {
                 _id: 'task-2',
-                tieuDe: 'Fix lỗi hiển thị sai thông tin trên dashboard',
-                moTa: 'Dữ liệu thống kê trên dashboard không được cập nhật real-time. Cần điều tra và sửa lỗi phía client.',
-                trangThai: 'Cần làm',
-                loaiCongViec: 'Lỗi',
-                doUuTien: 'Cao',
-                nguoiThucHienId: 'user-bruce',
-                nhomId: frontendTeam._id,
-                tags: ['bug', 'dashboard', 'ui'],
-                 ngayHetHan: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000)
-            },
-            {
-                _id: 'task-3',
-                tieuDe: 'Thiết kế wireframe và mockup cho trang Profile',
-                moTa: 'Tạo wireframe và mockup chi tiết cho trang quản lý thông tin người dùng mới.',
+                tieuDe: 'Thiết kế mockup cho trang Profile',
+                moTa: 'Tạo mockup chi tiết cho trang quản lý thông tin người dùng mới.',
                 trangThai: 'Cần làm',
                 loaiCongViec: 'Tính năng',
                 doUuTien: 'Trung bình',
-                nguoiThucHienId: 'user-diana',
+                nguoiThucHienId: createdUsers.find(u => u.hoTen === 'Diana Prince')?._id,
                 nhomId: frontendTeam._id,
                 tags: ['design', 'figma', 'ux'],
             },
             {
-                _id: 'task-4',
-                tieuDe: 'Tối ưu hóa truy vấn cơ sở dữ liệu cho service Products',
-                moTa: 'Một số API của service Products đang có thời gian phản hồi chậm. Cần review và tối ưu lại các câu query MongoDB.',
+                _id: 'task-3',
+                tieuDe: 'Nghiên cứu thư viện kéo thả',
+                moTa: 'Đánh giá các thư viện kéo thả (dnd-kit, react-beautiful-dnd) để chọn ra giải pháp tốt nhất.',
                 trangThai: 'Tồn đọng',
                 loaiCongViec: 'Công việc',
                 doUuTien: 'Thấp',
-                nhomId: coreTeam._id,
-                nguoiThucHienId: 'user-victor',
-                tags: ['database', 'performance', 'mongodb'],
+                nhomId: frontendTeam._id,
+                nguoiThucHienId: createdUsers.find(u => u.hoTen === 'Bruce Wayne')?._id,
+                tags: ['research', 'dnd-kit'],
             }
         ];
         await TaskModel.insertMany(tasksToCreate);

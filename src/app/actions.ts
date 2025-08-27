@@ -11,7 +11,7 @@ import type { SuggestTaskAssigneeInput } from "@/ai/flows/suggest-task-assignee"
 import { revalidatePath } from 'next/cache';
 
 // --- Auth Functions ---
-export const verifyUserCredentials = async (credentials: Pick<User, 'email' | 'matKhau'>): Promise<User | null> => {
+export const verifyUserCredentials = async (credentials: Pick<User, 'email' | 'matKhau'>): Promise<Omit<User, 'matKhau'> | null> => {
     await connectToDatabase();
     const { email, matKhau } = credentials;
 
@@ -81,23 +81,29 @@ const populateTeam = (team: any): Team => {
 
 const populateTask = (task: any): Task => {
     const taskObj = task._doc || task;
-    return {
+    const populatedTask: Task = {
         id: taskObj._id.toString(),
         tieuDe: taskObj.tieuDe,
         moTa: taskObj.moTa,
         trangThai: taskObj.trangThai,
         loaiCongViec: taskObj.loaiCongViec,
         doUuTien: taskObj.doUuTien,
-        nhomId: taskObj.nhomId ? taskObj.nhomId.toString() : undefined,
-        nhom: taskObj.nhomId ? populateTeam(taskObj.nhomId) : undefined,
+        nhomId: taskObj.nhomId ? taskObj.nhomId.toString() : '',
         nguoiThucHienId: taskObj.nguoiThucHienId ? taskObj.nguoiThucHienId.toString() : undefined,
-        nguoiThucHien: taskObj.nguoiThucHienId ? populateUser(taskObj.nguoiThucHienId) : undefined,
         ngayTao: taskObj.ngayTao,
         ngayBatDau: taskObj.ngayBatDau,
         ngayHetHan: taskObj.ngayHetHan,
-        tags: taskObj.tags,
+        tags: taskObj.tags || [],
     };
+    if (taskObj.populated('nhomId')) {
+        populatedTask.nhom = populateTeam(taskObj.nhomId);
+    }
+    if (taskObj.populated('nguoiThucHienId')) {
+        populatedTask.nguoiThucHien = populateUser(taskObj.nguoiThucHienId);
+    }
+    return populatedTask;
 };
+
 
 
 // --- Task Functions ---
@@ -167,12 +173,13 @@ export const updateTask = async (taskId: string, taskData: Partial<Omit<Task, 'i
     } 
 
     await TaskModel.findByIdAndUpdate(taskId, updateData);
+    const updatedTask = await TaskModel.findById(taskId);
     revalidatePath('/');
-    if (taskData.nhomId) {
-        revalidatePath(`/teams/${taskData.nhomId}`);
-    }
-    if (taskData.nguoiThucHienId) {
-        revalidatePath(`/profile`);
+    if (updatedTask) {
+        revalidatePath(`/teams/${updatedTask.nhomId}`);
+        if(updatedTask.nguoiThucHienId) {
+             revalidatePath(`/profile`);
+        }
     }
 };
 
@@ -267,9 +274,8 @@ export const updateTeam = async (teamId: string, teamData: Partial<Pick<Team, 't
 
 export const deleteTeam = async (teamId: string): Promise<void> => {
     await connectToDatabase();
-    await TeamModel.findByIdAndDelete(teamId);
-    // Also delete tasks associated with this team
     await TaskModel.deleteMany({ nhomId: teamId });
+    await TeamModel.findByIdAndDelete(teamId);
     revalidatePath('/settings');
     revalidatePath('/');
 };

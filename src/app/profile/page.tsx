@@ -82,12 +82,12 @@ export default function ProfilePage() {
 
     // Dummy handlers for Header component
     const [filters, setFilters] = useState({ assignee: 'all', team: 'all', search: '' });
-    const handleCreateTask = async (newTaskData: Omit<Task, 'id' | 'team' | 'assignee' | 'createdAt'>) => {
+    const handleCreateTask = async (newTaskData: Omit<Task, 'id' | 'nhom' | 'nguoiThucHien' | 'ngayTao'>) => {
         await addTask(newTaskData);
         if(user) fetchData(user.id);
     };
     
-    const handleUpdateTask = async (updatedTaskData: Omit<Task, 'team' | 'assignee'>) => {
+    const handleUpdateTask = async (updatedTaskData: Omit<Task, 'id'| 'nhom' | 'nguoiThucHien'>) => {
          await updateTask(updatedTaskData.id, updatedTaskData);
          if(user) await fetchData(user.id);
          setSelectedTask(null);
@@ -129,13 +129,13 @@ export default function ProfilePage() {
                         <div className="max-w-5xl mx-auto space-y-8">
                             <div className="flex flex-col sm:flex-row items-center gap-6">
                                 <Avatar className="h-24 w-24 text-3xl">
-                                    <AvatarImage src={user.avatar} alt={user.name} />
-                                    <AvatarFallback>{user.name.substring(0,2).toUpperCase()}</AvatarFallback>
+                                    <AvatarImage src={user.anhDaiDien} alt={user.hoTen} />
+                                    <AvatarFallback>{user.hoTen.substring(0,2).toUpperCase()}</AvatarFallback>
                                 </Avatar>
                                 <div className="text-center sm:text-left">
-                                    <h1 className="text-3xl font-bold tracking-tight">{user.name}</h1>
+                                    <h1 className="text-3xl font-bold tracking-tight">{user.hoTen}</h1>
                                     <p className="text-muted-foreground">{user.email}</p>
-                                    <p className="text-sm text-primary">{user.expertise}</p>
+                                    <p className="text-sm text-primary">{user.chuyenMon}</p>
                                 </div>
                             </div>
                             

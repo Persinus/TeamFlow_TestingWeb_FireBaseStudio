@@ -14,7 +14,7 @@ import { CalendarIcon, Moon, Sun, Smile, Loader2, Image as ImageIcon } from 'luc
 import type { Task, Team, User } from '@/types';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/hooks/use-auth';
@@ -27,7 +27,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { MOCK_USERS } from '@/lib/mock-data';
 
 // Get a list of unique avatar URLs from the mock data
-const availableAvatars = MOCK_USERS.map(u => u.avatar).filter((v, i, a) => a.indexOf(v) === i);
+const availableAvatars = MOCK_USERS.map(u => u.anhDaiDien).filter((v, i, a) => a.indexOf(v) === i);
 
 
 export default function SettingsPage() {
@@ -62,10 +62,10 @@ export default function SettingsPage() {
             router.push('/login');
         }
         if (!loading && user) {
-            setName(user.name);
+            setName(user.hoTen);
             setEmail(user.email);
-            setPhone(user.phone || '');
-            setDob(user.dob ? new Date(user.dob) : undefined);
+            setPhone(user.soDienThoai || '');
+            setDob(user.ngaySinh ? parseISO(user.ngaySinh) : undefined);
             fetchData();
         }
     }, [user, loading, router, fetchData]);
@@ -107,9 +107,9 @@ export default function SettingsPage() {
         
         setIsUpdating(true);
         try {
-            await apiUpdateUser(user.id, { name, phone, dob: dob?.toISOString() });
+            await apiUpdateUser(user.id, { hoTen: name, soDienThoai: phone, ngaySinh: dob?.toISOString() });
             // Update auth context
-            updateUser({ ...user, name, phone, dob: dob?.toISOString() });
+            updateUser({ ...user, hoTen: name, soDienThoai: phone, ngaySinh: dob?.toISOString() });
             toast({ title: 'Hồ sơ đã được cập nhật', description: 'Thông tin của bạn đã được lưu.' });
         } catch (error) {
             toast({ variant: 'destructive', title: 'Cập nhật thất bại', description: 'Không thể lưu hồ sơ của bạn.' });
@@ -121,8 +121,8 @@ export default function SettingsPage() {
     const handleAvatarChange = async (avatarUrl: string) => {
         if (!user) return;
         try {
-            await apiUpdateUser(user.id, { avatar: avatarUrl });
-            updateUser({ ...user, avatar: avatarUrl });
+            await apiUpdateUser(user.id, { anhDaiDien: avatarUrl });
+            updateUser({ ...user, anhDaiDien: avatarUrl });
             toast({ title: 'Ảnh đại diện đã được cập nhật!' });
         } catch (error) {
             toast({ variant: 'destructive', title: 'Cập nhật thất bại', description: 'Không thể cập nhật ảnh đại diện của bạn.' });
@@ -134,7 +134,7 @@ export default function SettingsPage() {
 
     // Dummy handlers for filters and task creation for Header component
     const [filters, setFilters] = useState({ assignee: 'all', team: 'all', search: '' });
-    const handleCreateTask = async (newTaskData: Omit<Task, 'id' | 'team' | 'assignee' | 'createdAt'>) => {
+    const handleCreateTask = async (newTaskData: Omit<Task, 'id' | 'nhom' | 'nguoiThucHien' | 'ngayTao'>) => {
         await addTask(newTaskData);
         // In a real app, you might want to refetch tasks here or update state optimistically
     };
@@ -167,8 +167,8 @@ export default function SettingsPage() {
                                     <CardContent className="space-y-6">
                                         <div className="flex items-center gap-4">
                                             <Avatar className="h-16 w-16">
-                                                <AvatarImage src={user.avatar} alt={user.name} />
-                                                <AvatarFallback>{user.name.substring(0,2).toUpperCase()}</AvatarFallback>
+                                                <AvatarImage src={user.anhDaiDien} alt={user.hoTen} />
+                                                <AvatarFallback>{user.hoTen.substring(0,2).toUpperCase()}</AvatarFallback>
                                             </Avatar>
                                             <Button type="button" variant="outline" onClick={() => setAvatarModalOpen(true)}>
                                                 <ImageIcon className="mr-2 h-4 w-4" />

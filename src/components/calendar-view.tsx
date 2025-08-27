@@ -20,8 +20,8 @@ export default function CalendarView({ tasks, onSelectTask }: CalendarViewProps)
   const tasksByDueDate = React.useMemo(() => {
     const map = new Map<string, Task[]>()
     tasks.forEach(task => {
-      if (task.dueDate) {
-        const dueDate = typeof task.dueDate === 'string' ? parseISO(task.dueDate) : task.dueDate;
+      if (task.ngayHetHan) {
+        const dueDate = typeof task.ngayHetHan === 'string' ? parseISO(task.ngayHetHan) : task.ngayHetHan;
         const dateKey = format(dueDate, "yyyy-MM-dd")
         if (!map.has(dateKey)) {
           map.set(dateKey, [])
@@ -79,12 +79,12 @@ export default function CalendarView({ tasks, onSelectTask }: CalendarViewProps)
                 >
                     <div className="flex items-center gap-2">
                         <div className={cn("w-2 h-2 rounded-full", {
-                            "bg-green-500": task.status === 'done',
-                            "bg-blue-500": task.status === 'todo',
-                            "bg-yellow-500": task.status === 'in-progress',
-                            "bg-gray-400": task.status === 'backlog',
+                            "bg-green-500": task.trangThai === 'Hoàn thành',
+                            "bg-blue-500": task.trangThai === 'Cần làm',
+                            "bg-yellow-500": task.trangThai === 'Đang tiến hành',
+                            "bg-gray-400": task.trangThai === 'Tồn đọng',
                         })} />
-                        <span className="flex-1 truncate font-medium">{task.title}</span>
+                        <span className="flex-1 truncate font-medium">{task.tieuDe}</span>
                     </div>
                 </button>
                 ))}
