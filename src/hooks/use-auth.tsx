@@ -3,18 +3,22 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { User as FirebaseUser, onAuthStateChanged, signOut as firebaseSignOut, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
+import { User as FirebaseUser, onAuthStateChanged, signOut as firebaseSignOut, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import type { User } from '@/types';
 import { auth, db } from '@/lib/firebase';
-import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, getDoc, serverTimestamp, updateDoc } from 'firebase/firestore';
 
 // Helper function to create a user profile in Firestore
 const createUserProfile = async (firebaseUser: FirebaseUser, name: string) => {
     const userRef = doc(db, 'users', firebaseUser.uid);
     const userSnap = await getDoc(userRef);
-    // Create profile only if it doesn't exist
+    
+    // Update Firebase Auth profile display name
+    await updateProfile(firebaseUser, { displayName: name });
+
+    // Create profile in Firestore only if it doesn't exist
     if (!userSnap.exists()) {
-        const userProfile: Omit<User, 'id' | 'password'> = {
+        const userProfile: Omit<User, 'id'> = {
             name,
             email: firebaseUser.email || '',
             avatar: `https://picsum.photos/seed/${firebaseUser.uid}/40/40`,
@@ -25,6 +29,7 @@ const createUserProfile = async (firebaseUser: FirebaseUser, name: string) => {
         await setDoc(userRef, userProfile);
         return { id: firebaseUser.uid, ...userProfile } as User;
     }
+    
     const userData = userSnap.data();
     // Special case to update Admin expertise if they were created with a different one
     if (name === 'Admin' && userData.expertise !== 'Project Overlord') {
@@ -85,8 +90,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }, [user, loading, pathname, router]);
 
     const login = async (email: string, pass: string): Promise<void> => {
-        // The login function should only be responsible for signing in.
-        await signInWithEmailAndPassword(auth, email, pass);
+       await signInWithEmailAndPassword(auth, email, pass);
     };
 
     const logout = async () => {
