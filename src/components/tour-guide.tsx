@@ -77,7 +77,7 @@ export default function TourGuide() {
 
     return (
         <Dialog open={isTourOpen} onOpenChange={setIsTourOpen}>
-            <DialogContent className="sm:max-w-lg">
+            <DialogContent className="max-w-lg w-[90vw] rounded-lg">
                 <DialogHeader>
                     <DialogTitle>Hướng dẫn sử dụng TeamFlow</DialogTitle>
                     <DialogDescription>
@@ -90,7 +90,7 @@ export default function TourGuide() {
                         {tourSteps.map((step, index) => (
                             <CarouselItem key={index}>
                                 <Card className="border-0 shadow-none">
-                                    <CardContent className="flex flex-col gap-4 items-center justify-center p-6 text-center h-48">
+                                    <CardContent className="flex flex-col gap-4 items-center justify-center p-6 text-center min-h-[12rem] h-auto">
                                         <h3 className="text-xl font-semibold">{step.title}</h3>
                                         <p className="text-sm text-muted-foreground">{step.description}</p>
                                     </CardContent>
@@ -98,9 +98,8 @@ export default function TourGuide() {
                             </CarouselItem>
                         ))}
                     </CarouselContent>
-                    {/* These buttons can be hidden if we use the footer buttons */}
-                    <CarouselPrevious className="invisible" />
-                    <CarouselNext className="invisible" />
+                    <CarouselPrevious className="absolute left-[-1rem] top-1/2 -translate-y-1/2" />
+                    <CarouselNext className="absolute right-[-1rem] top-1/2 -translate-y-1/2" />
                 </Carousel>
                 
                 <div className="py-2 text-center text-sm text-muted-foreground">
