@@ -1,5 +1,4 @@
 
-
 "use server";
 
 import bcrypt from 'bcryptjs';
@@ -170,7 +169,7 @@ export const addTask = async (taskData: Omit<Task, 'id' | 'nhom' | 'nguoiThucHie
 export const updateTask = async (taskId: string, taskData: Partial<Omit<Task, 'id' | 'nhom' | 'nguoiThucHien'>>): Promise<void> => {
     await connectToDatabase();
     const updateData: any = { ...taskData };
-    if (updateData.nguoiThucHienId === 'unassigned') {
+    if (updateData.nguoiThucHienId === 'unassigned' || updateData.nguoiThucHienId === null) {
       updateData.nguoiThucHienId = null;
     } 
 
@@ -310,3 +309,5 @@ export const updateTeamMemberRole = async (teamId: string, userId: string, role:
     );
     revalidatePath(`/teams/${teamId}`);
 };
+
+    
