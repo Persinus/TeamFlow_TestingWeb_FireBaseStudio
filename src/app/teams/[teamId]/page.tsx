@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useMemo } from 'react';
+import React, { useMemo, use } from 'react';
 import { notFound } from 'next/navigation';
 import { initialTasks, users, teams } from '@/lib/data';
 import type { Task, TaskStatus } from '@/types';
@@ -23,8 +23,10 @@ const statusColors = {
   done: 'hsl(var(--chart-2))',
 };
 
-export default function TeamDetailPage({ params }: { params: { teamId: string } }) {
+export default function TeamDetailPage({ params: paramsProp }: { params: { teamId: string } }) {
+  const params = use(Promise.resolve(paramsProp));
   const { teamId } = params;
+
   const team = useMemo(() => teams.find(t => t.id === teamId), [teamId]);
   
   // Dummy handlers for filters and task creation for Header component
