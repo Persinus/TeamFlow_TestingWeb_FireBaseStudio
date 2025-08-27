@@ -35,6 +35,38 @@ export const verifyUserCredentials = async (credentials: Pick<User, 'email' | 'm
     return populateUser(userWithoutPassword);
 };
 
+export const createUser = async (userData: Pick<User, 'hoTen' | 'email' | 'matKhau'>): Promise<Omit<User, 'matKhau'>> => {
+    await connectToDatabase();
+    const { hoTen, email, matKhau } = userData;
+
+    if (!hoTen || !email || !matKhau) {
+        throw new Error("Missing required fields");
+    }
+
+    const existingUser = await UserModel.findOne({ email: email.toLowerCase() });
+    if (existingUser) {
+        throw new Error("Email đã tồn tại. Vui lòng chọn một email khác.");
+    }
+
+    const hashedPassword = await bcrypt.hash(matKhau, 10);
+    
+    const newUser = new UserModel({
+        _id: `user-${hoTen.toLowerCase().replace(/\s/g, '')}-${Date.now()}`,
+        hoTen,
+        email: email.toLowerCase(),
+        matKhau: hashedPassword,
+        anhDaiDien: `https://api.dicebear.com/7.x/micah/svg?seed=${hoTen.replace(/\s/g, '')}`,
+        chuyenMon: "Thành viên mới",
+        taiCongViecHienTai: 0,
+    });
+
+    await newUser.save();
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { matKhau: _, ...userWithoutPassword } = newUser.toObject();
+    return populateUser(userWithoutPassword);
+}
+
 
 // --- AI Sugggestion Action ---
 export async function getAssigneeSuggestion(input: SuggestTaskAssigneeInput) {

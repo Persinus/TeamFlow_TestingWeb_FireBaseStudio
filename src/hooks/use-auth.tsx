@@ -4,7 +4,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import type { User } from '@/types';
-import { verifyUserCredentials } from '@/app/actions';
+import { verifyUserCredentials, createUser } from '@/app/actions';
 
 interface AuthContextType {
     user: User | null;
@@ -79,12 +79,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
 
     const register = async (name: string, email: string, pass: string): Promise<void> => {
-        // This is a mock. In a real app, this would create a new user in the database.
-        // It should call a server action `createUser` which is not implemented yet.
-        console.log(`Mock registration for: ${name}, ${email}`);
-        await new Promise(resolve => setTimeout(resolve, 500));
-        // For now, we'll just throw an error to indicate it's not implemented
-        throw new Error("Chức năng đăng ký chưa được triển khai đầy đủ.");
+        setLoading(true);
+        try {
+            await createUser({ hoTen: name, email, matKhau: pass });
+        } catch (error) {
+            throw error;
+        } finally {
+            setLoading(false);
+        }
     };
 
     const updateUser = (updatedUser: Partial<User>) => {

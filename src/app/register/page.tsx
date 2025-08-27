@@ -11,23 +11,26 @@ import Link from "next/link";
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import { Logo } from '@/components/icons';
+import { Loader2 } from 'lucide-react';
 
 export default function RegisterPage() {
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const { user, register, loading } = useAuth();
+    const [isRegistering, setIsRegistering] = useState(false);
+    const { user, register, loading: authLoading } = useAuth();
     const router = useRouter();
     const { toast } = useToast();
 
     useEffect(() => {
-        if (!loading && user) {
+        if (!authLoading && user) {
             router.push('/');
         }
-    }, [user, loading, router]);
+    }, [user, authLoading, router]);
     
     const handleRegister = async (e: React.FormEvent) => {
         e.preventDefault();
+        setIsRegistering(true);
         try {
             await register(name, email, password);
             toast({
@@ -41,10 +44,12 @@ export default function RegisterPage() {
                 title: 'Đăng ký thất bại',
                 description: error.message,
             });
+        } finally {
+            setIsRegistering(false);
         }
     };
     
-    if (loading || user) {
+    if (authLoading || user) {
         return <div className="flex h-screen items-center justify-center">Đang tải...</div>;
     }
 
@@ -70,6 +75,7 @@ export default function RegisterPage() {
                                     value={name}
                                     onChange={(e) => setName(e.target.value)}
                                     required 
+                                    disabled={isRegistering}
                                 />
                             </div>
                             <div className="grid gap-2">
@@ -81,6 +87,7 @@ export default function RegisterPage() {
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
                                     required 
+                                    disabled={isRegistering}
                                 />
                             </div>
                             <div className="grid gap-2">
@@ -91,10 +98,12 @@ export default function RegisterPage() {
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
                                     required 
+                                    disabled={isRegistering}
                                 />
                             </div>
-                            <Button type="submit" className="w-full">
-                                Tạo tài khoản
+                            <Button type="submit" className="w-full" disabled={isRegistering}>
+                                {isRegistering && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                {isRegistering ? 'Đang tạo...' : 'Tạo tài khoản'}
                             </Button>
                         </div>
                     </form>
@@ -109,5 +118,3 @@ export default function RegisterPage() {
         </div>
     );
 }
-
-    
