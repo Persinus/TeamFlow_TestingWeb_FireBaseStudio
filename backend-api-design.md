@@ -1,162 +1,161 @@
-# Thiết kế Back-end cho Ứng dụng Quản lý Công việc TeamFlow
+# Thiết kế Back-end cho Ứng dụng Quản lý Công việc TeamFlow với Next.js
 
-Tài liệu này mô tả chi tiết kiến trúc back-end được đề xuất cho ứng dụng TeamFlow, bao gồm thiết kế cơ sở dữ liệu, mối quan hệ, cấu trúc file gợi ý và các API endpoints.
+Tài liệu này mô tả chi tiết kiến trúc back-end được đề xuất cho ứng dụng TeamFlow, được xây dựng trực tiếp bên trong Next.js, tận dụng các tính năng full-stack của framework.
 
 ## 1. Công nghệ đề xuất
-- **Nền tảng:** Node.js
-- **Framework:** Express.js
-- **Cơ sở dữ liệu:** MongoDB (với Mongoose ODM)
-- **Xác thực:** JSON Web Tokens (JWT)
+- **Nền tảng:** Next.js (App Router)
+- **Ngôn ngữ:** TypeScript
+- **Styling:** Tailwind CSS & shadcn/ui
+- **Cơ sở dữ liệu:** Mock data (hiện tại), có thể thay thế bằng các dịch vụ như Firebase Firestore, Supabase, hoặc bất kỳ cơ sở dữ liệu nào khác.
+- **Xử lý tác vụ AI:** Genkit
 
 ---
 
-## 2. Cấu trúc thư mục đề xuất (Express.js)
-Đây là một cấu trúc thư mục gợi ý để tổ chức code phía back-end một cách rõ ràng và dễ bảo trì.
+## 2. Kiến trúc Back-end với Next.js
+
+Next.js là một framework full-stack. Thay vì tạo một server Express.js riêng biệt, chúng ta sẽ tận dụng các tính năng tích hợp của Next.js để xử lý logic phía máy chủ.
+
+### 2.1. Cấu trúc thư mục liên quan đến Back-end
+
+Cấu trúc back-end được tích hợp ngay trong thư mục `src` của Next.js:
+
 ```
-teamflow-backend/
+src/
 |
-├── src/
-│   ├── api/
-│   │   ├── routes/              // Định tuyến các endpoints
-│   │   │   ├── auth.routes.js
-│   │   │   ├── user.routes.js
-│   │   │   ├── team.routes.js
-│   │   │   └── task.routes.js
-│   │   ├── controllers/         // Chứa logic xử lý request/response
-│   │   │   ├── auth.controller.js
-│   │   │   ├── user.controller.js
-│   │   │   ├── team.controller.js
-│   │   │   └── task.controller.js
-│   │   ├── models/              // Định nghĩa Mongoose Schemas
-│   │   │   ├── user.model.js
-│   │   │   ├── team.model.js
-│   │   │   └── task.model.js
-│   │   └── middlewares/         // Các middleware (xác thực, error handling)
-│   │       ├── auth.middleware.js
-│   │       └── error.middleware.js
-│   ├── config/                  // Chứa các file cấu hình
-│   │   ├── db.config.js
-│   │   └── index.js
-│   ├── services/                // Logic nghiệp vụ phức tạp (nếu có)
-│   │   └── ai.service.js        // Ví dụ: dịch vụ gọi AI để gợi ý
-│   └── utils/                   // Các hàm tiện ích
-│       └── apiError.js
+├── app/
+│   ├── actions.ts             // Định nghĩa các Server Actions để xử lý dữ liệu (CUD - Create, Update, Delete)
+│   ├── api/                   // (Tùy chọn) Chứa các Route Handlers để tạo API endpoints truyền thống
+│   │   └── ...
+│   └── (routes)/              // Các component trang, bao gồm cả Server Components để lấy dữ liệu
+│       └── page.tsx
 |
-├── .env                         // Biến môi trường
-├── server.js                    // Điểm khởi đầu của server
-└── package.json
+├── ai/
+|   ├── flows/                 // Chứa các flow Genkit để xử lý logic AI
+|   |   └── suggest-task-assignee.ts
+|   └── genkit.ts              // Cấu hình Genkit
+|
+├── lib/
+│   └── data.ts                // Lớp truy cập dữ liệu (Data Access Layer). Giao tiếp với mock data.
+│                              // Đây là nơi sẽ được thay đổi để kết nối với DB thật.
+└── types.ts                   // Định nghĩa các kiểu dữ liệu chung (User, Task, Team)
 ```
+
+### 2.2. Luồng xử lý dữ liệu
+
+1.  **Lấy dữ liệu (Read):**
+    *   Các **Server Components** (ví dụ: `src/app/page.tsx`) trực tiếp gọi các hàm trong `src/lib/data.ts` để lấy dữ liệu.
+    *   Dữ liệu được fetch trên server và render thành HTML trước khi gửi xuống client, giúp tối ưu hiệu suất.
+
+2.  **Thay đổi dữ liệu (Create, Update, Delete):**
+    *   Client (ví dụ: một form trong component) gọi một **Server Action** được export từ `src/app/actions.ts`.
+    *   Server Action này sẽ gọi các hàm tương ứng trong `src/lib/data.ts` để thay đổi dữ liệu (thêm, sửa, xóa).
+    *   Sau khi thực hiện xong, Server Action có thể trả về kết quả hoặc Next.js có thể revalidate data để giao diện được cập nhật.
 
 ---
 
-## 3. Thiết kế Cơ sở dữ liệu (MongoDB)
+## 3. Thiết kế Cơ sở dữ liệu (Mô phỏng)
+
+Mô hình dữ liệu được định nghĩa trong `src/types.ts` và được mô phỏng trong `src/lib/data.ts`.
 
 ### 3.1. Sơ đồ quan hệ
 
-Mối quan hệ giữa các collection chính được thiết lập như sau:
+Mối quan hệ giữa các đối tượng chính:
 
-- **Users ◄—► Teams (Nhiều-nhiều):** Một người dùng có thể tham gia nhiều nhóm, và một nhóm có nhiều người dùng. Mối quan hệ này được thực hiện bằng cách lưu một mảng các `ObjectId` của `User` trong collection `Teams`.
-- **Teams —► Tasks (Một-nhiều):** Một nhóm có thể có nhiều công việc, nhưng mỗi công việc chỉ thuộc về một nhóm duy nhất. Điều này được thực hiện bằng cách lưu `ObjectId` của `Team` trong mỗi document của `Task`.
-- **Users —► Tasks (Một-nhiều - với vai trò Assignee):** Một người dùng có thể được giao nhiều công việc, nhưng mỗi công việc chỉ được giao cho một người dùng. Điều này được thực hiện bằng cách lưu `ObjectId` của `User` (assignee) trong mỗi document của `Task`.
+- **Users ◄—► Teams (Nhiều-nhiều):** Một người dùng có thể tham gia nhiều nhóm, và một nhóm có nhiều thành viên.
+- **Teams —► Tasks (Một-nhiều):** Một nhóm sở hữu nhiều công việc.
+- **Users —► Tasks (Một-nhiều - với vai trò Assignee):** Một người dùng có thể được giao nhiều công việc.
 
 ```
 +-----------+       +-----------------+       +-----------+
-|   Users   |<------|   Teams         |------>|   Tasks   |
+|   User    |<------|      Team       |------>|   Task    |
 |-----------|       |-----------------|       |-----------|
-| _id       |  (M)  | _id             |  (1)  | _id       |
-| name      |<---+  | name            |------>| teamId    | (Ref: Teams)
+| id        |  (M)  | id              |  (1)  | id        |
+| name      |<---+  | name            |------>| teamId    | (Ref: Team)
 | email     |    |  | description     |       | title     |
-| ...       |    |  | members         |       | ...       |
-+-----------+    |  |  [{userId, role}]|       | assigneeId| (Ref: Users)
-                 |  +-----------------+       +-----------+
+| avatar    |    |  | members         |       | ...       |
+| ...       |    |  |  [{userId, role}]|       | assigneeId| (Ref: User)
++-----------+    |  +-----------------+       +-----------+
                  |           ^
                  |           | (1)
                  +-----------+
                       (Assignee)
 ```
 
-### 3.2. Giải thích và định nghĩa các Collections
+### 3.2. Định nghĩa các kiểu dữ liệu (trong `src/types.ts`)
 
-#### Collection `Users`
-- **Mục đích:** Lưu trữ thông tin về tất cả người dùng trong hệ thống. Đây là collection trung tâm cho việc xác thực và quản lý thông tin cá nhân.
-- **Định nghĩa Schema (Mongoose):**
-```javascript
-const userSchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  email: { type: String, required: true, unique: true, lowercase: true },
-  password: { type: String, required: true, select: false }, // không trả về password khi query
-  avatar: { type: String },
-  expertise: { type: String },
-  phone: { type: String },
-  dob: { type: Date },
-}, { timestamps: true });
+#### `User`
+Lưu trữ thông tin người dùng.
+```typescript
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  avatar: string;
+  expertise: string;
+  currentWorkload: number;
+  phone?: string;
+  dob?: string;
+}
 ```
 
-#### Collection `Teams`
-- **Mục đích:** Tổ chức người dùng vào các nhóm làm việc. Mỗi nhóm có thành viên với các vai trò khác nhau (leader, member) và là đơn vị sở hữu các công việc.
-- **Định nghĩa Schema (Mongoose):**
-```javascript
-const teamSchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  description: { type: String },
-  members: [{
-    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-    role: { type: String, enum: ['leader', 'member'], default: 'member' }
-  }]
-}, { timestamps: true });
+#### `Team`
+Tổ chức người dùng vào các nhóm làm việc.
+```typescript
+export type TeamMemberRole = 'leader' | 'member';
+
+export interface Team {
+  id:string;
+  name: string;
+  description?: string;
+  members: { id: string; role: TeamMemberRole; }[];
+}
 ```
 
-#### Collection `Tasks`
-- **Mục đích:** Lưu trữ tất cả các công việc. Mỗi công việc được liên kết chặt chẽ với một nhóm (`teamId`) và có thể được giao cho một thành viên cụ thể (`assigneeId`).
-- **Định nghĩa Schema (Mongoose):**
-```javascript
-const taskSchema = new mongoose.Schema({
-  title: { type: String, required: true },
-  description: { type: String },
-  status: {
-    type: String,
-    enum: ['backlog', 'todo', 'in-progress', 'done'],
-    default: 'todo'
-  },
-  teamId: { type: mongoose.Schema.Types.ObjectId, ref: 'Team', required: true },
-  assigneeId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, // Có thể null
-  tags: [{ type: String }],
-  startDate: { type: Date },
-  dueDate: { type: Date }
-}, { timestamps: true });
+#### `Task`
+Lưu trữ các công việc, liên kết với một nhóm và có thể được giao cho một thành viên.
+```typescript
+export type TaskStatus = 'todo' | 'in-progress' | 'done' | 'backlog';
+
+export interface Task {
+  id: string;
+  title: string;
+  description: string;
+  status: TaskStatus;
+  assigneeId?: string; 
+  assignee?: User; 
+  teamId: string; 
+  team: Team; 
+  createdAt: string; // ISO string
+  startDate?: string; // ISO string
+  dueDate?: string; // ISO string
+  tags?: string[];
+}
 ```
 
 ---
 
-## 4. Thiết kế các Endpoint của API
+## 4. Các hàm xử lý phía Server (Server Actions & Data Access)
 
-Tất cả các endpoint (trừ đăng ký/đăng nhập) cần được bảo vệ bằng middleware xác thực JWT.
+### `src/lib/data.ts` (Data Access Layer)
+Đây là lớp trừu tượng để tương tác với nguồn dữ liệu. Hiện tại đang dùng mock data, nhưng sau này có thể thay thế bằng lời gọi đến Firebase, Supabase, Prisma...
+- `getUsers()`: Lấy danh sách tất cả người dùng.
+- `getTeams()`: Lấy danh sách tất cả các nhóm.
+- `getTeam(id)`: Lấy thông tin một nhóm theo ID.
+- `createTeam(data, leaderId)`: Tạo nhóm mới.
+- `updateTeam(id, data)`: Cập nhật thông tin nhóm.
+- `deleteTeam(id)`: Xóa nhóm.
+- `addTeamMember(teamId, userId)`: Thêm thành viên vào nhóm.
+- `getTasks()`: Lấy tất cả công việc.
+- `addTask(data)`: Tạo công việc mới.
+- `updateTask(id, data)`: Cập nhật công việc.
+- `updateTaskStatus(id, status)`: Cập nhật trạng thái công việc.
 
-### `/api/auth` (Xác thực)
-- `POST /register`: Nhận `name`, `email`, `password`. Tạo người dùng mới.
-- `POST /login`: Nhận `email`, `password`. Xác thực và trả về JWT.
-- `GET /me`: Yêu cầu token. Trả về thông tin người dùng đang đăng nhập.
+### `src/app/actions.ts` (Server Actions)
+Các hàm này được gọi từ client để thực hiện các thay đổi dữ liệu một cách an toàn trên server.
+- `getAssigneeSuggestion(input)`: Gọi flow AI để gợi ý người thực hiện.
+- `getAllTags()`: Lấy danh sách các tag đã có.
 
-### `/api/users` (Người dùng)
-- `GET /`: Lấy danh sách tất cả người dùng (chỉ các thông tin công khai).
-- `PUT /:userId`: Cập nhật thông tin cá nhân (tên, avatar, SĐT...).
+Các actions khác để tạo/sửa/xóa task, team sẽ được thêm vào đây khi cần.
 
-### `/api/teams` (Đội nhóm)
-- `GET /`: Lấy danh sách các nhóm mà người dùng hiện tại là thành viên.
-- `POST /`: Nhận `name`, `description`. Tạo nhóm mới, gán người tạo làm `leader`.
-- `GET /:teamId`: Lấy thông tin chi tiết một nhóm (bao gồm thông tin đầy đủ của thành viên qua populate).
-- `PUT /:teamId`: Cập nhật thông tin nhóm (tên, mô tả).
-- `DELETE /:teamId`: Xóa một nhóm (chỉ leader có quyền).
-- `POST /:teamId/members`: Nhận `userId`. Thêm thành viên mới vào nhóm.
-- `DELETE /:teamId/members/:userId`: Xóa thành viên khỏi nhóm.
-- `PUT /:teamId/members/:userId`: Nhận `role`. Cập nhật vai trò của thành viên.
-
-### `/api/tasks` (Công việc)
-- `GET /`: Lấy danh sách công việc. Hỗ trợ lọc: `?teamId={id}`, `?assigneeId={id}`, `?status={status}`.
-- `POST /`: Nhận dữ liệu công việc (`title`, `description`, `teamId`, ...) để tạo mới.
-- `GET /:taskId`: Lấy thông tin chi tiết một công việc.
-- `PUT /:taskId`: Cập nhật một công việc (`title`, `description`, `status`, `assigneeId`...).
-- `DELETE /:taskId`: Xóa một công việc.
-
-### `/api/ai` (Tính năng AI)
-- `POST /suggest-assignee`: Nhận `taskDescription` và `teamId`. Trả về gợi ý người thực hiện phù hợp nhất.
+### `src/ai/flows/*.ts` (AI Flows)
+- `suggestTaskAssignee(input)`: Sử dụng Genkit để nhận mô tả công việc và danh sách thành viên, sau đó trả về người được gợi ý dựa trên chuyên môn và khối lượng công việc.
