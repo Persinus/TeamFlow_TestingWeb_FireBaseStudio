@@ -191,28 +191,31 @@ export default function CreateTaskSheet({ children, onCreateTask, users, teams }
                     </FormItem>
                     )}
                 />
-                <FormField
-                    control={form.control}
-                    name="teamId"
-                    render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Team</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                            <SelectTrigger>
-                            <SelectValue placeholder="Assign to a team" />
-                            </Trigger>
-                        </FormControl>
-                        <SelectContent>
-                            {teams.map(team => (
-                                <SelectItem key={team.id} value={team.id}>{team.name}</SelectItem>
-                            ))}
-                        </SelectContent>
-                        </Select>
-                        <FormMessage />
-                    </FormItem>
-                    )}
-                />
+              <FormField
+  control={form.control}
+  name="teamId"
+  render={({ field }) => (
+    <FormItem>
+      <FormLabel>Team</FormLabel>
+      <Select onValueChange={field.onChange} defaultValue={field.value}>
+        <FormControl>
+          <SelectTrigger>
+            <SelectValue placeholder="Assign to a team" />
+          </SelectTrigger>
+        </FormControl>
+        <SelectContent>
+          {teams.map(team => (
+            <SelectItem key={team.id} value={team.id}>
+              {team.name}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <FormMessage />
+    </FormItem>
+  )}
+/>
+
             </div>
             <div className="grid grid-cols-2 gap-4">
                 <FormField
