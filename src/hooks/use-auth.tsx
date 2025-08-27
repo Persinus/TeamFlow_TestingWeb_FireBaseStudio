@@ -3,154 +3,13 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { User as FirebaseUser, onAuthStateChanged, signOut as firebaseSignOut, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import type { User } from '@/types';
-import { auth, db } from '@/lib/firebase';
-import { doc, setDoc, getDoc, serverTimestamp, updateDoc, collection, writeBatch, getDocs, query } from 'firebase/firestore';
+import { MOCK_USERS } from '@/lib/data';
 
-const fetchUserWithRetry = async (uid: string, retries = 3, delay = 300): Promise<User | null> => {
-    for (let i = 0; i < retries; i++) {
-        try {
-            const userRef = doc(db, 'users', uid);
-            const userSnap = await getDoc(userRef);
-            if (userSnap.exists()) {
-                return { id: userSnap.id, ...userSnap.data() } as User;
-            }
-            return null; // User profile doesn't exist in Firestore
-        } catch (error: any) {
-            // Only retry on "offline" errors
-            if (error.code === 'unavailable' || error.message.includes('offline')) {
-                console.warn(`Attempt ${i + 1} failed, client offline. Retrying...`);
-                if (i < retries - 1) {
-                    await new Promise(res => setTimeout(res, delay));
-                } else {
-                    console.error("Failed to fetch user profile after multiple retries.", error);
-                    throw error; // re-throw the last error
-                }
-            } else {
-                console.error("An unexpected error occurred while fetching user profile:", error);
-                throw error; // Don't retry on other errors
-            }
-        }
-    }
-    return null;
-};
-
-
-// Helper function to create a user profile in Firestore
-const createUserProfile = async (firebaseUser: FirebaseUser, name: string): Promise<User> => {
-    if (!db) throw new Error("Firestore is not initialized");
-    const userRef = doc(db, 'users', firebaseUser.uid);
-    const userSnap = await getDoc(userRef);
-    
-    // Update Firebase Auth profile display name
-    await updateProfile(firebaseUser, { displayName: name });
-
-    // Create profile in Firestore only if it doesn't exist
-    if (!userSnap.exists()) {
-        const userProfileData: Omit<User, 'id' | 'createdAt'> = {
-            name,
-            email: firebaseUser.email || '',
-            avatar: `https://picsum.photos/seed/${firebaseUser.uid}/200/200`,
-            expertise: 'New Member', // Default expertise
-            currentWorkload: 0,
-        };
-        await setDoc(userRef, { 
-            ...userProfileData,
-            createdAt: serverTimestamp(),
-        });
-        return { id: firebaseUser.uid, ...userProfileData, createdAt: new Date() } as User;
-    }
-    
-    const userData = userSnap.data();
-    return { id: userSnap.id, ...userData } as User;
-};
-
-// One-time function to create initial data if it doesn't exist
-const seedInitialData = async (adminUserId: string) => {
-    if (!db) throw new Error("Firestore is not initialized");
-    const usersQuery = query(collection(db, 'users'));
-    const usersSnapshot = await getDocs(usersQuery);
-
-    // Only seed if there's only the admin user
-    if (usersSnapshot.docs.length > 1) {
-        console.log('Database already has users. Skipping seed.');
-        return;
-    }
-    
-    console.log('No users found besides admin. Seeding initial data...');
-    const batch = writeBatch(db);
-
-    // Create more users
-    const usersToCreate = [
-        { id: 'user-bruce', name: 'Bruce Wayne', expertise: 'Frontend Development' },
-        { id: 'user-clark', name: 'Clark Kent', expertise: 'Backend Development' },
-        { id: 'user-diana', name: 'Diana Prince', expertise: 'UI/UX Design' },
-        { id: 'user-barry', name: 'Barry Allen', expertise: 'DevOps & Infrastructure' },
-    ];
-
-    for (const userData of usersToCreate) {
-        const userRef = doc(db, 'users', userData.id);
-        batch.set(userRef, {
-            name: userData.name,
-            email: `${userData.name.split(' ')[0].toLowerCase()}@teamflow.com`,
-            avatar: `https://picsum.photos/seed/${userData.id}/200/200`,
-            expertise: userData.expertise,
-            currentWorkload: 0,
-            createdAt: serverTimestamp(),
-        });
-    }
-
-    // Create teams
-    const teamsToCreate = [
-        { 
-            id: 'team-frontend', 
-            name: 'Frontend Wizards', 
-            members: [{ id: adminUserId, role: 'leader' }, { id: 'user-diana', role: 'member' }] 
-        },
-        { 
-            id: 'team-backend', 
-            name: 'Backend Brigade', 
-            members: [{ id: 'user-clark', role: 'leader' }, { id: 'user-bruce', role: 'member' }] 
-        },
-        { 
-            id: 'team-infra', 
-            name: 'Infra Avengers', 
-            members: [{ id: 'user-barry', role: 'leader' }] 
-        },
-    ];
-
-     for (const teamData of teamsToCreate) {
-        const teamRef = doc(db, 'teams', teamData.id);
-        batch.set(teamRef, {
-            name: teamData.name,
-            members: teamData.members,
-            createdAt: serverTimestamp()
-        });
-    }
-
-    // Create tasks
-    const tasksToCreate = [
-      { title: 'Design new dashboard layout', description: 'Create mockups and prototypes for the v2 dashboard.', status: 'todo', teamId: 'team-frontend', assigneeId: 'user-diana' },
-      { title: 'Implement user authentication API', description: 'Set up JWT-based authentication endpoints.', status: 'in-progress', teamId: 'team-backend', assigneeId: 'user-clark' },
-      { title: 'Set up CI/CD pipeline', description: 'Configure GitHub Actions for automated testing and deployment.', status: 'done', teamId: 'team-infra', assigneeId: 'user-barry' },
-      { title: 'Develop landing page components', description: 'Build reusable React components for the new marketing site.', status: 'in-progress', teamId: 'team-frontend', assigneeId: adminUserId },
-      { title: 'Refactor database schema', description: 'Optimize Firestore queries and data structures.', status: 'todo', teamId: 'team-backend', assigneeId: 'user-bruce' },
-      { title: 'User profile page design', description: 'Design the user settings and profile page.', status: 'backlog', teamId: 'team-frontend' },
-    ];
-
-    for (const taskData of tasksToCreate) {
-        const taskRef = doc(collection(db, 'tasks'));
-        batch.set(taskRef, {
-            ...taskData,
-            createdAt: serverTimestamp()
-        });
-    }
-
-    await batch.commit();
-    console.log('Initial data seeded successfully!');
-};
-
+const adminUser = MOCK_USERS.find(u => u.email === 'admin@teamflow.com');
+if (!adminUser) {
+    throw new Error("Missing mock admin user");
+}
 
 interface AuthContextType {
     user: User | null;
@@ -169,41 +28,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const pathname = usePathname();
 
     useEffect(() => {
-        if (!auth || !db) {
-            setLoading(false);
-            console.warn("Firebase not initialized, authentication is disabled.");
-            return;
+        // Simulate checking for a logged-in user from a previous session
+        const storedUser = sessionStorage.getItem('mockUser');
+        if (storedUser) {
+            setUser(JSON.parse(storedUser));
         }
-
-        const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-            if (firebaseUser) {
-                try {
-                    const userProfile = await fetchUserWithRetry(firebaseUser.uid);
-                    if (userProfile) {
-                        setUser(userProfile);
-                    } else {
-                        // This case should ideally happen only on registration
-                        const name = firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'New User';
-                        const newUserProfile = await createUserProfile(firebaseUser, name);
-                        setUser(newUserProfile);
-                    }
-                } catch (error) {
-                    console.error("Failed to process user authentication:", error);
-                    // Decide what to do on failure. Maybe log out? Or show an error toast?
-                    // For now, we'll just set user to null.
-                    setUser(null);
-                }
-            } else {
-                setUser(null);
-            }
-            setLoading(false);
-        });
-
-        return () => unsubscribe();
+        setLoading(false);
     }, []);
 
     useEffect(() => {
-        if (loading) return; // Wait for the initial auth check to complete
+        if (loading) return; 
 
         const isAuthPage = pathname === '/login' || pathname === '/register';
         
@@ -215,25 +49,31 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }, [user, loading, pathname, router]);
 
     const login = async (email: string, pass: string): Promise<void> => {
-       if (!auth) throw new Error("Authentication is not available.");
-       await signInWithEmailAndPassword(auth, email, pass);
+       setLoading(true);
+       await new Promise(resolve => setTimeout(resolve, 500)); // Simulate network latency
+
+       if (email.toLowerCase() === 'admin@teamflow.com' && pass === 'Admin@1234') {
+           const loggedInUser = adminUser;
+           setUser(loggedInUser);
+           sessionStorage.setItem('mockUser', JSON.stringify(loggedInUser));
+       } else {
+           setLoading(false);
+           throw new Error("Invalid credentials");
+       }
     };
 
     const logout = async () => {
-        if (!auth) return;
-        await firebaseSignOut(auth);
+        await new Promise(resolve => setTimeout(resolve, 200));
         setUser(null);
+        sessionStorage.removeItem('mockUser');
         router.push('/login');
     };
 
     const register = async (name: string, email: string, pass: string): Promise<void> => {
-        if (!auth || !db) throw new Error("Authentication is not available.");
-        const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
-        const newUser = await createUserProfile(userCredential.user, name);
-        if (email.toLowerCase() === 'admin@teamflow.com') {
-            await updateDoc(doc(db, 'users', newUser.id), { expertise: 'Project Overlord' });
-            await seedInitialData(newUser.id);
-        }
+        // This is a mock, so we don't actually create a new user.
+        // We just pretend it was successful.
+        console.log(`Mock registration for: ${name}, ${email}`);
+        await new Promise(resolve => setTimeout(resolve, 500));
     };
     
     const value = { user, loading, login, logout, register };

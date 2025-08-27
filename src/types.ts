@@ -1,4 +1,3 @@
-import { Timestamp } from "firebase/firestore";
 
 export interface User {
   id: string;
@@ -9,7 +8,6 @@ export interface User {
   currentWorkload: number;
   phone?: string;
   dob?: string; // Date of birth
-  createdAt?: Timestamp;
 }
 
 export type TeamMemberRole = 'leader' | 'member';
@@ -23,12 +21,11 @@ export interface Team {
   id:string;
   name: string;
   members: TeamMember[];
-  createdAt?: Timestamp;
 }
 
 export interface Comment {
   id: string;
-  author: User; // Keep the nested user object for display purposes
+  author: User; 
   content: string;
   createdAt: string; // ISO string for date-fns formatting
 }
@@ -40,10 +37,10 @@ export interface Task {
   title: string;
   description: string;
   status: TaskStatus;
-  assigneeId?: string; // Store only the ID
-  assignee?: User; // Keep for FE convenience, will be populated
-  teamId: string; // Store only the ID
-  team: Team; // Keep for FE convenience, will be populated
-  comments: Comment[]; // Comments will be a subcollection
+  assigneeId?: string; 
+  assignee?: User; 
+  teamId: string; 
+  team: Team; 
+  comments: Comment[];
   createdAt: string; // ISO string
 }
