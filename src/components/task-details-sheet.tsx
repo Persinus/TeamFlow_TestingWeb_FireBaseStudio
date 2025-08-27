@@ -30,7 +30,7 @@ interface TaskDetailsSheetProps {
   users: User[];
   teams: Team[];
   onOpenChange: (isOpen: boolean) => void;
-  onUpdateTask: (updatedTask: Omit<Task, 'nhom' | 'nguoiThucHien'>) => Promise<void>;
+  onUpdateTask: (updatedTask: Omit<Task, 'nhom' | 'nguoiThucHien'>) => Promise<Task>;
   onDeleteTask: (taskId: string) => Promise<void>;
 }
 
@@ -82,6 +82,7 @@ const safeParseDate = (date: string | Date | undefined): Date | undefined => {
 export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onUpdateTask, onDeleteTask }: TaskDetailsSheetProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const { toast } = useToast();
   const [availableTags, setAvailableTags] = useState<string[]>([]);
 
@@ -124,7 +125,7 @@ export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onU
   const onSubmit = async (data: TaskFormData) => {
     setIsUpdating(true);
     try {
-      await onUpdateTask({
+      const updatedTaskResult = await onUpdateTask({
         id: task.id,
         ...data,
         nguoiThucHienId: data.nguoiThucHienId === 'unassigned' ? undefined : data.nguoiThucHienId,
@@ -134,6 +135,10 @@ export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onU
         ngayTao: task.ngayTao,
       });
       setIsEditing(false);
+      toast({
+        title: 'Đã cập nhật công việc',
+        description: `"${updatedTaskResult.tieuDe}" đã được lưu thành công.`,
+      });
     } catch(error) {
       toast({
         variant: 'destructive',
@@ -146,20 +151,23 @@ export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onU
   };
 
   const handleDelete = async () => {
+    setIsDeleting(true);
     try {
         await onDeleteTask(task.id);
+        onOpenChange(false); // Close sheet on successful delete
         toast({
             variant: 'destructive',
             title: 'Đã xóa công việc',
             description: `"${task.tieuDe}" đã được xóa vĩnh viễn.`,
         });
-        onOpenChange(false);
     } catch (error) {
         toast({
             variant: 'destructive',
             title: 'Xóa thất bại',
             description: 'Đã có lỗi xảy ra khi xóa công việc.',
         });
+    } finally {
+        setIsDeleting(false);
     }
   }
 
@@ -285,8 +293,9 @@ export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onU
                          <SheetFooter className="pt-4 flex justify-between sm:justify-between">
                             <AlertDialog>
                                 <AlertDialogTrigger asChild>
-                                     <Button type="button" variant="destructive" className="mr-auto">
-                                        <Trash2 className="mr-2 h-4 w-4" /> Xóa
+                                     <Button type="button" variant="destructive" className="mr-auto" disabled={isDeleting}>
+                                        {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
+                                        {isDeleting ? 'Đang xóa...' : 'Xóa'}
                                     </Button>
                                 </AlertDialogTrigger>
                                 <AlertDialogContent>
@@ -299,7 +308,8 @@ export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onU
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
                                     <AlertDialogCancel>Hủy</AlertDialogCancel>
-                                    <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">
+                                    <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90" disabled={isDeleting}>
+                                        {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                         Vâng, xóa công việc
                                     </AlertDialogAction>
                                 </AlertDialogFooter>

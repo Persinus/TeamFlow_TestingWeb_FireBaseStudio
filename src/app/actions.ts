@@ -166,22 +166,23 @@ export const addTask = async (taskData: Omit<Task, 'id' | 'nhom' | 'nguoiThucHie
     return newTask._id.toString();
 };
 
-export const updateTask = async (taskId: string, taskData: Partial<Omit<Task, 'id' | 'nhom' | 'nguoiThucHien'>>): Promise<void> => {
+export const updateTask = async (taskId: string, taskData: Partial<Omit<Task, 'id' | 'nhom' | 'nguoiThucHien'>>): Promise<Task> => {
     await connectToDatabase();
     const updateData: any = { ...taskData };
     if (updateData.nguoiThucHienId === 'unassigned' || updateData.nguoiThucHienId === null) {
       updateData.nguoiThucHienId = null;
     } 
 
-    await TaskModel.findByIdAndUpdate(taskId, updateData);
-    const updatedTask = await TaskModel.findById(taskId);
-    revalidatePath('/');
-    if (updatedTask) {
-        revalidatePath(`/teams/${updatedTask.nhomId}`);
-        if(updatedTask.nguoiThucHienId) {
-             revalidatePath(`/profile`);
-        }
+    const updatedTask = await TaskModel.findByIdAndUpdate(taskId, updateData, { new: true });
+    if (!updatedTask) {
+        throw new Error('Task not found');
     }
+    revalidatePath('/');
+    revalidatePath(`/teams/${updatedTask.nhomId}`);
+    if(updatedTask.nguoiThucHienId) {
+         revalidatePath(`/profile`);
+    }
+    return populateTask(updatedTask);
 };
 
 export const deleteTask = async (taskId: string): Promise<void> => {
@@ -309,5 +310,3 @@ export const updateTeamMemberRole = async (teamId: string, userId: string, role:
     );
     revalidatePath(`/teams/${teamId}`);
 };
-
-    
