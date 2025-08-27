@@ -1,10 +1,10 @@
 import type { User, Team, Task } from '@/types';
 
 export const users: User[] = [
-  { id: 'user-1', name: 'Alice Johnson', avatar: 'https://picsum.photos/seed/alice/40/40', expertise: 'Frontend Development, React, UI/UX', currentWorkload: 3 },
-  { id: 'user-2', name: 'Bob Williams', avatar: 'https://picsum.photos/seed/bob/40/40', expertise: 'Backend Development, Node.js, Databases', currentWorkload: 2 },
-  { id: 'user-3', name: 'Charlie Brown', avatar: 'https://picsum.photos/seed/charlie/40/40', expertise: 'DevOps, CI/CD, Cloud Infrastructure', currentWorkload: 5 },
-  { id: 'user-4', name: 'Diana Prince', avatar: 'https://picsum.photos/seed/diana/40/40', expertise: 'Project Management, Agile Methodologies', currentWorkload: 4 },
+  { id: 'user-1', name: 'Alice Johnson', avatar: 'https://picsum.photos/seed/alice/40/40', expertise: 'Frontend Development, React, UI/UX', currentWorkload: 3, phone: '123-456-7890', dob: '1990-05-15' },
+  { id: 'user-2', name: 'Bob Williams', avatar: 'https://picsum.photos/seed/bob/40/40', expertise: 'Backend Development, Node.js, Databases', currentWorkload: 2, phone: '234-567-8901', dob: '1988-08-20' },
+  { id: 'user-3', name: 'Charlie Brown', avatar: 'https://picsum.photos/seed/charlie/40/40', expertise: 'DevOps, CI/CD, Cloud Infrastructure', currentWorkload: 5, phone: '345-678-9012', dob: '1992-11-30' },
+  { id: 'user-4', name: 'Diana Prince', avatar: 'https://picsum.photos/seed/diana/40/40', expertise: 'Project Management, Agile Methodologies', currentWorkload: 4, phone: '456-789-0123', dob: '1985-03-22' },
 ];
 
 export const teams: Team[] = [

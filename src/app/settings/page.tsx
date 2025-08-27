@@ -10,9 +10,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Moon, Sun } from 'lucide-react';
+import { CalendarIcon, Moon, Sun } from 'lucide-react';
 import { users } from '@/lib/data';
 import type { Task } from '@/types';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 export default function SettingsPage() {
     // Mock user, in a real app, this would come from an auth context
@@ -21,6 +25,8 @@ export default function SettingsPage() {
     const [theme, setTheme] = useState('light');
     const [name, setName] = useState(currentUser.name);
     const [email, setEmail] = useState('diana.prince@example.com'); // Mock email
+    const [phone, setPhone] = useState(currentUser.phone || '');
+    const [dob, setDob] = useState<Date | undefined>(currentUser.dob ? new Date(currentUser.dob) : undefined);
 
     useEffect(() => {
         const storedTheme = localStorage.getItem('theme') || 'light';
@@ -52,7 +58,7 @@ export default function SettingsPage() {
                         <Card>
                             <CardHeader>
                                 <CardTitle>Profile</CardTitle>
-                                <CardDescription>Manage your public profile and account details.</CardDescription>
+                                <CardDescription>This is how others will see you on the site. This data is not stored in a database.</CardDescription>
                             </CardHeader>
                             <CardContent className="space-y-6">
                                 <div className="flex items-center gap-4">
@@ -70,6 +76,35 @@ export default function SettingsPage() {
                                     <div className="space-y-2">
                                         <Label htmlFor="email">Email</Label>
                                         <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="phone">Phone Number</Label>
+                                        <Input id="phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="dob">Date of Birth</Label>
+                                        <Popover>
+                                            <PopoverTrigger asChild>
+                                                <Button
+                                                variant={"outline"}
+                                                className={cn(
+                                                    "w-full justify-start text-left font-normal",
+                                                    !dob && "text-muted-foreground"
+                                                )}
+                                                >
+                                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                                {dob ? format(dob, "PPP") : <span>Pick a date</span>}
+                                                </Button>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-auto p-0">
+                                                <Calendar
+                                                mode="single"
+                                                selected={dob}
+                                                onSelect={setDob}
+                                                initialFocus
+                                                />
+                                            </PopoverContent>
+                                        </Popover>
                                     </div>
                                 </div>
                                 <Button>Update Profile</Button>

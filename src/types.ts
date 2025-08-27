@@ -1,9 +1,12 @@
+
 export interface User {
   id: string;
   name: string;
   avatar: string; // URL to avatar image
   expertise: string;
   currentWorkload: number;
+  phone?: string;
+  dob?: string; // Date of birth
 }
 
 export interface Team {
