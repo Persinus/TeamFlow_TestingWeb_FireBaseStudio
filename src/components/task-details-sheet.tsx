@@ -27,6 +27,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Dialog } from './ui/dialog';
 import { DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from './ui/dialog';
 import { useAuth } from '@/hooks/use-auth';
+import { revalidatePath } from 'next/cache';
 
 
 interface TaskDetailsSheetProps {
@@ -35,6 +36,7 @@ interface TaskDetailsSheetProps {
   teams: Team[];
   onOpenChange: (isOpen: boolean) => void;
   onUpdateTask: (updatedTask: Omit<Task, 'nhom' | 'nguoiThucHien'>) => Promise<void>;
+  onTaskDeleted: () => void;
 }
 
 const taskSchema = z.object({
@@ -81,7 +83,7 @@ const safeParseDate = (date: string | Date | undefined): Date | undefined => {
     }
 };
 
-export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onUpdateTask }: TaskDetailsSheetProps) {
+export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onUpdateTask, onTaskDeleted }: TaskDetailsSheetProps) {
   const { user: currentUser } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
@@ -104,15 +106,18 @@ export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onU
 
   const canDelete = useMemo(() => {
     if (!task || !currentUser) return false;
+    
     // Personal task
     if (!task.nhomId) {
         return task.nguoiTaoId === currentUser.id;
     }
+    
     // Team task
     if (team) {
         const currentUserMembership = team.thanhVien?.find(m => m.thanhVienId === currentUser.id);
         return currentUserMembership?.vaiTro === 'Trưởng nhóm';
     }
+    
     return false;
   }, [task, currentUser, team]);
 
@@ -198,15 +203,13 @@ export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onU
     setIsDeleting(true);
     try {
         await apiDeleteTask(task.id, currentUser.id);
-        onOpenChange(false);
-        // Force a re-fetch of data in the parent component
-        // The onUpdateTask prop can be used for this, as it triggers a re-fetch
-        await onUpdateTask({ id: task.id } as any); 
         toast({
             title: 'Đã xóa công việc',
             description: `"${task.tieuDe}" đã được xóa vĩnh viễn.`,
             variant: "destructive"
         });
+        onOpenChange(false);
+        onTaskDeleted();
     } catch (error: any) {
         toast({
             variant: 'destructive',
@@ -434,5 +437,3 @@ export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onU
     </>
   );
 }
-
-    

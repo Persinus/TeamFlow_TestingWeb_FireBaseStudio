@@ -223,9 +223,9 @@ export default function TeamDetailPage() {
   }
   
   const handleUpdateTask = async (updatedTaskData: Omit<Task, 'nhom' | 'nguoiThucHien'>) => {
-    await updateTask(updatedTaskData.id, updatedTaskData);
+    const updatedTask = await updateTask(updatedTaskData.id, updatedTaskData);
     await fetchData(); // Refetch all data to ensure consistency
-    setSelectedTask(prev => prev ? {...prev, ...updatedTaskData} : null); // Optimistically update
+    setSelectedTask(updatedTask); // Optimistically update
   };
 
   const handleCreateTask = async (newTaskData: Omit<Task, 'id' | 'nhom' | 'nguoiThucHien' | 'ngayTao'>) => {
@@ -243,7 +243,7 @@ export default function TeamDetailPage() {
         <div className="flex min-h-screen w-full flex-col lg:flex-row bg-background">
             <Sidebar teams={[]} onTeamChange={() => {}} />
             <div className="flex flex-1 flex-col">
-                <Header onCreateTask={handleCreateTask as any} />
+                <Header onCreateTask={async () => await fetchData()} />
                 <SidebarInset>
                     <main className="flex-1 p-4 sm:p-6 md:p-8">
                         <Skeleton className="h-8 w-48 mb-8" />
@@ -273,7 +273,7 @@ export default function TeamDetailPage() {
     <div className="flex min-h-screen w-full flex-col lg:flex-row bg-background">
       <Sidebar teams={allTeams} onTeamChange={handleTeamCreated} />
       <div className="flex flex-1 flex-col">
-        <Header onCreateTask={handleCreateTask as any} />
+        <Header onCreateTask={async () => await fetchData()} />
         <SidebarInset>
             <motion.main 
               initial={{ opacity: 0, y: 20 }}
@@ -535,6 +535,7 @@ export default function TeamDetailPage() {
             teams={allTeams}
             onOpenChange={(isOpen) => !isOpen && setSelectedTask(null)}
             onUpdateTask={handleUpdateTask}
+            onTaskDeleted={fetchData}
         />
        )}
         <Dialog open={isEditTeamOpen} onOpenChange={setEditTeamOpen}>

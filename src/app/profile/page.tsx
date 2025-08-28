@@ -87,9 +87,9 @@ export default function ProfilePage() {
     };
     
     const handleUpdateTask = async (updatedTaskData: Omit<Task, 'id'| 'nhom' | 'nguoiThucHien'>) => {
-         await updateTask(updatedTaskData.id, updatedTaskData);
+         const updatedTask = await updateTask(updatedTaskData.id, updatedTaskData);
          if(user) await fetchData(user.id);
-         setSelectedTask(prev => prev ? { ...prev, ...updatedTaskData } : null);
+         setSelectedTask(updatedTask);
     }
     
     if (authLoading || pageLoading || !user) {
@@ -97,7 +97,7 @@ export default function ProfilePage() {
             <div className="flex min-h-screen w-full flex-col lg:flex-row bg-background">
                 <Sidebar teams={teams} onTeamChange={() => user && fetchData(user.id)} />
                 <div className="flex flex-1 flex-col">
-                    <Header onCreateTask={handleCreateTask} />
+                    <Header onCreateTask={async () => user && await fetchData(user.id) } />
                     <SidebarInset>
                         <main className="flex-1 p-4 sm:p-6 md:p-8">
                              <ProfileSkeleton />
@@ -112,7 +112,7 @@ export default function ProfilePage() {
         <div className="flex min-h-screen w-full flex-col lg:flex-row bg-background">
             <Sidebar teams={teams} onTeamChange={() => fetchData(user.id)} />
             <div className="flex flex-1 flex-col">
-                <Header onCreateTask={handleCreateTask} />
+                <Header onCreateTask={async () => await fetchData(user.id)} />
                 <SidebarInset>
                     <motion.main 
                          initial={{ opacity: 0, y: 20 }}
@@ -161,6 +161,7 @@ export default function ProfilePage() {
                     teams={teams}
                     onOpenChange={(isOpen) => !isOpen && setSelectedTask(null)}
                     onUpdateTask={handleUpdateTask}
+                    onTaskDeleted={() => fetchData(user.id)}
                 />
             )}
         </div>

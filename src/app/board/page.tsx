@@ -331,6 +331,7 @@ export default function BoardPage() {
             teams={teams}
             onOpenChange={(isOpen) => !isOpen && setSelectedTask(null)}
             onUpdateTask={handleUpdateTask}
+            onTaskDeleted={fetchData}
         />
       )}
     </div>
