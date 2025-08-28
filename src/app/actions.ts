@@ -241,11 +241,16 @@ export const addTask = async (taskData: Omit<Task, 'id' | 'nhom' | 'nguoiThucHie
         _id: `task-${Date.now()}`,
     });
     await newTask.save();
-
+    
+    revalidatePath('/');
     revalidatePath('/board');
     if (taskData.nhomId) {
       revalidatePath(`/teams/${taskData.nhomId}`);
     }
+    if (taskData.nguoiThucHienId) {
+      revalidatePath('/profile');
+    }
+
     return newTask._id.toString();
 };
 

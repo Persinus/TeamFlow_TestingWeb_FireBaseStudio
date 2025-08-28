@@ -149,11 +149,10 @@ export default function BoardPage() {
     });
   }, [tasks, filters]);
   
-  const handleUpdateTask = async (updatedTaskData: Omit<Task, 'id' | 'nhom' | 'nguoiThucHien'>) => {
-    // I moved the line below from the TaskDetailsSheet to here.
-    await updateTask(updatedTaskData.id, updatedTaskData);
-    await fetchData(); // Refetch all data to ensure consistency
-    setSelectedTask(prev => prev ? {...prev, ...updatedTaskData} : null); // Optimistically update selected task
+  const handleUpdateTask = async (updatedTaskData: Omit<Task, 'nhom' | 'nguoiThucHien'>) => {
+    const updatedTask = await updateTask(updatedTaskData.id, updatedTaskData);
+    await fetchData(); 
+    setSelectedTask(updatedTask); 
   };
 
   const handleDeleteTask = async (taskId: string) => {
