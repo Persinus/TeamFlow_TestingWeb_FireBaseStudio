@@ -92,14 +92,14 @@ export default function AnalyticsPage() {
         }
     }, [selectedTeam, user, fetchData]);
 
-    if (authLoading || !user) {
-        return <div className="flex h-screen items-center justify-center">Đang tải...</div>;
-    }
-    
     const sortedAnalyticsData = useMemo(() => {
         return [...analyticsData].sort((a, b) => (b['Hoàn thành'] / b.total || 0) - (a['Hoàn thành'] / a.total || 0));
     }, [analyticsData]);
 
+    if (authLoading || !user) {
+        return <div className="flex h-screen items-center justify-center">Đang tải...</div>;
+    }
+    
     return (
         <div className="flex min-h-screen w-full flex-col lg:flex-row bg-background">
             <Sidebar teams={teams} onTeamChange={() => user && getTeamsForUser(user.id).then(setTeams)} />
