@@ -3,7 +3,7 @@
 "use server";
 
 import bcrypt from 'bcryptjs';
-import type { User, Team, Task, TrangThaiCongViec as TaskStatus, VaiTroThanhVien as TeamMemberRole } from '@/types';
+import type { User, Team, Task, TrangThaiCongViec as TaskStatus, VaiTroThanhVien as TeamMemberRole, UserAnalyticsData } from '@/types';
 import connectToDatabase from '@/lib/mongodb';
 import { User as UserModel, Team as TeamModel, Task as TaskModel } from '@/lib/models';
 import { suggestTaskAssignee } from "@/ai/flows/suggest-task-assignee";
@@ -11,6 +11,7 @@ import type { SuggestTaskAssigneeInput } from "@/ai/flows/suggest-task-assignee"
 import { generateTaskDescription } from "@/ai/flows/generate-task-description";
 import type { GenerateTaskDescriptionInput } from "@/ai/flows/generate-task-description";
 import { revalidatePath } from 'next/cache';
+import mongoose from 'mongoose';
 
 // --- Auth Functions ---
 export const verifyUserCredentials = async (credentials: Pick<User, 'email' | 'matKhau'>): Promise<Omit<User, 'matKhau'> | null> => {
@@ -130,42 +131,54 @@ const populateTeam = (team: any): Team => {
 };
 
 const populateTask = (task: any): Task => {
-    const taskObj = task?._doc || task;
-    if (!taskObj) return task;
-    
-    const populatedTask: Task = {
-        id: taskObj._id.toString(),
-        tieuDe: taskObj.tieuDe,
-        moTa: taskObj.moTa,
-        trangThai: taskObj.trangThai,
-        loaiCongViec: taskObj.loaiCongViec,
-        doUuTien: taskObj.doUuTien,
-        nguoiTaoId: taskObj.nguoiTaoId?.toString(),
-        ngayTao: taskObj.ngayTao,
-        ngayBatDau: taskObj.ngayBatDau,
-        ngayHetHan: taskObj.ngayHetHan,
-        tags: taskObj.tags || [],
-    };
+  const taskObj = task?._doc || task;
+  if (!taskObj) return task;
 
-    if (taskObj.nhomId) {
-        if (typeof taskObj.nhomId === 'object' && taskObj.nhomId !== null && '_id' in taskObj.nhomId) {
-            populatedTask.nhomId = taskObj.nhomId._id.toString();
-            populatedTask.nhom = populateTeam(taskObj.nhomId);
-        } else {
-            populatedTask.nhomId = taskObj.nhomId.toString();
-        }
-    }
+  const populatedTask: Task = {
+    id: taskObj._id.toString(),
+    tieuDe: taskObj.tieuDe,
+    moTa: taskObj.moTa,
+    trangThai: taskObj.trangThai,
+    loaiCongViec: taskObj.loaiCongViec,
+    doUuTien: taskObj.doUuTien,
+    nguoiTaoId: taskObj.nguoiTaoId?.toString(),
+    ngayTao: taskObj.ngayTao,
+    ngayBatDau: taskObj.ngayBatDau,
+    ngayHetHan: taskObj.ngayHetHan,
+    tags: taskObj.tags || [],
+    nhomId: undefined,
+    nhom: undefined,
+    nguoiThucHienId: undefined,
+    nguoiThucHien: undefined,
+  };
 
-    if (taskObj.nguoiThucHienId) {
-        if (typeof taskObj.nguoiThucHienId === 'object' && taskObj.nguoiThucHienId !== null && '_id' in taskObj.nguoiThucHienId) {
-            populatedTask.nguoiThucHienId = taskObj.nguoiThucHienId._id.toString();
-            populatedTask.nguoiThucHien = populateUser(taskObj.nguoiThucHienId);
-        } else {
-            populatedTask.nguoiThucHienId = taskObj.nguoiThucHienId.toString();
-        }
+  if (taskObj.nhomId) {
+    if (
+      typeof taskObj.nhomId === 'object' &&
+      taskObj.nhomId !== null &&
+      '_id' in taskObj.nhomId
+    ) {
+      populatedTask.nhomId = taskObj.nhomId._id.toString();
+      populatedTask.nhom = populateTeam(taskObj.nhomId);
+    } else {
+      populatedTask.nhomId = taskObj.nhomId.toString();
     }
-    
-    return populatedTask;
+  }
+
+  if (taskObj.nguoiThucHienId) {
+    if (
+      typeof taskObj.nguoiThucHienId === 'object' &&
+      taskObj.nguoiThucHienId !== null &&
+      '_id' in taskObj.nguoiThucHienId
+    ) {
+      populatedTask.nguoiThucHienId = taskObj.nguoiThucHienId._id.toString();
+      populatedTask.nguoiThucHien = populateUser(taskObj.nguoiThucHienId);
+    } else {
+      populatedTask.nguoiThucHienId = taskObj.nguoiThucHienId.toString();
+    }
+  }
+
+  return populatedTask;
 };
 
 
@@ -221,9 +234,6 @@ export const addTask = async (taskData: Partial<Omit<Task, 'id' | 'nhom' | 'nguo
     await connectToDatabase();
     
     const dataToSave = { ...taskData };
-    if (!dataToSave.nhomId) {
-        dataToSave.nhomId = undefined;
-    }
 
     if (dataToSave.nhomId) {
         const team = await TeamModel.findById(dataToSave.nhomId);
@@ -247,6 +257,7 @@ export const addTask = async (taskData: Partial<Omit<Task, 'id' | 'nhom' | 'nguo
         if (dataToSave.nguoiThucHienId !== creatorId) {
             throw new Error("Không thể giao công việc cá nhân cho người khác.");
         }
+        dataToSave.nhomId = undefined;
     }
 
     const newTask = new TaskModel({
@@ -328,6 +339,7 @@ export const deleteTask = async (taskId: string, userId: string): Promise<void> 
 
     revalidatePath('/');
     revalidatePath('/board');
+    revalidatePath('/analytics');
     if (task.nhomId) {
       revalidatePath(`/teams/${task.nhomId.toString()}`);
     }
@@ -464,4 +476,89 @@ export const updateTeamMemberRole = async (teamId: string, userId: string, role:
         { $set: { 'thanhVien.$.vaiTro': role } }
     );
     revalidatePath(`/teams/${teamId}`);
+};
+
+// --- Analytics Functions ---
+export const getAnalyticsData = async (teamId?: string): Promise<UserAnalyticsData[]> => {
+    await connectToDatabase();
+
+    const userMatch = teamId ? { 'teams._id': teamId } : {};
+
+    const users = await UserModel.aggregate([
+        {
+            $lookup: {
+                from: 'teams',
+                localField: '_id',
+                foreignField: 'thanhVien.thanhVienId',
+                as: 'teams'
+            }
+        },
+        {
+            $match: userMatch
+        },
+        {
+            $project: {
+                _id: 1,
+                hoTen: 1,
+                anhDaiDien: 1
+            }
+        }
+    ]);
+    const userIds = users.map(u => u._id);
+
+    const tasks = await TaskModel.aggregate([
+        { 
+            $match: { 
+                nguoiThucHienId: { $in: userIds }
+            } 
+        },
+        {
+            $group: {
+                _id: {
+                    nguoiThucHienId: "$nguoiThucHienId",
+                    trangThai: "$trangThai"
+                },
+                count: { $sum: 1 }
+            }
+        },
+        {
+            $group: {
+                _id: "$_id.nguoiThucHienId",
+                counts: {
+                    $push: {
+                        trangThai: "$_id.trangThai",
+                        count: "$count"
+                    }
+                }
+            }
+        }
+    ]);
+
+    const taskMap = new Map(tasks.map(t => [t._id, t.counts]));
+
+    const analyticsData: UserAnalyticsData[] = users.map(user => {
+        const userTasks = taskMap.get(user._id) || [];
+        const statusCounts: Record<TaskStatus, number> = {
+            'Tồn đọng': 0,
+            'Cần làm': 0,
+            'Đang tiến hành': 0,
+            'Hoàn thành': 0,
+        };
+
+        let total = 0;
+        userTasks.forEach((item: { trangThai: TaskStatus, count: number }) => {
+            statusCounts[item.trangThai] = item.count;
+            total += item.count;
+        });
+
+        return {
+            userId: user._id,
+            hoTen: user.hoTen,
+            anhDaiDien: user.anhDaiDien,
+            total,
+            ...statusCounts,
+        };
+    });
+
+    return analyticsData;
 };

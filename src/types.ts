@@ -24,7 +24,7 @@ export interface Team {
   id: string; // Map to _id
   tenNhom: string;
   moTa?: string;
-  thanhVien?: ThanhVienNhom[];
+  thanhVien: ThanhVienNhom[];
 }
 
 export type TrangThaiCongViec = 'Cần làm' | 'Đang tiến hành' | 'Hoàn thành' | 'Tồn đọng';
@@ -52,4 +52,15 @@ export interface Task {
   ngayHetHan?: string | Date; // ISO string or Date object
   
   tags?: string[];
+}
+
+export interface UserAnalyticsData {
+  userId: string;
+  hoTen: string;
+  anhDaiDien: string;
+  total: number;
+  "Tồn đọng": number;
+  "Cần làm": number;
+  "Đang tiến hành": number;
+  "Hoàn thành": number;
 }

@@ -3,7 +3,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { Home, Settings, Users, ChevronDown, PlusCircle, HelpCircle, LayoutDashboard } from 'lucide-react';
+import { Home, Settings, Users, ChevronDown, PlusCircle, HelpCircle, LayoutDashboard, BarChart2 } from 'lucide-react';
 import { Logo } from '@/components/icons';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -52,6 +52,7 @@ export function MobileSidebar({ teams, onTeamChange }: SidebarProps) {
         <SidebarMenu>
             <NavLink href="/" icon={Home} exact tooltip="Trang chủ">Trang chủ</NavLink>
             <NavLink href="/board" icon={LayoutDashboard} tooltip="Bảng điều khiển">Bảng điều khiển</NavLink>
+             <NavLink href="/analytics" icon={BarChart2} tooltip="Phân tích">Báo cáo & Phân tích</NavLink>
             <SidebarGroup className="px-0">
                 <SidebarMenuButton onClick={() => setIsTeamsOpen(!isTeamsOpen)} className="w-full">
                     <Users/>
@@ -117,6 +118,7 @@ export default function Sidebar({ teams, onTeamChange }: SidebarProps) {
             <SidebarMenu>
                 <NavLink href="/" icon={Home} exact tooltip="Trang chủ">Trang chủ</NavLink>
                 <NavLink href="/board" icon={LayoutDashboard} tooltip="Bảng điều khiển">Bảng điều khiển</NavLink>
+                 <NavLink href="/analytics" icon={BarChart2} tooltip="Phân tích">Báo cáo & Phân tích</NavLink>
                 <SidebarGroup>
                     <SidebarMenuButton onClick={() => setIsTeamsOpen(!isTeamsOpen)} tooltip="Các đội">
                         <Users/>
