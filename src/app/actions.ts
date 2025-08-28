@@ -1,4 +1,5 @@
 
+
 "use server";
 
 import bcrypt from 'bcryptjs';
@@ -216,12 +217,16 @@ export const getTasksByTeam = async (teamId: string): Promise<Task[]> => {
     return tasks.map(populateTask);
 };
 
-export const addTask = async (taskData: Omit<Task, 'id' | 'nhom' | 'nguoiThucHien' | 'ngayTao'>, creatorId: string): Promise<string> => {
+export const addTask = async (taskData: Partial<Omit<Task, 'id' | 'nhom' | 'nguoiThucHien' | 'ngayTao'>>, creatorId: string): Promise<string> => {
     await connectToDatabase();
     
-    // --- Permission Check ---
-    if (taskData.nhomId) {
-        const team = await TeamModel.findById(taskData.nhomId);
+    const dataToSave = { ...taskData };
+    if (!dataToSave.nhomId) {
+        dataToSave.nhomId = undefined;
+    }
+
+    if (dataToSave.nhomId) {
+        const team = await TeamModel.findById(dataToSave.nhomId);
         if (!team) {
             throw new Error("Đội không tồn tại.");
         }
@@ -230,34 +235,34 @@ export const addTask = async (taskData: Omit<Task, 'id' | 'nhom' | 'nguoiThucHie
             throw new Error("Bạn không phải là thành viên của đội này.");
         }
         
-        if (taskData.nguoiThucHienId && !team.thanhVien?.some((m: any) => m.thanhVienId.toString() === taskData.nguoiThucHienId)) {
+        if (dataToSave.nguoiThucHienId && !team.thanhVien?.some((m: any) => m.thanhVienId.toString() === dataToSave.nguoiThucHienId)) {
             throw new Error("Người được giao không phải là thành viên của đội này.");
         }
 
-        if (member.vaiTro === 'Thành viên' && taskData.nguoiThucHienId !== creatorId) {
+        if (member.vaiTro === 'Thành viên' && dataToSave.nguoiThucHienId !== creatorId) {
              throw new Error("Bạn chỉ có thể tạo công việc cho chính mình.");
         }
 
     } else { // Personal task
-        if (taskData.nguoiThucHienId !== creatorId) {
+        if (dataToSave.nguoiThucHienId !== creatorId) {
             throw new Error("Không thể giao công việc cá nhân cho người khác.");
         }
     }
 
     const newTask = new TaskModel({
-        ...taskData,
+        ...dataToSave,
         _id: `task-${Date.now()}`,
-        nguoiTaoId: creatorId, // Set creator
-        nhomId: taskData.nhomId || null,
+        nguoiTaoId: creatorId,
+        nhomId: dataToSave.nhomId || null,
     });
     await newTask.save();
     
     revalidatePath('/');
     revalidatePath('/board');
-    if (taskData.nhomId) {
-      revalidatePath(`/teams/${taskData.nhomId}`);
+    if (dataToSave.nhomId) {
+      revalidatePath(`/teams/${dataToSave.nhomId}`);
     }
-    if (taskData.nguoiThucHienId) {
+    if (dataToSave.nguoiThucHienId) {
       revalidatePath('/profile');
     }
 
@@ -319,13 +324,12 @@ export const deleteTask = async (taskId: string, userId: string): Promise<void> 
         }
     }
     
-    // If permission checks pass, delete the task
     await TaskModel.findByIdAndDelete(taskId);
 
     revalidatePath('/');
     revalidatePath('/board');
     if (task.nhomId) {
-      revalidatePath(`/teams/${task.nhomId}`);
+      revalidatePath(`/teams/${task.nhomId.toString()}`);
     }
     if (task.nguoiThucHienId) {
         revalidatePath(`/profile`);

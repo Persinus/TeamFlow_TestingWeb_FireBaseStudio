@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -103,18 +104,15 @@ export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onU
 
   const canDelete = useMemo(() => {
     if (!task || !currentUser) return false;
-
     // Personal task
     if (!task.nhomId) {
         return task.nguoiTaoId === currentUser.id;
     }
-
     // Team task
     if (team) {
         const currentUserMembership = team.thanhVien?.find(m => m.thanhVienId === currentUser.id);
         return currentUserMembership?.vaiTro === 'Trưởng nhóm';
     }
-
     return false;
   }, [task, currentUser, team]);
 
@@ -201,6 +199,9 @@ export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onU
     try {
         await apiDeleteTask(task.id, currentUser.id);
         onOpenChange(false);
+        // Force a re-fetch of data in the parent component
+        // The onUpdateTask prop can be used for this, as it triggers a re-fetch
+        await onUpdateTask({ id: task.id } as any); 
         toast({
             title: 'Đã xóa công việc',
             description: `"${task.tieuDe}" đã được xóa vĩnh viễn.`,
