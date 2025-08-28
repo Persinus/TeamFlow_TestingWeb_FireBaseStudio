@@ -359,29 +359,33 @@ export default function TeamDetailPage() {
                             <CardTitle>Phân bổ công việc</CardTitle>
                             <CardDescription>Các công việc hiện tại theo trạng thái.</CardDescription>
                             </CardHeader>
-                            <CardContent>
-                            <ChartContainer
-                                config={{}}
-                                className="mx-auto aspect-square h-[200px]"
-                            >
-                                <PieChart>
-                                <Tooltip
-                                    cursor={false}
-                                    content={<ChartTooltipContent hideLabel />}
-                                />
-                                <Pie
-                                    data={taskStatusDistribution}
-                                    dataKey="value"
-                                    nameKey="name"
-                                    innerRadius={60}
-                                    strokeWidth={5}
+                            <CardContent className="relative flex items-center justify-center">
+                                <ChartContainer
+                                    config={{}}
+                                    className="mx-auto aspect-square h-[200px]"
                                 >
-                                    {taskStatusDistribution.map((entry) => (
-                                    <Cell key={`cell-${entry.name}`} fill={entry.fill} />
-                                    ))}
-                                </Pie>
-                                </PieChart>
-                            </ChartContainer>
+                                    <PieChart>
+                                    <Tooltip
+                                        cursor={false}
+                                        content={<ChartTooltipContent hideLabel />}
+                                    />
+                                    <Pie
+                                        data={taskStatusDistribution}
+                                        dataKey="value"
+                                        nameKey="name"
+                                        innerRadius={60}
+                                        strokeWidth={5}
+                                    >
+                                        {taskStatusDistribution.map((entry) => (
+                                        <Cell key={`cell-${entry.name}`} fill={entry.fill} />
+                                        ))}
+                                    </Pie>
+                                    </PieChart>
+                                </ChartContainer>
+                                <div className="absolute flex flex-col items-center justify-center">
+                                    <span className="text-3xl font-bold">{teamTasks.length}</span>
+                                    <span className="text-xs text-muted-foreground">Công việc</span>
+                                </div>
                             </CardContent>
                         </Card>
                         <Card>
@@ -563,3 +567,4 @@ export default function TeamDetailPage() {
     </div>
   );
 }
+
