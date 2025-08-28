@@ -29,21 +29,22 @@ interface HeaderProps {
 }
 
 export default function Header({ onCreateTask }: HeaderProps) {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
 
   const [userTeams, setUserTeams] = useState<Team[]>([]);
 
 
-  useEffect(() => {
-    async function fetchDataForSheet() {
-      if (user) {
-        const teamsData = await getTeamsForUser(user.id);
-        setUserTeams(teamsData);
-      }
+  const fetchUserTeams = async () => {
+    if (user) {
+      const teamsData = await getTeamsForUser(user.id);
+      setUserTeams(teamsData);
     }
-    fetchDataForSheet();
+  }
+
+  useEffect(() => {
+    fetchUserTeams();
   }, [user]);
 
   const handleLogout = async () => {
@@ -73,12 +74,7 @@ export default function Header({ onCreateTask }: HeaderProps) {
                 <SheetHeader>
                     <SheetTitle className="sr-only">Menu Điều hướng</SheetTitle>
                 </SheetHeader>
-                <MobileSidebar teams={userTeams} onTeamChange={async () => {
-                   if (user) {
-                     const teamsData = await getTeamsForUser(user.id);
-                     setUserTeams(teamsData);
-                   }
-                }} onShowTour={() => {}}/>
+                <MobileSidebar teams={userTeams} onTeamChange={fetchUserTeams} />
             </SheetContent>
         </Sheet>
         
