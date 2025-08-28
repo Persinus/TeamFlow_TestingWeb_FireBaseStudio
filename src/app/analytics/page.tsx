@@ -97,7 +97,7 @@ export default function AnalyticsPage() {
     }
     
     const sortedAnalyticsData = useMemo(() => {
-        return [...analyticsData].sort((a, b) => (b.Hoàn thành / b.total || 0) - (a.Hoàn thành / a.total || 0));
+        return [...analyticsData].sort((a, b) => (b['Hoàn thành'] / b.total || 0) - (a['Hoàn thành'] / a.total || 0));
     }, [analyticsData]);
 
     return (
@@ -156,7 +156,7 @@ export default function AnalyticsPage() {
                                             </TableHeader>
                                             <TableBody>
                                                 {sortedAnalyticsData.length > 0 ? sortedAnalyticsData.map(data => {
-                                                    const progress = data.total > 0 ? (data.Hoàn thành / data.total) * 100 : 0;
+                                                    const progress = data.total > 0 ? (data['Hoàn thành'] / data.total) * 100 : 0;
                                                     return (
                                                         <TableRow key={data.userId}>
                                                             <TableCell>
@@ -177,7 +177,7 @@ export default function AnalyticsPage() {
                                                             <TableCell className="text-center">{data['Tồn đọng']}</TableCell>
                                                             <TableCell className="text-center">{data['Cần làm']}</TableCell>
                                                             <TableCell className="text-center">{data['Đang tiến hành']}</TableCell>
-                                                            <TableCell className="text-center font-semibold text-green-600">{data.Hoàn thành}</TableCell>
+                                                            <TableCell className="text-center font-semibold text-green-600">{data['Hoàn thành']}</TableCell>
                                                             <TableCell className="text-center font-bold">{data.total}</TableCell>
                                                         </TableRow>
                                                     );
