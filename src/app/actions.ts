@@ -1,5 +1,3 @@
-
-
 "use server";
 
 import bcrypt from 'bcryptjs';
@@ -482,7 +480,7 @@ export const updateTeamMemberRole = async (teamId: string, userId: string, role:
 export const getAnalyticsData = async (teamId?: string): Promise<UserAnalyticsData[]> => {
     await connectToDatabase();
 
-    const userMatch = teamId ? { 'teams._id': teamId } : {};
+    const userMatch = teamId ? { 'teams._id': new mongoose.Types.ObjectId(teamId) } : {};
 
     const users = await UserModel.aggregate([
         {
