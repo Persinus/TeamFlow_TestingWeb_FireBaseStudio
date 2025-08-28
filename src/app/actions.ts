@@ -217,26 +217,23 @@ export const addTask = async (taskData: Omit<Task, 'id' | 'nhom' | 'nguoiThucHie
             throw new Error("Bạn không phải là thành viên của đội này.");
         }
         
-        // If an assignee is provided, check if they are in the team
         if (taskData.nguoiThucHienId && !team.thanhVien.some((m: any) => m.thanhVienId.toString() === taskData.nguoiThucHienId)) {
             throw new Error("Người được giao không phải là thành viên của đội này.");
         }
 
-        // If creator is just a 'Thành viên', they can only assign to themselves
         if (member.vaiTro === 'Thành viên' && taskData.nguoiThucHienId !== creatorId) {
              throw new Error("Bạn chỉ có thể tạo công việc cho chính mình.");
         }
 
     } else {
-        // Personal task, assignee must be the creator
         if (taskData.nguoiThucHienId !== creatorId) {
             throw new Error("Không thể giao công việc cá nhân cho người khác.");
         }
     }
 
-    const newTaskData: Partial<Task> = { ...taskData };
+    const newTaskData = { ...taskData };
     if (!newTaskData.nhomId) {
-        delete newTaskData.nhomId;
+        delete (newTaskData as Partial<Task>).nhomId;
     }
 
     const newTask = new TaskModel({
@@ -394,7 +391,6 @@ export const addTeamMember = async (teamId: string, userId: string): Promise<voi
     await connectToDatabase();
     const team = await TeamModel.findById(teamId);
     if (team) {
-        // Ensure the thanhVien array exists before pushing to it
         if (!team.thanhVien) {
             team.thanhVien = [];
         }
