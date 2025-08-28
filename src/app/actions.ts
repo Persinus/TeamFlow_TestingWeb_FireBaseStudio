@@ -562,3 +562,18 @@ export const getAnalyticsData = async (teamId?: string): Promise<UserAnalyticsDa
 
     return analyticsData;
 };
+
+
+// --- Data Viewer Function ---
+export async function getRawDatabaseData() {
+    await connectToDatabase();
+    const users = await UserModel.find().lean();
+    const teams = await TeamModel.find().lean();
+    const tasks = await TaskModel.find().lean();
+
+    return {
+        users,
+        teams,
+        tasks
+    };
+}
