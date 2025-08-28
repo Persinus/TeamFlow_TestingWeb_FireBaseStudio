@@ -63,6 +63,16 @@ function DashboardSkeleton() {
     );
 }
 
+const safeParseDate = (date: string | Date | undefined): Date | undefined => {
+    if (!date) return undefined;
+    if (date instanceof Date) return date;
+    try {
+        return parseISO(date);
+    } catch (e) {
+        return undefined;
+    }
+};
+
 export default function HomePage() {
     const { user, loading: authLoading } = useAuth();
     const router = useRouter();
@@ -96,8 +106,9 @@ export default function HomePage() {
         const completedTasksByDate = tasks
             .filter(t => t.trangThai === 'Hoàn thành' && t.ngayHetHan)
             .reduce((acc, task) => {
-                const completedDateStr = task.ngayHetHan ? format(parseISO(task.ngayHetHan as string), 'yyyy-MM-dd') : '';
-                if (completedDateStr) {
+                const completedDate = safeParseDate(task.ngayHetHan);
+                if (completedDate) {
+                   const completedDateStr = format(completedDate, 'yyyy-MM-dd');
                    acc[completedDateStr] = (acc[completedDateStr] || 0) + 1;
                 }
                 return acc;
@@ -116,11 +127,17 @@ export default function HomePage() {
         return tasks
             .filter(task => {
                 if (task.trangThai === 'Hoàn thành' || !task.ngayHetHan) return false;
-                const dueDate = parseISO(task.ngayHetHan as string);
+                const dueDate = safeParseDate(task.ngayHetHan);
+                if (!dueDate) return false;
                 const daysDiff = differenceInDays(dueDate, now);
                 return daysDiff >= 0 && daysDiff <= 7;
             })
-            .sort((a, b) => parseISO(a.ngayHetHan as string).getTime() - parseISO(b.ngayHetHan as string).getTime());
+            .sort((a, b) => {
+                const dateA = safeParseDate(a.ngayHetHan);
+                const dateB = safeParseDate(b.ngayHetHan);
+                if (!dateA || !dateB) return 0;
+                return dateA.getTime() - dateB.getTime()
+            });
     }, [tasks]);
 
     if (authLoading || !user) {
@@ -198,17 +215,21 @@ export default function HomePage() {
                                         <CardContent>
                                             {upcomingTasks.length > 0 ? (
                                                 <ul className="space-y-3">
-                                                    {upcomingTasks.map(task => (
-                                                        <li key={task.id}>
-                                                            <Link href={`/teams/${task.nhomId}`} className="block hover:bg-muted p-2 rounded-md transition-colors">
-                                                                <p className="font-semibold truncate">{task.tieuDe}</p>
-                                                                <div className={cn("text-sm flex items-center gap-1", differenceInDays(parseISO(task.ngayHetHan as string), new Date()) <= 3 ? 'text-destructive' : 'text-muted-foreground')}>
-                                                                    <CalendarIcon className="h-4 w-4" />
-                                                                    <span>Hết hạn vào {format(parseISO(task.ngayHetHan as string), 'PPP')}</span>
-                                                                </div>
-                                                            </Link>
-                                                        </li>
-                                                    ))}
+                                                    {upcomingTasks.map(task => {
+                                                        const dueDate = safeParseDate(task.ngayHetHan);
+                                                        if (!dueDate) return null;
+                                                        return (
+                                                            <li key={task.id}>
+                                                                <Link href={`/teams/${task.nhomId}`} className="block hover:bg-muted p-2 rounded-md transition-colors">
+                                                                    <p className="font-semibold truncate">{task.tieuDe}</p>
+                                                                    <div className={cn("text-sm flex items-center gap-1", differenceInDays(dueDate, new Date()) <= 3 ? 'text-destructive' : 'text-muted-foreground')}>
+                                                                        <CalendarIcon className="h-4 w-4" />
+                                                                        <span>Hết hạn vào {format(dueDate, 'PPP')}</span>
+                                                                    </div>
+                                                                </Link>
+                                                            </li>
+                                                        )
+                                                    })}
                                                 </ul>
                                             ) : (
                                                 <div className="flex flex-col items-center justify-center text-center text-muted-foreground py-6">
@@ -229,3 +250,5 @@ export default function HomePage() {
         </div>
     );
 }
+
+    
