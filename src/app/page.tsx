@@ -4,7 +4,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
-import { getTasks, getTeams, getUsers } from '@/app/actions';
+import { getTasks, getTeamsForUser } from '@/app/actions';
 import type { Task, Team, User } from '@/types';
 import Sidebar from '@/components/sidebar';
 import Header from '@/components/header';
@@ -88,7 +88,7 @@ export default function HomePage() {
         }
         if (user) {
             setLoading(true);
-            Promise.all([getTasks(), getTeams()])
+            Promise.all([getTasks(), getTeamsForUser(user.id)])
                 .then(([taskData, teamData]) => {
                     setTasks(taskData.filter(t => t.nguoiThucHienId === user.id));
                     setTeams(teamData);
@@ -146,7 +146,7 @@ export default function HomePage() {
 
     return (
         <div className="flex min-h-screen w-full flex-col lg:flex-row bg-background">
-            <Sidebar teams={teams} onTeamChange={() => getTeams().then(setTeams)} />
+            <Sidebar teams={teams} onTeamChange={() => user && getTeamsForUser(user.id).then(setTeams)} />
             <div className="flex flex-1 flex-col">
                 <Header onCreateTask={async () => {}} />
                 <SidebarInset>

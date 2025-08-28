@@ -9,7 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import { SidebarInset } from '@/components/ui/sidebar';
-import { getTeams, getUsers, getTasksByAssignee, addTask, updateTask, deleteTask as apiDeleteTask } from '@/app/actions';
+import { getTeamsForUser, getUsers, getTasksByAssignee, addTask, updateTask, deleteTask as apiDeleteTask } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
 import TaskCard from '@/components/task-card';
@@ -57,7 +57,7 @@ export default function ProfilePage() {
         setPageLoading(true);
         try {
             const [teamsData, usersData, tasksData] = await Promise.all([
-                getTeams(),
+                getTeamsForUser(userId),
                 getUsers(),
                 getTasksByAssignee(userId)
             ]);
@@ -167,3 +167,5 @@ export default function ProfilePage() {
         </div>
     );
 }
+
+    

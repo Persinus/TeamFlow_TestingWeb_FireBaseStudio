@@ -166,3 +166,5 @@ export default function Sidebar({ teams, onTeamChange }: SidebarProps) {
 }
 
 export { SidebarTrigger } from '@/components/ui/sidebar';
+
+    
