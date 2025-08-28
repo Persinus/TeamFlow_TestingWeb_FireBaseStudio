@@ -205,12 +205,10 @@ export const getTasksByTeam = async (teamId: string): Promise<Task[]> => {
 
 export const addTask = async (taskData: Omit<Task, 'id' | 'nhom' | 'nguoiThucHien' | 'ngayTao'>, creatorId: string): Promise<string> => {
     await connectToDatabase();
-
-    const { nhomId, nguoiThucHienId } = taskData;
-
+    
     // --- Permission Check ---
-    if (nhomId) {
-        const team = await TeamModel.findById(nhomId);
+    if (taskData.nhomId) {
+        const team = await TeamModel.findById(taskData.nhomId);
         if (!team) {
             throw new Error("Đội không tồn tại.");
         }
@@ -220,24 +218,23 @@ export const addTask = async (taskData: Omit<Task, 'id' | 'nhom' | 'nguoiThucHie
         }
         
         // If an assignee is provided, check if they are in the team
-        if (nguoiThucHienId && !team.thanhVien.some((m: any) => m.thanhVienId.toString() === nguoiThucHienId)) {
+        if (taskData.nguoiThucHienId && !team.thanhVien.some((m: any) => m.thanhVienId.toString() === taskData.nguoiThucHienId)) {
             throw new Error("Người được giao không phải là thành viên của đội này.");
         }
 
         // If creator is just a 'Thành viên', they can only assign to themselves
-        if (member.vaiTro === 'Thành viên' && nguoiThucHienId !== creatorId) {
+        if (member.vaiTro === 'Thành viên' && taskData.nguoiThucHienId !== creatorId) {
              throw new Error("Bạn chỉ có thể tạo công việc cho chính mình.");
         }
 
     } else {
         // Personal task, assignee must be the creator
-        if (nguoiThucHienId !== creatorId) {
+        if (taskData.nguoiThucHienId !== creatorId) {
             throw new Error("Không thể giao công việc cá nhân cho người khác.");
         }
     }
 
-
-    const newTaskData = { ...taskData };
+    const newTaskData: Partial<Task> = { ...taskData };
     if (!newTaskData.nhomId) {
         delete newTaskData.nhomId;
     }
