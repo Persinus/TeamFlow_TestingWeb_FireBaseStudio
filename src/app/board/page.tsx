@@ -155,11 +155,6 @@ export default function BoardPage() {
     setSelectedTask(updatedTask); 
   };
 
-  const handleDeleteTask = async (taskId: string) => {
-    await apiDeleteTask(taskId);
-    fetchData();
-    setSelectedTask(null);
-  }
 
   const handleStatusChange = async (taskId: string, newStatus: TaskStatus) => {
     const originalTasks = tasks;
@@ -336,7 +331,6 @@ export default function BoardPage() {
             teams={teams}
             onOpenChange={(isOpen) => !isOpen && setSelectedTask(null)}
             onUpdateTask={handleUpdateTask}
-            onDeleteTask={handleDeleteTask}
         />
       )}
     </div>

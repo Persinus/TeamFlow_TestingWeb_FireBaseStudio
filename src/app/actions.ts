@@ -91,7 +91,8 @@ export async function generateDescriptionFromAI(input: GenerateTaskDescriptionIn
 
 // --- Helper Functions for Populating Data ---
 const populateUser = (user: any): User => {
-    const userObj = user._doc || user;
+    const userObj = user?._doc || user;
+    if (!userObj) return user; // Return original if it's not a mongoose doc
     return {
         id: userObj._id.toString(),
         hoTen: userObj.hoTen,
@@ -105,7 +106,8 @@ const populateUser = (user: any): User => {
 };
 
 const populateTeam = (team: any): Team => {
-    const teamObj = team._doc || team;
+    const teamObj = team?._doc || team;
+     if (!teamObj) return team;
     return {
         id: teamObj._id.toString(),
         tenNhom: teamObj.tenNhom,
@@ -127,9 +129,9 @@ const populateTeam = (team: any): Team => {
 };
 
 const populateTask = (task: any): Task => {
-    const taskObj = task._doc || task;
+    const taskObj = task?._doc || task;
+    if (!taskObj) return task;
     
-    // Create a base task object
     const populatedTask: Task = {
         id: taskObj._id.toString(),
         tieuDe: taskObj.tieuDe,
@@ -137,15 +139,15 @@ const populateTask = (task: any): Task => {
         trangThai: taskObj.trangThai,
         loaiCongViec: taskObj.loaiCongViec,
         doUuTien: taskObj.doUuTien,
+        nguoiTaoId: taskObj.nguoiTaoId?.toString(),
         ngayTao: taskObj.ngayTao,
         ngayBatDau: taskObj.ngayBatDau,
         ngayHetHan: taskObj.ngayHetHan,
         tags: taskObj.tags || [],
     };
 
-    // Safely handle nhomId and its population
     if (taskObj.nhomId) {
-        if (typeof taskObj.nhomId === 'object' && taskObj.nhomId !== null) {
+        if (typeof taskObj.nhomId === 'object' && taskObj.nhomId !== null && '_id' in taskObj.nhomId) {
             populatedTask.nhomId = taskObj.nhomId._id.toString();
             populatedTask.nhom = populateTeam(taskObj.nhomId);
         } else {
@@ -153,16 +155,15 @@ const populateTask = (task: any): Task => {
         }
     }
 
-    // Safely handle nguoiThucHienId and its population
     if (taskObj.nguoiThucHienId) {
-        if (typeof taskObj.nguoiThucHienId === 'object' && taskObj.nguoiThucHienId !== null) {
+        if (typeof taskObj.nguoiThucHienId === 'object' && taskObj.nguoiThucHienId !== null && '_id' in taskObj.nguoiThucHienId) {
             populatedTask.nguoiThucHienId = taskObj.nguoiThucHienId._id.toString();
             populatedTask.nguoiThucHien = populateUser(taskObj.nguoiThucHienId);
         } else {
             populatedTask.nguoiThucHienId = taskObj.nguoiThucHienId.toString();
         }
     }
-
+    
     return populatedTask;
 };
 
@@ -224,12 +225,12 @@ export const addTask = async (taskData: Omit<Task, 'id' | 'nhom' | 'nguoiThucHie
         if (!team) {
             throw new Error("Đội không tồn tại.");
         }
-        const member = team.thanhVien.find((m: any) => m.thanhVienId.toString() === creatorId);
+        const member = team.thanhVien?.find((m: any) => m.thanhVienId.toString() === creatorId);
         if (!member) {
             throw new Error("Bạn không phải là thành viên của đội này.");
         }
         
-        if (taskData.nguoiThucHienId && !team.thanhVien.some((m: any) => m.thanhVienId.toString() === taskData.nguoiThucHienId)) {
+        if (taskData.nguoiThucHienId && !team.thanhVien?.some((m: any) => m.thanhVienId.toString() === taskData.nguoiThucHienId)) {
             throw new Error("Người được giao không phải là thành viên của đội này.");
         }
 
@@ -237,20 +238,17 @@ export const addTask = async (taskData: Omit<Task, 'id' | 'nhom' | 'nguoiThucHie
              throw new Error("Bạn chỉ có thể tạo công việc cho chính mình.");
         }
 
-    } else {
+    } else { // Personal task
         if (taskData.nguoiThucHienId !== creatorId) {
             throw new Error("Không thể giao công việc cá nhân cho người khác.");
         }
     }
 
-    const newTaskData: Partial<Task> = { ...taskData };
-    if (!newTaskData.nhomId) {
-        delete newTaskData.nhomId;
-    }
-
     const newTask = new TaskModel({
-        ...newTaskData,
+        ...taskData,
         _id: `task-${Date.now()}`,
+        nguoiTaoId: creatorId, // Set creator
+        nhomId: taskData.nhomId || null,
     });
     await newTask.save();
     
@@ -273,7 +271,7 @@ export const updateTask = async (taskId: string, taskData: Partial<Omit<Task, 'i
     if (updateData.nguoiThucHienId === 'unassigned' || updateData.nguoiThucHienId === null) {
       updateData.nguoiThucHienId = null;
     } 
-    if (!updateData.nhomId) {
+    if (!updateData.nhomId || updateData.nhomId === 'personal') {
         updateData.nhomId = null;
     }
 
@@ -292,13 +290,38 @@ export const updateTask = async (taskId: string, taskData: Partial<Omit<Task, 'i
     return populateTask(updatedTask);
 };
 
-export const deleteTask = async (taskId: string): Promise<void> => {
+export const deleteTask = async (taskId: string, userId: string): Promise<void> => {
     await connectToDatabase();
-    const task = await TaskModel.findById(taskId);
+    
+    const task = await TaskModel.findById(taskId).populate('nhomId');
     if (!task) {
-        throw new Error('Task not found');
+        throw new Error('Không tìm thấy công việc.');
     }
+
+    // Case 1: Personal task (no team)
+    if (!task.nhomId) {
+        if (task.nguoiTaoId?.toString() !== userId) {
+            throw new Error('Bạn không có quyền xóa công việc này.');
+        }
+    } 
+    // Case 2: Team task
+    else {
+        const team = await TeamModel.findById(task.nhomId);
+        if (!team) {
+             throw new Error('Đội liên kết với công việc không tồn tại.');
+        }
+        const member = team.thanhVien?.find((m: any) => m.thanhVienId.toString() === userId);
+        if (!member) {
+            throw new Error('Bạn không phải là thành viên của đội này.');
+        }
+        if (member.vaiTro !== 'Trưởng nhóm') {
+             throw new Error('Chỉ có Trưởng nhóm mới có quyền xóa công việc của đội.');
+        }
+    }
+    
+    // If permission checks pass, delete the task
     await TaskModel.findByIdAndDelete(taskId);
+
     revalidatePath('/');
     revalidatePath('/board');
     if (task.nhomId) {
@@ -438,5 +461,3 @@ export const updateTeamMemberRole = async (teamId: string, userId: string, role:
     );
     revalidatePath(`/teams/${teamId}`);
 };
-
-    

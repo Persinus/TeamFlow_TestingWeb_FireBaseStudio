@@ -24,7 +24,7 @@ export interface Team {
   id: string; // Map to _id
   tenNhom: string;
   moTa?: string;
-  thanhVien: ThanhVienNhom[]; // Changed to non-optional to reflect that a team always has members
+  thanhVien?: ThanhVienNhom[];
 }
 
 export type TrangThaiCongViec = 'Cần làm' | 'Đang tiến hành' | 'Hoàn thành' | 'Tồn đọng';
@@ -43,6 +43,7 @@ export interface Task {
   nhomId?: string; // Ref to Team._id
   nhom?: Team; // Populated field
 
+  nguoiTaoId?: string; // Ref to User._id
   nguoiThucHienId?: string; // Ref to User._id
   nguoiThucHien?: User; // Populated field
   

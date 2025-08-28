@@ -9,7 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import { SidebarInset } from '@/components/ui/sidebar';
-import { getTeams, getUsers, getTasksByAssignee, addTask, updateTask, deleteTask } from '@/app/actions';
+import { getTeams, getUsers, getTasksByAssignee, addTask, updateTask, deleteTask as apiDeleteTask } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
 import TaskCard from '@/components/task-card';
@@ -81,19 +81,15 @@ export default function ProfilePage() {
     }, [user, authLoading, router, fetchData]);
     
     const handleCreateTask = async (newTaskData: Omit<Task, 'id' | 'nhom' | 'nguoiThucHien' | 'ngayTao'>) => {
-        await addTask(newTaskData);
+       if(!user) return;
+        await addTask(newTaskData, user.id);
         if(user) fetchData(user.id);
     };
     
     const handleUpdateTask = async (updatedTaskData: Omit<Task, 'id'| 'nhom' | 'nguoiThucHien'>) => {
          await updateTask(updatedTaskData.id, updatedTaskData);
          if(user) await fetchData(user.id);
-         setSelectedTask(null);
-    }
-     const handleDeleteTask = async (taskId: string) => {
-        await deleteTask(taskId);
-        if(user) await fetchData(user.id);
-        setSelectedTask(null);
+         setSelectedTask(prev => prev ? { ...prev, ...updatedTaskData } : null);
     }
     
     if (authLoading || pageLoading || !user) {
@@ -165,7 +161,6 @@ export default function ProfilePage() {
                     teams={teams}
                     onOpenChange={(isOpen) => !isOpen && setSelectedTask(null)}
                     onUpdateTask={handleUpdateTask}
-                    onDeleteTask={handleDeleteTask}
                 />
             )}
         </div>

@@ -1,9 +1,10 @@
 
+
 "use client";
 
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import { notFound, useRouter, useParams } from 'next/navigation';
-import { getTeam, getUsers, getTasksByTeam, addTeamMember, removeTeamMember, updateTeamMemberRole, getTeams, updateTask, deleteTask, createTeam, updateTeam as apiUpdateTeam, deleteTeam as apiDeleteTeam, addTask } from '@/app/actions';
+import { getTeam, getUsers, getTasksByTeam, addTeamMember, removeTeamMember, updateTeamMemberRole, getTeams, updateTask, createTeam, updateTeam as apiUpdateTeam, deleteTeam as apiDeleteTeam, addTask, deleteTask as apiDeleteTask } from '@/app/actions';
 import type { Task, TrangThaiCongViec as TaskStatus, User, Team, VaiTroThanhVien as TeamMemberRole, LoaiCongViec } from '@/types';
 import Sidebar from '@/components/sidebar';
 import Header from '@/components/header';
@@ -227,14 +228,9 @@ export default function TeamDetailPage() {
     setSelectedTask(prev => prev ? {...prev, ...updatedTaskData} : null); // Optimistically update
   };
 
-  const handleDeleteTask = async (taskId: string) => {
-    await deleteTask(taskId);
-    fetchData();
-    setSelectedTask(null);
-  }
-
   const handleCreateTask = async (newTaskData: Omit<Task, 'id' | 'nhom' | 'nguoiThucHien' | 'ngayTao'>) => {
-      await addTask(newTaskData);
+      if (!user) return;
+      await addTask(newTaskData, user.id);
       fetchData();
   };
   const handleTeamCreated = async () => {
@@ -539,7 +535,6 @@ export default function TeamDetailPage() {
             teams={allTeams}
             onOpenChange={(isOpen) => !isOpen && setSelectedTask(null)}
             onUpdateTask={handleUpdateTask}
-            onDeleteTask={handleDeleteTask}
         />
        )}
         <Dialog open={isEditTeamOpen} onOpenChange={setEditTeamOpen}>

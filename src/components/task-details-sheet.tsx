@@ -9,7 +9,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFo
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import type { Task, User, Team, TrangThaiCongViec } from '@/types';
+import type { Task, User, Team, TrangThaiCongViec, VaiTroThanhVien } from '@/types';
 import { format, parseISO } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
@@ -21,10 +21,11 @@ import { CalendarIcon, Loader2, Pencil, User as UserIcon, Users, Tag, CheckSquar
 import { Separator } from './ui/separator';
 import { Badge } from './ui/badge';
 import { MultiSelect } from './ui/multi-select';
-import { getAllTags, generateDescriptionFromAI } from '@/app/actions';
+import { getAllTags, generateDescriptionFromAI, deleteTask as apiDeleteTask } from '@/app/actions';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from './ui/alert-dialog';
 import { Dialog } from './ui/dialog';
 import { DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from './ui/dialog';
+import { useAuth } from '@/hooks/use-auth';
 
 
 interface TaskDetailsSheetProps {
@@ -33,7 +34,6 @@ interface TaskDetailsSheetProps {
   teams: Team[];
   onOpenChange: (isOpen: boolean) => void;
   onUpdateTask: (updatedTask: Omit<Task, 'nhom' | 'nguoiThucHien'>) => Promise<void>;
-  onDeleteTask: (taskId: string) => Promise<void>;
 }
 
 const taskSchema = z.object({
@@ -80,7 +80,8 @@ const safeParseDate = (date: string | Date | undefined): Date | undefined => {
     }
 };
 
-export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onUpdateTask, onDeleteTask }: TaskDetailsSheetProps) {
+export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onUpdateTask }: TaskDetailsSheetProps) {
+  const { user: currentUser } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -97,6 +98,25 @@ export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onU
   const form = useForm<TaskFormData>({
     resolver: zodResolver(taskSchema),
   });
+
+  const team = useMemo(() => teams.find(t => t.id === task?.nhomId), [task, teams]);
+
+  const canDelete = useMemo(() => {
+    if (!task || !currentUser) return false;
+
+    // Personal task
+    if (!task.nhomId) {
+        return task.nguoiTaoId === currentUser.id;
+    }
+
+    // Team task
+    if (team) {
+        const currentUserMembership = team.thanhVien?.find(m => m.thanhVienId === currentUser.id);
+        return currentUserMembership?.vaiTro === 'Trưởng nhóm';
+    }
+
+    return false;
+  }, [task, currentUser, team]);
 
   useEffect(() => {
     async function fetchTags() {
@@ -124,7 +144,6 @@ export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onU
   }, [task, isEditing, form]);
   
   const assignee = useMemo(() => users.find(u => u.id === task?.nguoiThucHienId), [task, users]);
-  const team = useMemo(() => teams.find(t => t.id === task?.nhomId), [task, teams]);
 
   if (!task) return null;
 
@@ -177,20 +196,21 @@ export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onU
   };
 
   const handleDelete = async () => {
+    if (!currentUser) return;
     setIsDeleting(true);
     try {
-        await onDeleteTask(task.id);
+        await apiDeleteTask(task.id, currentUser.id);
         onOpenChange(false);
         toast({
             title: 'Đã xóa công việc',
             description: `"${task.tieuDe}" đã được xóa vĩnh viễn.`,
             variant: "destructive"
         });
-    } catch (error) {
+    } catch (error: any) {
         toast({
             variant: 'destructive',
             title: 'Xóa thất bại',
-            description: 'Đã có lỗi xảy ra khi xóa công việc.',
+            description: error.message || 'Đã có lỗi xảy ra khi xóa công việc.',
         });
     } finally {
         setIsDeleting(false);
@@ -347,32 +367,34 @@ export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onU
                             )} />
                         </div>
                          <SheetFooter className="pt-4 flex justify-between sm:justify-between">
-                            <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                     <Button type="button" variant="destructive" className="mr-auto" disabled={isDeleting}>
-                                        {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
-                                        {isDeleting ? 'Đang xóa...' : 'Xóa'}
-                                    </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                <AlertDialogHeader>
-                                    <AlertDialogTitle>Bạn có hoàn toàn chắc chắn?</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                    Hành động này không thể được hoàn tác. Thao tác này sẽ xóa vĩnh viễn công việc
-                                    và xóa dữ liệu của nó khỏi máy chủ của chúng tôi.
-                                    </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                    <AlertDialogCancel>Hủy</AlertDialogCancel>
-                                    <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90" disabled={isDeleting}>
-                                        {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                        Vâng, xóa công việc
-                                    </AlertDialogAction>
-                                </AlertDialogFooter>
-                                </AlertDialogContent>
-                            </AlertDialog>
+                            {canDelete && (
+                                <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                        <Button type="button" variant="destructive" className="mr-auto" disabled={isDeleting}>
+                                            {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
+                                            {isDeleting ? 'Đang xóa...' : 'Xóa'}
+                                        </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                        <AlertDialogTitle>Bạn có hoàn toàn chắc chắn?</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                        Hành động này không thể được hoàn tác. Thao tác này sẽ xóa vĩnh viễn công việc
+                                        và xóa dữ liệu của nó khỏi máy chủ của chúng tôi.
+                                        </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                        <AlertDialogCancel>Hủy</AlertDialogCancel>
+                                        <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90" disabled={isDeleting}>
+                                            {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                            Vâng, xóa công việc
+                                        </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
+                            )}
 
-                            <div className="flex gap-2">
+                            <div className="flex gap-2 ml-auto">
                                 <Button type="button" variant="ghost" onClick={() => setIsEditing(false)}>Hủy</Button>
                                 <Button type="submit" disabled={isUpdating}>
                                     {isUpdating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
