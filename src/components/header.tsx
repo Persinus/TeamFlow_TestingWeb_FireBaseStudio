@@ -29,7 +29,7 @@ interface HeaderProps {
 }
 
 export default function Header({ onCreateTask }: HeaderProps) {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
 
