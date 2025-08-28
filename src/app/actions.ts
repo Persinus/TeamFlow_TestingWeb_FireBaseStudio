@@ -1,5 +1,4 @@
 
-
 "use server";
 
 import bcrypt from 'bcryptjs';
@@ -129,6 +128,8 @@ const populateTeam = (team: any): Team => {
 
 const populateTask = (task: any): Task => {
     const taskObj = task._doc || task;
+    
+    // Create a base task object
     const populatedTask: Task = {
         id: taskObj._id.toString(),
         tieuDe: taskObj.tieuDe,
@@ -136,19 +137,30 @@ const populateTask = (task: any): Task => {
         trangThai: taskObj.trangThai,
         loaiCongViec: taskObj.loaiCongViec,
         doUuTien: taskObj.doUuTien,
-        nhomId: taskObj.nhomId ? (typeof taskObj.nhomId === 'object' ? taskObj.nhomId._id.toString() : taskObj.nhomId.toString()) : undefined,
-        nguoiThucHienId: taskObj.nguoiThucHienId ? (typeof taskObj.nguoiThucHienId === 'object' ? taskObj.nguoiThucHienId._id.toString() : taskObj.nguoiThucHienId.toString()) : undefined,
         ngayTao: taskObj.ngayTao,
         ngayBatDau: taskObj.ngayBatDau,
         ngayHetHan: taskObj.ngayHetHan,
         tags: taskObj.tags || [],
     };
 
-    if (taskObj.nhomId && typeof taskObj.nhomId === 'object') {
-        populatedTask.nhom = populateTeam(taskObj.nhomId);
+    // Safely handle nhomId and its population
+    if (taskObj.nhomId) {
+        if (typeof taskObj.nhomId === 'object' && taskObj.nhomId !== null) {
+            populatedTask.nhomId = taskObj.nhomId._id.toString();
+            populatedTask.nhom = populateTeam(taskObj.nhomId);
+        } else {
+            populatedTask.nhomId = taskObj.nhomId.toString();
+        }
     }
-    if (taskObj.nguoiThucHienId && typeof taskObj.nguoiThucHienId === 'object') {
-        populatedTask.nguoiThucHien = populateUser(taskObj.nguoiThucHienId);
+
+    // Safely handle nguoiThucHienId and its population
+    if (taskObj.nguoiThucHienId) {
+        if (typeof taskObj.nguoiThucHienId === 'object' && taskObj.nguoiThucHienId !== null) {
+            populatedTask.nguoiThucHienId = taskObj.nguoiThucHienId._id.toString();
+            populatedTask.nguoiThucHien = populateUser(taskObj.nguoiThucHienId);
+        } else {
+            populatedTask.nguoiThucHienId = taskObj.nguoiThucHienId.toString();
+        }
     }
 
     return populatedTask;
@@ -231,9 +243,9 @@ export const addTask = async (taskData: Omit<Task, 'id' | 'nhom' | 'nguoiThucHie
         }
     }
 
-    const newTaskData = { ...taskData };
+    const newTaskData: Partial<Task> = { ...taskData };
     if (!newTaskData.nhomId) {
-        delete (newTaskData as Partial<Task>).nhomId;
+        delete newTaskData.nhomId;
     }
 
     const newTask = new TaskModel({
@@ -426,3 +438,5 @@ export const updateTeamMemberRole = async (teamId: string, userId: string, role:
     );
     revalidatePath(`/teams/${teamId}`);
 };
+
+    
