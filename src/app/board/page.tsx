@@ -1,8 +1,9 @@
 
+
 "use client";
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { getTasks, updateTaskStatus, addTask as apiAddTask, getUsers, getTeams, updateTask, deleteTask as apiDeleteTask } from '@/app/actions';
+import { getTasks, updateTaskStatus, getUsers, getTeamsForUser, updateTask, deleteTask as apiDeleteTask } from '@/app/actions';
 import type { Task, TrangThaiCongViec as TaskStatus, User, Team } from '@/types';
 import Sidebar from '@/components/sidebar';
 import Header from '@/components/header';
@@ -100,12 +101,13 @@ export default function BoardPage() {
   const activeTask = useMemo(() => tasks.find(t => t.id === activeId), [tasks, activeId]);
 
   const fetchData = useCallback(async () => {
+    if (!user) return;
     try {
       setLoading(true);
       const [tasksData, usersData, teamsData] = await Promise.all([
         getTasks(),
         getUsers(),
-        getTeams()
+        getTeamsForUser(user.id)
       ]);
       setTasks(tasksData);
       setUsers(usersData);
@@ -116,7 +118,7 @@ export default function BoardPage() {
     } finally {
       setLoading(false);
     }
-  }, [toast]);
+  }, [toast, user]);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -146,11 +148,6 @@ export default function BoardPage() {
       return assigneeMatch && teamMatch && searchMatch;
     });
   }, [tasks, filters]);
-
-  const handleCreateTask = async (newTaskData: Omit<Task, 'id' | 'nhom' | 'nguoiThucHien' | 'ngayTao'>) => {
-    await apiAddTask(newTaskData);
-    fetchData(); 
-  };
   
   const handleUpdateTask = async (updatedTaskData: Omit<Task, 'id' | 'nhom' | 'nguoiThucHien'>) => {
     // I moved the line below from the TaskDetailsSheet to here.
@@ -229,7 +226,7 @@ export default function BoardPage() {
       <Sidebar teams={teams} onTeamChange={fetchData} />
       <div className="flex flex-1 flex-col">
         <Header 
-          onCreateTask={handleCreateTask}
+          onCreateTask={fetchData}
         />
         <SidebarInset>
             <motion.main 

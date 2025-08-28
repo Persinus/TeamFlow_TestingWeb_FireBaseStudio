@@ -203,8 +203,40 @@ export const getTasksByTeam = async (teamId: string): Promise<Task[]> => {
     return tasks.map(populateTask);
 };
 
-export const addTask = async (taskData: Omit<Task, 'id' | 'nhom' | 'nguoiThucHien' | 'ngayTao'>): Promise<string> => {
+export const addTask = async (taskData: Omit<Task, 'id' | 'nhom' | 'nguoiThucHien' | 'ngayTao'>, creatorId: string): Promise<string> => {
     await connectToDatabase();
+
+    const { nhomId, nguoiThucHienId } = taskData;
+
+    // --- Permission Check ---
+    if (nhomId) {
+        const team = await TeamModel.findById(nhomId);
+        if (!team) {
+            throw new Error("Đội không tồn tại.");
+        }
+        const member = team.thanhVien.find((m: any) => m.thanhVienId.toString() === creatorId);
+        if (!member) {
+            throw new Error("Bạn không phải là thành viên của đội này.");
+        }
+        
+        // If an assignee is provided, check if they are in the team
+        if (nguoiThucHienId && !team.thanhVien.some((m: any) => m.thanhVienId.toString() === nguoiThucHienId)) {
+            throw new Error("Người được giao không phải là thành viên của đội này.");
+        }
+
+        // If creator is just a 'Thành viên', they can only assign to themselves
+        if (member.vaiTro === 'Thành viên' && nguoiThucHienId !== creatorId) {
+             throw new Error("Bạn chỉ có thể tạo công việc cho chính mình.");
+        }
+
+    } else {
+        // Personal task, assignee must be the creator
+        if (nguoiThucHienId !== creatorId) {
+            throw new Error("Không thể giao công việc cá nhân cho người khác.");
+        }
+    }
+
+
     const newTaskData = { ...taskData };
     if (!newTaskData.nhomId) {
         delete newTaskData.nhomId;
@@ -215,12 +247,14 @@ export const addTask = async (taskData: Omit<Task, 'id' | 'nhom' | 'nguoiThucHie
         _id: `task-${Date.now()}`,
     });
     await newTask.save();
+
     revalidatePath('/board');
     if (taskData.nhomId) {
       revalidatePath(`/teams/${taskData.nhomId}`);
     }
     return newTask._id.toString();
 };
+
 
 export const updateTask = async (taskId: string, taskData: Partial<Omit<Task, 'id' | 'nhom' | 'nguoiThucHien'>>): Promise<Task> => {
     await connectToDatabase();
@@ -306,6 +340,18 @@ export const getTeams = async (): Promise<Team[]> => {
     const teams = await TeamModel.find().populate({ path: 'thanhVien.thanhVienId', model: UserModel, select: 'hoTen anhDaiDien email chuyenMon' }).lean();
     return teams.map(populateTeam);
 };
+
+export const getTeamsForUser = async (userId: string): Promise<Team[]> => {
+    await connectToDatabase();
+    const teams = await TeamModel.find({ 'thanhVien.thanhVienId': userId })
+        .populate({
+            path: 'thanhVien.thanhVienId',
+            model: UserModel,
+            select: 'hoTen anhDaiDien email chuyenMon taiCongViecHienTai'
+        }).lean();
+    return teams.map(populateTeam);
+}
+
 
 export const getTeam = async (id: string): Promise<Team | undefined> => {
     await connectToDatabase();

@@ -1,7 +1,8 @@
 
+
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -12,8 +13,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
-import { generateDescriptionFromAI, getAllTags } from '@/app/actions';
-import type { Task, User, Team } from '@/types';
+import { generateDescriptionFromAI, getAllTags, addTask } from '@/app/actions';
+import type { Task, User, Team, VaiTroThanhVien } from '@/types';
 import { Wand2, Calendar as CalendarIcon, Loader2 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Calendar } from './ui/calendar';
@@ -21,13 +22,13 @@ import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { MultiSelect } from './ui/multi-select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from './ui/dialog';
+import { useAuth } from '@/hooks/use-auth';
 
 
 interface CreateTaskSheetProps {
   children: React.ReactNode;
-  onCreateTask: (newTaskData: Omit<Task, 'id' | 'nhom' | 'nguoiThucHien' | 'ngayTao'>) => Promise<void>;
-  users: User[];
-  teams: Team[];
+  onCreateTask: () => Promise<void>;
+  userTeams: Team[];
 }
 
 const taskSchema = z.object({
@@ -44,24 +45,15 @@ const taskSchema = z.object({
 });
 
 
-export default function CreateTaskSheet({ children, onCreateTask, users, teams }: CreateTaskSheetProps) {
+export default function CreateTaskSheet({ children, onCreateTask, userTeams }: CreateTaskSheetProps) {
+  const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
-  const [isSuggesting, setIsSuggesting] = useState(false);
   const { toast } = useToast();
   const [availableTags, setAvailableTags] = React.useState<string[]>([]);
   const [isAiModalOpen, setAiModalOpen] = useState(false);
   const [aiPrompt, setAiPrompt] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
-
-  React.useEffect(() => {
-    async function fetchTags() {
-      const tags = await getAllTags();
-      setAvailableTags(tags);
-    }
-    if (isOpen) {
-      fetchTags();
-    }
-  }, [isOpen]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<z.infer<typeof taskSchema>>({
     resolver: zodResolver(taskSchema),
@@ -71,9 +63,61 @@ export default function CreateTaskSheet({ children, onCreateTask, users, teams }
       trangThai: 'Cần làm',
       loaiCongViec: 'Công việc',
       doUuTien: 'Trung bình',
-      tags: []
+      tags: [],
+      nhomId: "personal",
+      nguoiThucHienId: user?.id,
     },
   });
+
+  const selectedTeamId = form.watch('nhomId');
+
+  const { teamMembers, currentUserRole } = useMemo(() => {
+    if (!selectedTeamId || selectedTeamId === 'personal') {
+      return { teamMembers: user ? [user] : [], currentUserRole: undefined };
+    }
+    const team = userTeams.find(t => t.id === selectedTeamId);
+    if (!team) {
+      return { teamMembers: [], currentUserRole: undefined };
+    }
+    const members = team.thanhVien?.map(m => m.user).filter((u): u is User => !!u) || [];
+    const role = team.thanhVien?.find(m => m.thanhVienId === user?.id)?.vaiTro;
+    return { teamMembers: members, currentUserRole: role };
+  }, [selectedTeamId, userTeams, user]);
+
+
+  useEffect(() => {
+    if (isOpen) {
+      // Reset form when opening
+      form.reset({
+        tieuDe: '',
+        moTa: '',
+        trangThai: 'Cần làm',
+        loaiCongViec: 'Công việc',
+        doUuTien: 'Trung bình',
+        tags: [],
+        nhomId: "personal",
+        nguoiThucHienId: user?.id,
+      });
+
+      // Fetch tags
+      getAllTags().then(setAvailableTags);
+    }
+  }, [isOpen, form, user]);
+
+  useEffect(() => {
+    // When team changes, reset assignee based on permissions
+    if (currentUserRole === 'Trưởng nhóm') {
+      // Keep assignee if they are in the new team, otherwise reset
+      const currentAssignee = form.getValues('nguoiThucHienId');
+      if (!teamMembers.some(m => m.id === currentAssignee)) {
+        form.setValue('nguoiThucHienId', undefined);
+      }
+    } else {
+      // For members or personal tasks, always assign to self
+      form.setValue('nguoiThucHienId', user?.id);
+    }
+  }, [selectedTeamId, currentUserRole, teamMembers, form, user]);
+
   
   const handleGenerateDescription = async () => {
     if (!aiPrompt) {
@@ -93,22 +137,38 @@ export default function CreateTaskSheet({ children, onCreateTask, users, teams }
   }
 
   const onSubmit = async (values: z.infer<typeof taskSchema>) => {
-    await onCreateTask({
-      ...values,
-      moTa: values.moTa ?? "",
-      nguoiThucHienId: values.nguoiThucHienId === 'unassigned' ? undefined : values.nguoiThucHienId,
-      nhomId: values.nhomId === 'personal' ? undefined : values.nhomId,
-      ngayBatDau: values.ngayBatDau,
-      ngayHetHan: values.ngayHetHan,
-      tags: values.tags || [],
-    });
-    form.reset();
-    setIsOpen(false);
-    toast({
-        title: "Đã tạo công việc",
-        description: `"${values.tieuDe}" đã được thêm vào bảng.`,
-    });
+    if (!user) {
+        toast({ variant: 'destructive', title: 'Lỗi', description: 'Không tìm thấy người dùng.' });
+        return;
+    }
+    setIsSubmitting(true);
+
+    const submissionData = {
+        ...values,
+        nguoiThucHienId: values.nguoiThucHienId || user.id, // Default to self if unassigned
+        nhomId: values.nhomId === 'personal' ? undefined : values.nhomId,
+    };
+
+    try {
+        await addTask(submissionData, user.id);
+        await onCreateTask(); // Re-fetch data on parent component
+        setIsOpen(false);
+        toast({
+            title: "Đã tạo công việc",
+            description: `"${values.tieuDe}" đã được thêm vào bảng.`,
+        });
+    } catch (error: any) {
+         toast({
+            variant: 'destructive',
+            title: "Tạo công việc thất bại",
+            description: error.message,
+        });
+    } finally {
+        setIsSubmitting(false);
+    }
   };
+
+  const canChangeAssignee = selectedTeamId !== 'personal' && currentUserRole === 'Trưởng nhóm';
 
   return (
     <>
@@ -193,7 +253,7 @@ export default function CreateTaskSheet({ children, onCreateTask, users, teams }
                       </FormControl>
                       <SelectContent>
                         <SelectItem value="personal">Cá nhân (Không thuộc đội nào)</SelectItem>
-                        {teams.map(team => (
+                        {userTeams.map(team => (
                           <SelectItem key={team.id} value={team.id}>
                             {team.tenNhom}
                           </SelectItem>
@@ -251,6 +311,30 @@ export default function CreateTaskSheet({ children, onCreateTask, users, teams }
                     )}
                 />
             </div>
+             <FormField
+              control={form.control}
+              name="nguoiThucHienId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Người được giao</FormLabel>
+                   <div className="flex gap-2">
+                        <Select onValueChange={field.onChange} value={field.value} disabled={!canChangeAssignee}>
+                            <FormControl>
+                                <SelectTrigger>
+                                <SelectValue placeholder="Chọn người thực hiện" />
+                                </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                                {teamMembers.map(member => (
+                                    <SelectItem key={member.id} value={member.id}>{member.hoTen}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                   </div>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <div className="grid grid-cols-2 gap-4">
                 <FormField
                 control={form.control}
@@ -329,31 +413,6 @@ export default function CreateTaskSheet({ children, onCreateTask, users, teams }
                 )}
                 />
             </div>
-             <FormField
-              control={form.control}
-              name="nguoiThucHienId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Người được giao</FormLabel>
-                   <div className="flex gap-2">
-                        <Select onValueChange={field.onChange} value={field.value}>
-                            <FormControl>
-                                <SelectTrigger>
-                                <SelectValue placeholder="Chọn người thực hiện" />
-                                </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                                <SelectItem value="unassigned">Chưa giao</SelectItem>
-                                {users.map(user => (
-                                    <SelectItem key={user.id} value={user.id}>{user.hoTen}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                   </div>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
             <FormField
               control={form.control}
               name="tags"
@@ -379,7 +438,10 @@ export default function CreateTaskSheet({ children, onCreateTask, users, teams }
               )}
             />
             <SheetFooter>
-              <Button type="submit" className="w-full">Tạo công việc</Button>
+              <Button type="submit" className="w-full" disabled={isSubmitting}>
+                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
+                Tạo công việc
+              </Button>
             </SheetFooter>
           </form>
         </Form>

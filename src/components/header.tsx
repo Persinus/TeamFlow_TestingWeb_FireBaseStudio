@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -21,9 +22,10 @@ import { useAuth } from '@/hooks/use-auth';
 import Link from 'next/link';
 import { useToast } from '../hooks/use-toast';
 import { useRouter } from 'next/navigation';
+import { getTeamsForUser } from '@/app/actions';
 
 interface HeaderProps {
-  onCreateTask: (newTaskData: Omit<Task, 'id' | 'nhom' | 'nguoiThucHien' | 'ngayTao' > & { users: User[], teams: Team[] }) => Promise<void>;
+  onCreateTask: () => Promise<void>;
 }
 
 export default function Header({ onCreateTask }: HeaderProps) {
@@ -31,19 +33,18 @@ export default function Header({ onCreateTask }: HeaderProps) {
   const { toast } = useToast();
   const router = useRouter();
 
-  const [users, setUsers] = useState<User[]>([]);
-  const [teams, setTeams] = useState<Team[]>([]);
+  const [userTeams, setUserTeams] = useState<Team[]>([]);
 
 
   useEffect(() => {
-    const fetchDataForSheet = async () => {
-        const { getUsers, getTeams } = await import('@/app/actions');
-        const [usersData, teamsData] = await Promise.all([getUsers(), getTeams()]);
-        setUsers(usersData);
-        setTeams(teamsData);
+    async function fetchDataForSheet() {
+      if (user) {
+        const teamsData = await getTeamsForUser(user.id);
+        setUserTeams(teamsData);
+      }
     }
     fetchDataForSheet();
-  }, []);
+  }, [user]);
 
   const handleLogout = async () => {
     try {
@@ -72,9 +73,11 @@ export default function Header({ onCreateTask }: HeaderProps) {
                 <SheetHeader>
                     <SheetTitle className="sr-only">Menu Điều hướng</SheetTitle>
                 </SheetHeader>
-                <MobileSidebar teams={teams} onTeamChange={() => {
-                   const { getTeams } = require('@/app/actions');
-                   getTeams().then(setTeams);
+                <MobileSidebar teams={userTeams} onTeamChange={async () => {
+                   if (user) {
+                     const teamsData = await getTeamsForUser(user.id);
+                     setUserTeams(teamsData);
+                   }
                 }} onShowTour={() => {}}/>
             </SheetContent>
         </Sheet>
@@ -82,8 +85,8 @@ export default function Header({ onCreateTask }: HeaderProps) {
         <div className="flex-1" />
 
         <div className="flex items-center gap-2 ml-auto">
-            <CreateTaskSheet onCreateTask={onCreateTask} users={users} teams={teams}>
-            <Button>Tạo công việc</Button>
+            <CreateTaskSheet onCreateTask={onCreateTask} userTeams={userTeams}>
+              <Button>Tạo công việc</Button>
             </CreateTaskSheet>
 
             <DropdownMenu>
