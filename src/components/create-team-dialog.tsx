@@ -47,7 +47,7 @@ export default function CreateTeamDialog({ children, onTeamCreated }: CreateTeam
     
     setIsCreating(true);
     try {
-        await createTeam(values, user.id);
+        await createTeam({ tenNhom: values.name, moTa: values.description }, user.id);
         toast({ title: "Đã tạo đội", description: `Đội "${values.name}" đã được tạo thành công.` });
         onTeamCreated(); // Callback to refresh the team list
         setOpen(false);
@@ -110,5 +110,3 @@ export default function CreateTeamDialog({ children, onTeamCreated }: CreateTeam
     </Dialog>
   );
 }
-
-    
