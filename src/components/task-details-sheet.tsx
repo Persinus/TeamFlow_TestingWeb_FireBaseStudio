@@ -27,7 +27,6 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Dialog } from './ui/dialog';
 import { DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from './ui/dialog';
 import { useAuth } from '@/hooks/use-auth';
-import { revalidatePath } from 'next/cache';
 
 
 interface TaskDetailsSheetProps {
