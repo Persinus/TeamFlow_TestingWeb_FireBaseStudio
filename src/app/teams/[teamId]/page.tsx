@@ -103,7 +103,7 @@ export default function TeamDetailPage() {
   }, [authLoading, user, router, fetchData]);
 
   const teamMembers = useMemo(() => {
-    if (!team) return [];
+    if (!team || !team.thanhVien) return [];
     return team.thanhVien.map(member => {
       const userDetails = allUsers.find(u => u.id === member.thanhVienId);
       return userDetails ? { ...userDetails, vaiTro: member.vaiTro } : null;
@@ -184,7 +184,7 @@ export default function TeamDetailPage() {
   };
 
   const handleChangeRole = async (memberId: string, newRole: TeamMemberRole) => {
-    if (!team) return;
+    if (!team || !team.thanhVien) return;
      if (newRole === 'Thành viên' && team.thanhVien.filter(m => m.vaiTro === 'Trưởng nhóm').length === 1 && team.thanhVien.find(m => m.thanhVienId === memberId)?.vaiTro === 'Trưởng nhóm') {
         toast({ variant: 'destructive', title: 'Hành động bị từ chối', description: 'Một đội phải có ít nhất một đội trưởng.' });
         return;

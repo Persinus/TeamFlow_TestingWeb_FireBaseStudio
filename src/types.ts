@@ -24,7 +24,7 @@ export interface Team {
   id: string; // Map to _id
   tenNhom: string;
   moTa?: string;
-  thanhVien: ThanhVienNhom[];
+  thanhVien?: ThanhVienNhom[];
 }
 
 export type TrangThaiCongViec = 'Cần làm' | 'Đang tiến hành' | 'Hoàn thành' | 'Tồn đọng';

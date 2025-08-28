@@ -351,7 +351,14 @@ export const addTeamMember = async (teamId: string, userId: string): Promise<voi
     await connectToDatabase();
     const team = await TeamModel.findById(teamId);
     if (team) {
-        if (!team.thanhVien.some((m: any) => m.thanhVienId.equals(userId))) {
+        // Ensure the thanhVien array exists before pushing to it
+        if (!team.thanhVien) {
+            team.thanhVien = [];
+        }
+        
+        const isAlreadyMember = team.thanhVien.some((m: any) => m.thanhVienId.toString() === userId);
+        
+        if (!isAlreadyMember) {
             team.thanhVien.push({ thanhVienId: userId, vaiTro: 'Thành viên' } as any);
             await team.save();
         }
