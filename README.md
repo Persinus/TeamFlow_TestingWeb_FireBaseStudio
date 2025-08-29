@@ -4,7 +4,7 @@
 
 ## Overview
 
-**TeamFlow** is a modern, AI-powered project management application built to enhance team collaboration. It serves as a centralized platform for managing tasks and tracking progress, aiming to streamline workflows through intelligent features. TeamFlow is designed for software teams, project managers, and any group needing an efficient, visual tool to organize their work.
+TeamFlow is an AI-powered project management application built to enhance team collaboration. It serves as a centralized platform for managing tasks and tracking progress, aiming to streamline workflows through intelligent features. TeamFlow is designed for software teams, project managers, and any group needing an efficient, visual tool to organize their work.
 
 ---
 
