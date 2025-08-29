@@ -4,11 +4,19 @@
 
 ## Overview
 
-**TeamFlow** is a modern, full-stack web application built with Next.js, designed to streamline team collaboration and project management.
+**TeamFlow** is a modern, AI-powered project management application built to enhance team collaboration. It serves as a centralized platform for managing tasks and tracking progress, aiming to streamline workflows through intelligent features. TeamFlow is designed for software teams, project managers, and any group needing an efficient, visual tool to organize their work.
 
-*   **Purpose:** To provide a centralized and intuitive platform for teams to manage tasks, monitor project progress, and collaborate effectively.
-*   **Goals:** To enhance productivity by integrating intelligent AI features, such as smart task assignment suggestions and automated description generation, directly into the team's workflow.
-*   **Intended Audience:** This application is built for software development teams, project managers, and any group of individuals who need a visual and efficient tool to organize their work and collaborate on projects.
+---
+
+## Stakeholder Identification
+
+| NAME                | ROLE                               | RESPONSIBILITY                                                                | INTERESTS IN THIS PRODUCT                                                                 |
+| ------------------- | ---------------------------------- | ----------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| **Project Manager** | Product Owner / Project Lead       | Defines project goals, manages backlog, prioritizes features, and ensures the project meets business objectives. | Successful project delivery, on-time and within budget. A tool that provides clear visibility into project progress and team workload. |
+| **Development Team**| Software Engineers (Frontend/Backend) | Develop, test, and maintain the application's features and infrastructure.      | A stable, well-documented codebase. An effective tool to track tasks, bugs, and development progress without unnecessary complexity. |
+| **UI/UX Designer**  | User Experience & Interface Designer | Creates user-friendly, intuitive, and visually appealing interfaces. Conducts user research to guide design decisions. | A product that is easy to use and provides a positive user experience. Successful implementation of their design vision. |
+| **End-Users**       | Team Leaders & Team Members        | Use the application for daily task management, collaboration, and progress tracking. | An intuitive and efficient tool that simplifies their work, improves communication, and helps them stay organized and focused. |
+| **Company Mgmt.**   | Executive Sponsor / Department Head | Provides budget and resources, oversees project alignment with company strategy. | Return on investment (ROI), improved team productivity, and successful adoption of the tool across the organization. |
 
 ---
 
