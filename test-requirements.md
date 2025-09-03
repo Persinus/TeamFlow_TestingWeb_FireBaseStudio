@@ -1,28 +1,24 @@
-# Yêu cầu Kiểm thử (Test Requirements) - Chức năng Thông tin Cá nhân
+# Yêu cầu Kiểm thử (Test Requirements) - Chức năng Hiển thị Thông tin Cá nhân
 
-Bảng này liệt kê các yêu cầu kiểm thử chi tiết cho chức năng quản lý thông tin cá nhân của người dùng trên trang "Cài đặt".
+Bảng này liệt kê các yêu cầu kiểm thử chi tiết cho chức năng hiển thị thông tin cá nhân của người dùng trên trang "Cài đặt".
 
-| ID | Requirement (English) | Yêu cầu (Tiếng Việt) | Loại (Type) |
-|---|---|---|---|
-| **TR-F-01** | **User Can Successfully Update Profile** | **Người dùng có thể cập nhật hồ sơ thành công** | **Functional** |
-| TR-F-01.1 | After changing Name, Phone, DoB and saving, the new data must be persisted correctly. | Sau khi thay đổi Họ tên, SĐT, Ngày sinh và lưu, dữ liệu mới phải được lưu chính xác. | Functional |
-| TR-F-01.2 | After a successful update, the new information (e.g., name) should be reflected globally. | Sau khi cập nhật, thông tin mới (ví dụ: tên) phải được phản ánh trên toàn ứng dụng. | Functional |
-| TR-F-01.3 | A "Profile updated" success toast message must appear after saving. | Một thông báo "Hồ sơ đã được cập nhật" phải xuất hiện sau khi lưu thành công. | Functional |
-| TR-F-01.4 | The user's email field must be read-only and cannot be edited. | Trường email của người dùng phải ở chế độ chỉ đọc và không thể chỉnh sửa. | Functional |
-| **TR-F-02** | **User Can Change Avatar** | **Người dùng có thể thay đổi ảnh đại diện** | **Functional** |
-| TR-F-02.1 | Clicking "Change Avatar" must open a modal with a list of predefined avatars. | Nhấn "Đổi ảnh" phải mở ra một modal với danh sách các ảnh đại diện có sẵn. | Functional |
-| TR-F-02.2 | Selecting a new avatar in the modal must immediately update the avatar on the page and save. | Chọn một ảnh đại diện mới trong modal phải ngay lập tức cập nhật và lưu thay đổi. | Functional |
-| **TR-L-03** | **UI is Clear and Professional** | **Giao diện rõ ràng và chuyên nghiệp** | **Look and Feel** |
-| TR-L-03.1 | Labels and input fields must be properly aligned. | Các nhãn và trường nhập liệu phải được căn chỉnh thẳng hàng. | Look and Feel |
-| TR-L-03.2 | The avatar must be displayed clearly, as a circle, and with appropriate dimensions. | Ảnh đại diện phải được hiển thị rõ nét, dạng tròn và có kích thước phù hợp. | Look
-and Feel |
-| TR-L-03.3 | The "Update profile" button should show a loading spinner during the update process. | Nút "Cập nhật hồ sơ" phải có spinner tải khi đang xử lý để thông báo cho người dùng. | Look and Feel |
-| **TR-B-04** | **System Correctly Handles Boundary Values**| **Hệ thống xử lý đúng các giá trị biên** | **Boundary** |
-| TR-B-04.1 | Test entering a very long name (e.g., 100 chars) and a very short name (1 char). | Kiểm tra việc nhập một tên rất dài (100 ký tự) hoặc rất ngắn (1 ký tự). | Boundary |
-| TR-B-04.2 | Test entering a phone number with special characters and international formats. | Kiểm tra việc nhập số điện thoại có ký tự đặc biệt và định dạng quốc tế. | Boundary |
-| TR-B-04.3 | Test selecting a date of birth in the future or in the distant past (e.g., year 1900). | Kiểm tra việc chọn một ngày sinh ở tương lai hoặc một ngày trong quá khứ xa. | Boundary |
-| TR-B-04.4 | Clearing optional fields (Phone, DoB) and saving must be accepted by the system. | Xóa thông tin các trường tùy chọn (SĐT, Ngày sinh) và lưu phải được hệ thống chấp nhận. | Boundary |
-| **TR-N-05** | **System Handles Unexpected Scenarios Gracefully** | **Hệ thống xử lý tốt các tình huống không mong muốn** | **Negative** |
-| TR-N-05.1 | Attempting to save with a blank required field (Name) should be prevented. | Thử lưu khi trường bắt buộc (Họ tên) bị bỏ trống phải bị ngăn chặn. | Negative |
-| TR-N-05.2 | Clicking "Update profile" with no network connection should show a clear error message. | Nhấn "Cập nhật hồ sơ" khi không có mạng phải hiển thị một thông báo lỗi rõ ràng. | Negative |
-| TR-N-05.3 | Closing the avatar selection modal without making a choice should not change the avatar. | Đóng modal chọn ảnh mà không chọn gì không được làm thay đổi ảnh đại diện hiện tại. | Negative |
+| ID          | Requirement (English)                               | Yêu cầu (Tiếng Việt)                                               | Loại (Type)       |
+|-------------|-----------------------------------------------------|--------------------------------------------------------------------|-------------------|
+| **TR-F-01** | **User Profile Information is Displayed Correctly** | **Thông tin hồ sơ người dùng được hiển thị chính xác**              | **Functional**    |
+| TR-F-01.1   | The user's full name must be shown accurately.      | Họ và tên của người dùng phải được hiển thị chính xác.             | Functional        |
+| TR-F-01.2   | The user's email address must be shown accurately.  | Địa chỉ email của người dùng phải được hiển thị chính xác.         | Functional        |
+| TR-F-01.3   | The user's phone number must be displayed if it exists. | Số điện thoại của người dùng phải được hiển thị nếu có.            | Functional        |
+| TR-F-01.4   | The user's date of birth must be displayed correctly if it exists. | Ngày sinh của người dùng phải được hiển thị đúng định dạng nếu có. | Functional        |
+| TR-F-01.5   | The user's current avatar must be displayed.        | Ảnh đại diện hiện tại của người dùng phải được hiển thị.          | Functional        |
+| **TR-L-02** | **UI is Clear and Professional**                    | **Giao diện rõ ràng và chuyên nghiệp**                             | **Look and Feel** |
+| TR-L-02.1   | Labels and input fields must be properly aligned.   | Các nhãn và trường nhập liệu phải được căn chỉnh thẳng hàng.       | Look and Feel     |
+| TR-L-02.2   | The avatar must be displayed clearly, as a circle.  | Ảnh đại diện phải được hiển thị rõ nét và có dạng tròn.            | Look and Feel     |
+| TR-L-02.3   | All text should be readable with sufficient contrast. | Toàn bộ văn bản phải dễ đọc và có độ tương phản đủ.              | Look and Feel     |
+| **TR-B-03** | **System Correctly Handles Boundary Values**        | **Hệ thống xử lý đúng các giá trị biên hiển thị**                  | **Boundary**      |
+| TR-B-03.1   | A very long name should be displayed without breaking the layout. | Một tên rất dài phải được hiển thị mà không làm vỡ bố cục (ví dụ: cắt ngắn). | Boundary          |
+| TR-B-03.2   | A very long email should be displayed without breaking the layout. | Một email rất dài phải được hiển thị mà không làm vỡ bố cục. | Boundary          |
+| TR-B-03.3   | A user with no phone number should not show the phone field. | Người dùng không có số điện thoại không nên thấy trường SĐT.   | Boundary          |
+| TR-B-03.4   | A user with no date of birth should show a placeholder like "Select a date". | Người dùng không có ngày sinh nên hiển thị chữ giữ chỗ như "Chọn một ngày". | Boundary          |
+| **TR-N-04** | **System Handles Unexpected Scenarios Gracefully**  | **Hệ thống xử lý tốt các tình huống không mong muốn**              | **Negative**      |
+| TR-N-04.1   | If the avatar image URL is broken, a fallback initial should be shown. | Nếu URL ảnh đại diện bị hỏng, một ký tự thay thế (fallback) phải được hiển thị. | Negative          |
+| TR-N-04.2   | If any profile data is `null` or `undefined`, the page must load without errors. | Nếu bất kỳ dữ liệu hồ sơ nào là `null` hoặc `undefined`, trang phải tải mà không có lỗi. | Negative          |
