@@ -18,7 +18,8 @@ import { SidebarInset } from '@/components/ui/sidebar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { motion } from 'framer-motion';
 import { BarChart as BarChartIcon, Users, Download, PieChart as PieChartIcon } from 'lucide-react';
-import { ChartContainer, ChartTooltip, ChartTooltipContent, PieChart, Pie, Cell } from '@/components/ui/chart';
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
+import { PieChart, Pie, Cell } from 'recharts';
 import { Button } from '@/components/ui/button';
 
 function AnalyticsSkeleton() {
