@@ -12,7 +12,7 @@ import { SidebarInset } from '@/components/ui/sidebar';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { motion } from 'framer-motion';
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis } from "recharts"
-import { differenceInDays, format, subDays, parseISO } from 'date-fns';
+import { differenceInDays, format, subDays, parseISO, isBefore } from 'date-fns';
 import { AlertCircle, CalendarIcon, CheckCircle, Lightbulb, ArrowRight, TrendingUp, Check, ListTodo } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
