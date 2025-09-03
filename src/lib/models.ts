@@ -15,6 +15,15 @@ const UserSchema = new Schema({
   ngaySinh: String,
 }, { _id: false, versionKey: false });
 
+// --- Mascot Schema ---
+const MascotSchema = new Schema({
+  ten: { type: String, required: true, default: 'Pingubo' },
+  level: { type: Number, required: true, default: 1 },
+  kinhNghiem: { type: Number, required: true, default: 0 },
+  tamTrang: { type: String, enum: ['vui vẻ', 'bình thường', 'buồn'], required: true, default: 'bình thường' },
+}, { _id: false });
+
+
 // --- Team Schema (Nhom) ---
 const ThanhVienNhomSchema = new Schema({
   thanhVienId: { type: String, ref: 'User', required: true },
@@ -26,6 +35,7 @@ const TeamSchema = new Schema({
   tenNhom: { type: String, required: true },
   moTa: String,
   thanhVien: [ThanhVienNhomSchema],
+  linhVat: { type: MascotSchema, default: () => ({}) },
 }, { _id: false, versionKey: false });
 
 // --- Task Schema (CongViec) ---
@@ -53,7 +63,7 @@ const TaskTemplateSchema = new Schema({
     tieuDe: { type: String, required: true },
     moTa: { type: String, default: '' },
     loaiCongViec: { type: String, enum: ['Tính năng', 'Lỗi', 'Công việc'], default: 'Công việc' },
-    doUuTien: { type: String, enum: ['Cao', 'Trung bình', 'Thấp'], default: 'Trung bình' },
+    doUuTien: { type: String, enum: ['Cao', 'Trung bình', 'Thấp'], default: 'Thấp' },
     tags: [String],
     nguoiTaoId: { type: String, ref: 'User', required: true },
 }, { _id: false, versionKey: false });

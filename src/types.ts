@@ -21,11 +21,19 @@ export interface ThanhVienNhom {
   user?: User; // Populated field
 }
 
+export interface TeamMascot {
+  ten: string;
+  level: number;
+  kinhNghiem: number;
+  tamTrang: 'vui vẻ' | 'bình thường' | 'buồn';
+}
+
 export interface Team {
   id: string; // Map to _id
   tenNhom: string;
   moTa?: string;
   thanhVien: ThanhVienNhom[];
+  linhVat?: TeamMascot;
 }
 
 export type TrangThaiCongViec = 'Cần làm' | 'Đang tiến hành' | 'Hoàn thành' | 'Tồn đọng';

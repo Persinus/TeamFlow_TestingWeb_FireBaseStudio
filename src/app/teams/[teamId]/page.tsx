@@ -30,6 +30,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import TaskDetailsSheet from '@/components/task-details-sheet';
 import { motion } from 'framer-motion';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import TeamMascot from '@/components/team-mascot';
 
 const statusColors: Record<TaskStatus, string> = {
   'Tồn đọng': 'hsl(var(--muted-foreground))',
@@ -282,25 +283,13 @@ export default function TeamDetailPage() {
               className="flex-1 p-4 sm:p-6 md:p-8"
             >
               <div className="space-y-8">
-                <div className="flex flex-wrap items-center justify-between gap-4">
-                  <div>
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                  <div className="flex-1">
                     <h1 className="text-3xl font-bold tracking-tight">{team.tenNhom}</h1>
                     <p className="text-muted-foreground">{team.moTa}</p>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <div className="flex -space-x-2 overflow-hidden">
-                        {teamMembers.slice(0, 5).map(member => (
-                        <Avatar key={member.id} className="inline-block h-8 w-8 rounded-full ring-2 ring-background">
-                            <AvatarImage src={member.anhDaiDien} alt={member.hoTen} />
-                            <AvatarFallback>{member.hoTen.substring(0, 2).toUpperCase()}</AvatarFallback>
-                        </Avatar>
-                        ))}
-                         {teamMembers.length > 5 && (
-                            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-xs font-medium ring-2 ring-background">
-                                +{teamMembers.length - 5}
-                            </div>
-                        )}
-                    </div>
+                  <div className="flex items-center gap-4">
+                    {team.linhVat && <TeamMascot mascot={team.linhVat} />}
                      <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="outline" size="icon"><MoreHorizontal className="h-4 w-4" /></Button>
@@ -567,4 +556,3 @@ export default function TeamDetailPage() {
     </div>
   );
 }
-
