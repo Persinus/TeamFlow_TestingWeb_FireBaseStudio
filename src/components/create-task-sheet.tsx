@@ -13,9 +13,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
-import { generateDescriptionFromAI, getAllTags, addTask } from '@/app/actions';
-import type { Task, User, Team, VaiTroThanhVien } from '@/types';
-import { Wand2, Calendar as CalendarIcon, Loader2 } from 'lucide-react';
+import { generateDescriptionFromAI, getAllTags, addTask, getTaskTemplates } from '@/app/actions';
+import type { Task, User, Team, VaiTroThanhVien, TaskTemplate } from '@/types';
+import { Wand2, Calendar as CalendarIcon, Loader2, FileText } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Calendar } from './ui/calendar';
 import { cn } from '@/lib/utils';
@@ -23,6 +23,7 @@ import { format } from 'date-fns';
 import { MultiSelect } from './ui/multi-select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from './ui/dialog';
 import { useAuth } from '@/hooks/use-auth';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './ui/dropdown-menu';
 
 
 interface CreateTaskSheetProps {
@@ -54,6 +55,7 @@ export default function CreateTaskSheet({ children, onCreateTask, userTeams }: C
   const [aiPrompt, setAiPrompt] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [templates, setTemplates] = useState<TaskTemplate[]>([]);
 
   const form = useForm<z.infer<typeof taskSchema>>({
     resolver: zodResolver(taskSchema),
@@ -99,8 +101,11 @@ export default function CreateTaskSheet({ children, onCreateTask, userTeams }: C
         nguoiThucHienId: user?.id,
       });
 
-      // Fetch tags
+      // Fetch initial data
       getAllTags().then(setAvailableTags);
+      if(user) {
+        getTaskTemplates(user.id).then(setTemplates);
+      }
     }
   }, [isOpen, form, user]);
 
@@ -135,6 +140,15 @@ export default function CreateTaskSheet({ children, onCreateTask, userTeams }: C
     }
     setIsGenerating(false);
   }
+
+  const applyTemplate = (template: TaskTemplate) => {
+    form.setValue('tieuDe', template.tieuDe);
+    form.setValue('moTa', template.moTa || '');
+    if (template.loaiCongViec) form.setValue('loaiCongViec', template.loaiCongViec);
+    if (template.doUuTien) form.setValue('doUuTien', template.doUuTien);
+    if (template.tags) form.setValue('tags', template.tags);
+    toast({ title: 'Đã áp dụng mẫu', description: `Đã áp dụng mẫu "${template.tenMau}".` });
+  };
 
   const onSubmit = async (values: z.infer<typeof taskSchema>) => {
     if (!user) {
@@ -178,11 +192,29 @@ export default function CreateTaskSheet({ children, onCreateTask, userTeams }: C
         <SheetHeader>
           <SheetTitle>Tạo một công việc mới</SheetTitle>
           <SheetDescription>
-            Điền vào các chi tiết dưới đây để thêm một công việc mới vào bảng dự án.
+            Điền vào các chi tiết dưới đây hoặc chọn một mẫu để bắt đầu.
           </SheetDescription>
         </SheetHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="w-full">
+                        <FileText className="mr-2 h-4 w-4" />
+                        Áp dụng một mẫu...
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-[var(--radix-dropdown-menu-trigger-width)]">
+                    {templates.length > 0 ? templates.map(template => (
+                        <DropdownMenuItem key={template.id} onClick={() => applyTemplate(template)}>
+                            {template.tenMau}
+                        </DropdownMenuItem>
+                    )) : (
+                        <DropdownMenuItem disabled>Không có mẫu nào</DropdownMenuItem>
+                    )}
+                </DropdownMenuContent>
+            </DropdownMenu>
+
             <FormField
               control={form.control}
               name="tieuDe"

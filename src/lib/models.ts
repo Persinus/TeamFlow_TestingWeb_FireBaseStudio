@@ -43,6 +43,19 @@ const TaskSchema = new Schema({
   ngayBatDau: Date,
   ngayHetHan: Date,
   tags: [String],
+  gitLinks: { type: [String], default: [] },
+}, { _id: false, versionKey: false });
+
+// --- Task Template Schema ---
+const TaskTemplateSchema = new Schema({
+    _id: { type: String, required: true },
+    tenMau: { type: String, required: true },
+    tieuDe: { type: String, required: true },
+    moTa: { type: String, default: '' },
+    loaiCongViec: { type: String, enum: ['Tính năng', 'Lỗi', 'Công việc'], default: 'Công việc' },
+    doUuTien: { type: String, enum: ['Cao', 'Trung bình', 'Thấp'], default: 'Trung bình' },
+    tags: [String],
+    nguoiTaoId: { type: String, ref: 'User', required: true },
 }, { _id: false, versionKey: false });
 
 
@@ -50,3 +63,4 @@ const TaskSchema = new Schema({
 export const User = (models.User || model('User', UserSchema)) as Model<Document & import('@/types').User>;
 export const Team = (models.Team || model('Team', TeamSchema)) as Model<Document & import('@/types').Team>;
 export const Task = (models.Task || model('Task', TaskSchema)) as Model<Document & import('@/types').Task>;
+export const TaskTemplate = (models.TaskTemplate || model('TaskTemplate', TaskTemplateSchema)) as Model<Document & import('@/types').TaskTemplate>;

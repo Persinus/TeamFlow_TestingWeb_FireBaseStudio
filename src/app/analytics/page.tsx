@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
@@ -16,7 +17,9 @@ import { useRouter } from 'next/navigation';
 import { SidebarInset } from '@/components/ui/sidebar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { motion } from 'framer-motion';
-import { BarChart, Users } from 'lucide-react';
+import { BarChart as BarChartIcon, Users, Download, PieChart as PieChartIcon } from 'lucide-react';
+import { ChartContainer, ChartTooltip, ChartTooltipContent, PieChart, Pie, Cell } from '@/components/ui/chart';
+import { Button } from '@/components/ui/button';
 
 function AnalyticsSkeleton() {
     return (
@@ -28,25 +31,16 @@ function AnalyticsSkeleton() {
                 </div>
                 <Skeleton className="h-10 w-48" />
             </div>
-            <Card>
-                <CardHeader>
-                    <Skeleton className="h-7 w-40" />
-                </CardHeader>
-                <CardContent>
-                    <div className="space-y-4">
-                        {[...Array(5)].map((_, i) => (
-                             <div key={i} className="flex items-center gap-4">
-                                <Skeleton className="h-10 w-10 rounded-full" />
-                                <div className="flex-1 space-y-2">
-                                    <Skeleton className="h-4 w-1/4" />
-                                     <Skeleton className="h-4 w-3/4" />
-                                </div>
-                                <Skeleton className="h-6 w-1/4" />
-                            </div>
-                        ))}
-                    </div>
-                </CardContent>
-            </Card>
+             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                <Card className="lg:col-span-2">
+                    <CardHeader><Skeleton className="h-7 w-40" /></CardHeader>
+                    <CardContent><Skeleton className="h-64 w-full" /></CardContent>
+                </Card>
+                <Card>
+                    <CardHeader><Skeleton className="h-7 w-40" /></CardHeader>
+                    <CardContent><Skeleton className="h-64 w-full" /></CardContent>
+                </Card>
+             </div>
         </div>
     );
 }
@@ -96,6 +90,44 @@ export default function AnalyticsPage() {
         return [...analyticsData].sort((a, b) => (b['Hoàn thành'] / b.total || 0) - (a['Hoàn thành'] / a.total || 0));
     }, [analyticsData]);
 
+    const totalTaskByType = useMemo(() => {
+        const totals = { 'Tính năng': 0, 'Lỗi': 0, 'Công việc': 0 };
+        analyticsData.forEach(user => {
+            totals['Tính năng'] += user.byType['Tính năng'];
+            totals['Lỗi'] += user.byType['Lỗi'];
+            totals['Công việc'] += user.byType['Công việc'];
+        });
+        return Object.entries(totals)
+            .map(([name, value]) => ({ name, value }))
+            .filter(item => item.value > 0);
+    }, [analyticsData]);
+
+    const handleExport = () => {
+        const headers = ["Thành viên", "Tổng cộng", "Tồn đọng", "Cần làm", "Đang làm", "Hoàn thành", "Tiến độ (%)"];
+        const rows = sortedAnalyticsData.map(data => [
+            data.hoTen,
+            data.total,
+            data['Tồn đọng'],
+            data['Cần làm'],
+            data['Đang tiến hành'],
+            data['Hoàn thành'],
+            Math.round(data.total > 0 ? (data['Hoàn thành'] / data.total) * 100 : 0)
+        ]);
+
+        let csvContent = "data:text/csv;charset=utf-8," 
+            + headers.join(",") + "\n" 
+            + rows.map(e => e.join(",")).join("\n");
+
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", `analytics_export_${new Date().toISOString().split('T')[0]}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
+
     if (authLoading || !user) {
         return <div className="flex h-screen items-center justify-center">Đang tải...</div>;
     }
@@ -112,14 +144,14 @@ export default function AnalyticsPage() {
                         transition={{ duration: 0.5 }}
                         className="flex-1 p-4 sm:p-6 md:p-8"
                     >
-                        <div className="max-w-6xl mx-auto">
-                            <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+                        <div className="max-w-7xl mx-auto">
+                            <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
                                 <div>
                                     <h1 className="text-3xl font-bold tracking-tight">Báo cáo & Phân tích</h1>
                                     <p className="text-muted-foreground">Theo dõi hiệu suất và phân bổ công việc của các thành viên.</p>
                                 </div>
-                                <div className="w-full sm:w-auto">
-                                    <Select value={selectedTeam} onValueChange={setSelectedTeam}>
+                                <div className="flex flex-wrap items-center gap-2">
+                                     <Select value={selectedTeam} onValueChange={setSelectedTeam}>
                                         <SelectTrigger className="w-full sm:w-[200px]">
                                             <SelectValue placeholder="Chọn đội" />
                                         </SelectTrigger>
@@ -130,11 +162,17 @@ export default function AnalyticsPage() {
                                             ))}
                                         </SelectContent>
                                     </Select>
+                                    <Button onClick={handleExport} disabled={analyticsData.length === 0}>
+                                        <Download className="mr-2 h-4 w-4" />
+                                        Xuất ra CSV
+                                    </Button>
                                 </div>
                             </div>
                             
                             {loading ? <AnalyticsSkeleton /> : (
-                                <Card>
+                                <div className="space-y-6">
+                                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                                    <Card className="lg:col-span-2">
                                     <CardHeader>
                                         <CardTitle>Báo cáo hiệu suất thành viên</CardTitle>
                                         <CardDescription>
@@ -191,7 +229,27 @@ export default function AnalyticsPage() {
                                             </TableBody>
                                         </Table>
                                     </CardContent>
-                                </Card>
+                                    </Card>
+                                     <Card>
+                                        <CardHeader>
+                                            <CardTitle>Phân loại Công việc</CardTitle>
+                                            <CardDescription>Tỷ lệ các loại công việc trong phạm vi đã chọn.</CardDescription>
+                                        </CardHeader>
+                                        <CardContent>
+                                             <ChartContainer config={{}} className="mx-auto aspect-square h-[250px]">
+                                                <PieChart>
+                                                    <ChartTooltip content={<ChartTooltipContent nameKey="name" />} />
+                                                    <Pie data={totalTaskByType} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label>
+                                                        <Cell key="cell-0" fill="hsl(var(--chart-1))" />
+                                                        <Cell key="cell-1" fill="hsl(var(--chart-2))" />
+                                                        <Cell key="cell-2" fill="hsl(var(--chart-3))" />
+                                                    </Pie>
+                                                </PieChart>
+                                            </ChartContainer>
+                                        </CardContent>
+                                    </Card>
+                                </div>
+                                </div>
                             )}
                         </div>
                     </motion.main>

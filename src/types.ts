@@ -1,5 +1,6 @@
 
 
+
 export interface User {
   id: string; // Map to _id
   hoTen: string;
@@ -52,6 +53,7 @@ export interface Task {
   ngayHetHan?: string | Date; // ISO string or Date object
   
   tags?: string[];
+  gitLinks?: string[];
 }
 
 export interface UserAnalyticsData {
@@ -63,4 +65,20 @@ export interface UserAnalyticsData {
   "Cần làm": number;
   "Đang tiến hành": number;
   "Hoàn thành": number;
+  byType: {
+    'Tính năng': number;
+    'Lỗi': number;
+    'Công việc': number;
+  };
+}
+
+export interface TaskTemplate {
+    id: string;
+    tenMau: string;
+    tieuDe: string;
+    moTa?: string;
+    loaiCongViec?: LoaiCongViec;
+    doUuTien?: DoUuTien;
+    tags?: string[];
+    nguoiTaoId: string;
 }

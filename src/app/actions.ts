@@ -1,10 +1,11 @@
 
+
 "use server";
 
 import bcrypt from 'bcryptjs';
-import type { User, Team, Task, TrangThaiCongViec as TaskStatus, VaiTroThanhVien as TeamMemberRole, UserAnalyticsData } from '@/types';
+import type { User, Team, Task, TrangThaiCongViec as TaskStatus, VaiTroThanhVien as TeamMemberRole, UserAnalyticsData, TaskTemplate } from '@/types';
 import connectToDatabase from '@/lib/mongodb';
-import { User as UserModel, Team as TeamModel, Task as TaskModel } from '@/lib/models';
+import { User as UserModel, Team as TeamModel, Task as TaskModel, TaskTemplate as TaskTemplateModel } from '@/lib/models';
 import { suggestTaskAssignee } from "@/ai/flows/suggest-task-assignee";
 import type { SuggestTaskAssigneeInput } from "@/ai/flows/suggest-task-assignee";
 import { generateTaskDescription } from "@/ai/flows/generate-task-description";
@@ -145,6 +146,7 @@ const populateTask = (task: any): Task => {
     ngayBatDau: taskObj.ngayBatDau,
     ngayHetHan: taskObj.ngayHetHan,
     tags: taskObj.tags || [],
+    gitLinks: taskObj.gitLinks || [],
     nhomId: undefined,
     nhom: undefined,
     nguoiThucHienId: undefined,
@@ -178,6 +180,21 @@ const populateTask = (task: any): Task => {
   }
 
   return populatedTask;
+};
+
+const populateTaskTemplate = (template: any): TaskTemplate => {
+    const templateObj = template?._doc || template;
+    if (!templateObj) return template;
+    return {
+        id: templateObj._id.toString(),
+        tenMau: templateObj.tenMau,
+        tieuDe: templateObj.tieuDe,
+        moTa: templateObj.moTa,
+        loaiCongViec: templateObj.loaiCongViec,
+        doUuTien: templateObj.doUuTien,
+        tags: templateObj.tags || [],
+        nguoiTaoId: templateObj.nguoiTaoId.toString(),
+    };
 };
 
 
@@ -477,32 +494,50 @@ export const updateTeamMemberRole = async (teamId: string, userId: string, role:
     revalidatePath(`/teams/${teamId}`);
 };
 
+// --- Task Template Functions ---
+export const getTaskTemplates = async (userId: string): Promise<TaskTemplate[]> => {
+    await connectToDatabase();
+    const templates = await TaskTemplateModel.find({ nguoiTaoId: userId }).lean();
+    return templates.map(populateTaskTemplate);
+};
+
+export const createTaskTemplate = async (templateData: Omit<TaskTemplate, 'id'>, userId: string): Promise<string> => {
+    await connectToDatabase();
+    const newTemplate = new TaskTemplateModel({
+        ...templateData,
+        _id: `template-${Date.now()}`,
+        nguoiTaoId: userId,
+    });
+    await newTemplate.save();
+    revalidatePath('/settings');
+    return newTemplate._id.toString();
+};
+
+export const deleteTaskTemplate = async (templateId: string, userId: string): Promise<void> => {
+    await connectToDatabase();
+    const template = await TaskTemplateModel.findById(templateId);
+    if (!template || template.nguoiTaoId.toString() !== userId) {
+        throw new Error('Không tìm thấy mẫu hoặc không có quyền xóa.');
+    }
+    await TaskTemplateModel.findByIdAndDelete(templateId);
+    revalidatePath('/settings');
+};
+
+
 // --- Analytics Functions ---
 export const getAnalyticsData = async (teamId?: string): Promise<UserAnalyticsData[]> => {
     await connectToDatabase();
 
-    const userMatch = teamId ? { 'teams._id': new mongoose.Types.ObjectId(teamId) } : {};
-
-    const users = await UserModel.aggregate([
-        {
-            $lookup: {
-                from: 'teams',
-                localField: '_id',
-                foreignField: 'thanhVien.thanhVienId',
-                as: 'teams'
-            }
-        },
-        {
-            $match: userMatch
-        },
-        {
-            $project: {
-                _id: 1,
-                hoTen: 1,
-                anhDaiDien: 1
-            }
+    const userMatch: mongoose.FilterQuery<any> = {};
+    if (teamId) {
+        const team = await TeamModel.findById(teamId).lean();
+        if (team) {
+            const memberIds = team.thanhVien.map((m: any) => m.thanhVienId);
+            userMatch._id = { $in: memberIds };
         }
-    ]);
+    }
+    
+    const users = await UserModel.find(userMatch).lean();
     const userIds = users.map(u => u._id);
 
     const tasks = await TaskModel.aggregate([
@@ -513,41 +548,30 @@ export const getAnalyticsData = async (teamId?: string): Promise<UserAnalyticsDa
         },
         {
             $group: {
-                _id: {
-                    nguoiThucHienId: "$nguoiThucHienId",
-                    trangThai: "$trangThai"
-                },
-                count: { $sum: 1 }
-            }
-        },
-        {
-            $group: {
-                _id: "$_id.nguoiThucHienId",
-                counts: {
-                    $push: {
-                        trangThai: "$_id.trangThai",
-                        count: "$count"
-                    }
-                }
+                _id: "$nguoiThucHienId",
+                tasks: { $push: "$$ROOT" }
             }
         }
     ]);
-
-    const taskMap = new Map(tasks.map(t => [t._id, t.counts]));
-
+    
+    const taskMap = new Map(tasks.map(t => [t._id, t.tasks]));
+    
     const analyticsData: UserAnalyticsData[] = users.map(user => {
         const userTasks = taskMap.get(user._id) || [];
         const statusCounts: Record<TaskStatus, number> = {
-            'Tồn đọng': 0,
-            'Cần làm': 0,
-            'Đang tiến hành': 0,
-            'Hoàn thành': 0,
+            'Tồn đọng': 0, 'Cần làm': 0, 'Đang tiến hành': 0, 'Hoàn thành': 0,
+        };
+        const typeCounts: Record<"Tính năng" | "Lỗi" | "Công việc", number> = {
+            'Tính năng': 0, 'Lỗi': 0, 'Công việc': 0,
         };
 
         let total = 0;
-        userTasks.forEach((item: { trangThai: TaskStatus, count: number }) => {
-            statusCounts[item.trangThai] = item.count;
-            total += item.count;
+        userTasks.forEach((item: any) => {
+            statusCounts[item.trangThai]++;
+            if(item.loaiCongViec) {
+              typeCounts[item.loaiCongViec]++;
+            }
+            total++;
         });
 
         return {
@@ -556,6 +580,7 @@ export const getAnalyticsData = async (teamId?: string): Promise<UserAnalyticsDa
             anhDaiDien: user.anhDaiDien,
             total,
             ...statusCounts,
+            byType: typeCounts
         };
     });
 
@@ -576,5 +601,3 @@ export async function getRawDatabaseData() {
         tasks
     };
 }
-
-    
