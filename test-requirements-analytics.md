@@ -15,7 +15,7 @@ Bảng này liệt kê các yêu cầu kiểm thử chi tiết cho chức năng 
 | TR-AN-F-02.4 | The export button should be disabled if there is no analytics data to export. | Nút xuất phải bị vô hiệu hóa nếu không có dữ liệu phân tích nào để xuất. | Functional |
 | **TR-AN-F-03** | **Data is Displayed Correctly** | **Dữ liệu được hiển thị chính xác** | **Functional** |
 | TR-AN-F-03.1 | The performance table must accurately show the total tasks and the count for each status for every member. | Bảng hiệu suất phải hiển thị chính xác tổng số công việc và số lượng cho mỗi trạng thái của từng thành viên. | Functional |
-| TR-AN-F-03.2 | The progress bar for each member must correctly calculate and display the completion percentage. | Thanh tiến độ cho mỗi thành viên phải tính toán và hiển thị chính xác phần trăm hoàn thành. | Functional |
+| TR-AN-F-03.2 | The progress bar for each member must correctly calculate and display the completion percentage. | . | Functional |
 | TR-AN-F-03.3 | The "Task Type Distribution" pie chart must correctly show the proportion of tasks by type (Feature, Bug, Task). | Biểu đồ tròn "Phân loại Công việc" phải hiển thị chính xác tỷ lệ các loại công việc (Tính năng, Lỗi, Công việc). | Functional |
 | **TR-AN-L-04** | **UI is Clear and Professional** | **Giao diện rõ ràng và chuyên nghiệp** | **Look and Feel** |
 | TR-AN-L-04.1 | A loading skeleton should be displayed while analytics data is being fetched. | Một bộ khung sườn (skeleton) tải trang nên được hiển thị trong khi dữ liệu phân tích đang được lấy về. | Look and Feel |
