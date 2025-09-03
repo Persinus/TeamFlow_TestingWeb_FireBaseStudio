@@ -19,7 +19,7 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { LayoutGrid, CalendarDays, GanttChartSquare, ListTree } from 'lucide-react';
+import { LayoutGrid, CalendarDays, GanttChartSquare, ListTree, XCircle } from 'lucide-react';
 import CalendarView from '@/components/calendar-view';
 import TimelineView from '@/components/timeline-view';
 import { Select, SelectContent, SelectItem, SelectSeparator, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -172,6 +172,15 @@ export default function BoardPage() {
         console.error("Lỗi khi cập nhật trạng thái:", error);
     }
   };
+
+  const clearFilters = () => {
+    setFilters({ assignee: 'all', team: 'all', search: '' });
+     toast({ title: 'Đã xóa bộ lọc', description: 'Đã quay về chế độ xem mặc định.' });
+  }
+
+  const hasActiveFilters = useMemo(() => {
+      return filters.assignee !== 'all' || filters.team !== 'all' || filters.search !== '';
+  }, [filters]);
   
   const tasksByStatus = useMemo(() => {
     return columns.reduce((acc, column) => {
@@ -268,6 +277,11 @@ export default function BoardPage() {
                             ))}
                         </SelectContent>
                     </Select>
+                     {hasActiveFilters && (
+                        <Button variant="ghost" size="icon" onClick={clearFilters} aria-label="Xóa bộ lọc">
+                            <XCircle className="h-5 w-5 text-destructive" />
+                        </Button>
+                    )}
                     <div className="flex items-center gap-2 rounded-lg bg-card border p-1 shadow-sm">
                         <Button variant={viewMode === 'board' ? 'secondary' : 'ghost'} size="icon" onClick={() => setViewMode('board')} aria-label="Chế độ xem bảng">
                             <LayoutGrid className="h-5 w-5" />
@@ -336,5 +350,3 @@ export default function BoardPage() {
     </div>
   );
 }
-
-    

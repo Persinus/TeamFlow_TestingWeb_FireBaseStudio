@@ -13,11 +13,12 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { motion } from 'framer-motion';
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis } from "recharts"
 import { differenceInDays, format, subDays, parseISO } from 'date-fns';
-import { AlertCircle, CalendarIcon, CheckCircle, Lightbulb, ArrowRight } from 'lucide-react';
+import { AlertCircle, CalendarIcon, CheckCircle, Lightbulb, ArrowRight, TrendingUp, Check, ListTodo } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
 
 const quotes = [
     { text: "Làm việc nhóm khiến giấc mơ thành hiện thực.", author: "Bang Gae" },
@@ -72,6 +73,22 @@ const safeParseDate = (date: string | Date | undefined): Date | undefined => {
         return undefined;
     }
 };
+
+const getAIInsight = (tasks: Task[]) => {
+    const total = tasks.length;
+    if (total === 0) return "Bạn chưa có công việc nào. Hãy tạo một công việc mới để bắt đầu!";
+    
+    const completed = tasks.filter(t => t.trangThai === 'Hoàn thành').length;
+    const overdue = tasks.filter(t => t.ngayHetHan && isBefore(safeParseDate(t.ngayHetHan)!, new Date())).length;
+    const backlog = tasks.filter(t => t.trangThai === 'Tồn đọng').length;
+
+    if (overdue > total / 2) return "Bạn có nhiều công việc quá hạn. Hãy ưu tiên giải quyết chúng trước!";
+    if (backlog > total / 2) return "Có vẻ như bạn có nhiều công việc trong backlog. Hãy xem xét và chuyển chúng sang 'Cần làm' nhé!";
+    if (completed === total) return "Xuất sắc! Bạn đã hoàn thành tất cả công việc được giao. Hãy tiếp tục phát huy!";
+    
+    return "Bạn đang làm rất tốt. Hãy tiếp tục duy trì đà làm việc hiệu quả này!";
+};
+
 
 export default function HomePage() {
     const { user, loading: authLoading } = useAuth();
@@ -140,6 +157,17 @@ export default function HomePage() {
             });
     }, [tasks]);
 
+    const userStats = useMemo(() => {
+        const total = tasks.length;
+        const completed = tasks.filter(t => t.trangThai === 'Hoàn thành').length;
+        const inProgress = tasks.filter(t => t.trangThai === 'Đang tiến hành').length;
+        const completionRate = total > 0 ? Math.round((completed / total) * 100) : 0;
+        return { total, completed, inProgress, completionRate };
+    }, [tasks]);
+    
+    const aiInsight = useMemo(() => getAIInsight(tasks), [tasks]);
+
+
     if (authLoading || !user) {
         return <div className="flex h-screen w-full items-center justify-center">Đang tải...</div>;
     }
@@ -163,48 +191,77 @@ export default function HomePage() {
                         
                         {loading ? <DashboardSkeleton /> : (
                              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                                <Card className="lg:col-span-2">
-                                    <CardHeader>
-                                        <CardTitle>Tổng quan hoạt động</CardTitle>
-                                        <CardDescription>Số lượng công việc bạn đã hoàn thành trong 30 ngày qua.</CardDescription>
-                                    </CardHeader>
-                                    <CardContent className="pl-2">
-                                        {hasActivity ? (
-                                            <ResponsiveContainer width="100%" height={300}>
-                                                <BarChart data={taskCompletionData}>
-                                                    <XAxis dataKey="date" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
-                                                    <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `${value}`} allowDecimals={false} />
-                                                    <Bar dataKey="total" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-                                                </BarChart>
-                                            </ResponsiveContainer>
-                                        ) : (
-                                             <div className="flex flex-col items-center justify-center text-center text-muted-foreground h-[300px] gap-4 p-4 bg-muted/50 rounded-lg">
-                                                <Lightbulb className="h-12 w-12 text-accent" />
-                                                <div>
-                                                    <h3 className="font-semibold text-lg text-foreground">Chưa có hoạt động nào được ghi lại</h3>
-                                                    <p className="mt-1 max-w-md mx-auto">
-                                                        Bắt đầu làm việc để thấy biểu đồ của bạn được lấp đầy! Mời đồng đội và bắt đầu quản lý dự án cùng nhau.
-                                                    </p>
+                                <div className="lg:col-span-2 space-y-6">
+                                     <div className="grid gap-6 sm:grid-cols-3">
+                                        <Card>
+                                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                                <CardTitle className="text-sm font-medium">Tổng Công việc</CardTitle>
+                                                <ListTodo className="h-4 w-4 text-muted-foreground" />
+                                            </CardHeader>
+                                            <CardContent>
+                                                <div className="text-2xl font-bold">{userStats.total}</div>
+                                            </CardContent>
+                                        </Card>
+                                        <Card>
+                                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                                <CardTitle className="text-sm font-medium">Đã Hoàn thành</CardTitle>
+                                                <Check className="h-4 w-4 text-muted-foreground" />
+                                            </CardHeader>
+                                            <CardContent>
+                                                <div className="text-2xl font-bold">{userStats.completed}</div>
+                                            </CardContent>
+                                        </Card>
+                                         <Card>
+                                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                                <CardTitle className="text-sm font-medium">Tỷ lệ Hoàn thành</CardTitle>
+                                                <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                                            </CardHeader>
+                                            <CardContent>
+                                                <div className="text-2xl font-bold">{userStats.completionRate}%</div>
+                                                <Progress value={userStats.completionRate} className="h-2 mt-1" />
+                                            </CardContent>
+                                        </Card>
+                                    </div>
+                                    <Card>
+                                        <CardHeader>
+                                            <CardTitle>Tổng quan hoạt động</CardTitle>
+                                            <CardDescription>Số lượng công việc bạn đã hoàn thành trong 30 ngày qua.</CardDescription>
+                                        </CardHeader>
+                                        <CardContent className="pl-2">
+                                            {hasActivity ? (
+                                                <ResponsiveContainer width="100%" height={250}>
+                                                    <BarChart data={taskCompletionData}>
+                                                        <XAxis dataKey="date" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
+                                                        <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `${value}`} allowDecimals={false} />
+                                                        <Bar dataKey="total" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                                                    </BarChart>
+                                                </ResponsiveContainer>
+                                            ) : (
+                                                 <div className="flex flex-col items-center justify-center text-center text-muted-foreground h-[250px] gap-4 p-4 bg-muted/50 rounded-lg">
+                                                    <Lightbulb className="h-12 w-12 text-accent" />
+                                                    <div>
+                                                        <h3 className="font-semibold text-lg text-foreground">Chưa có hoạt động nào được ghi lại</h3>
+                                                        <p className="mt-1 max-w-md mx-auto">
+                                                            Bắt đầu làm việc để thấy biểu đồ của bạn được lấp đầy! Mời đồng đội và bắt đầu quản lý dự án cùng nhau.
+                                                        </p>
+                                                    </div>
+                                                    <Button asChild>
+                                                        <Link href="/board">
+                                                            Đi tới Bảng điều khiển <ArrowRight className="ml-2 h-4 w-4" />
+                                                        </Link>
+                                                    </Button>
                                                 </div>
-                                                <Button asChild>
-                                                    <Link href="/board">
-                                                        Đi tới Bảng điều khiển <ArrowRight className="ml-2 h-4 w-4" />
-                                                    </Link>
-                                                </Button>
-                                            </div>
-                                        )}
-                                    </CardContent>
-                                </Card>
+                                            )}
+                                        </CardContent>
+                                    </Card>
+                                </div>
                                 <div className="space-y-6">
                                     <Card className="bg-gradient-to-br from-accent/50 to-background">
                                         <CardHeader>
-                                            <CardTitle className="flex items-center gap-2"><Lightbulb className="text-accent-foreground" /> Trích dẫn trong ngày</CardTitle>
+                                            <CardTitle className="flex items-center gap-2"><Lightbulb className="text-accent-foreground" /> Gợi ý cho bạn</CardTitle>
                                         </CardHeader>
                                         <CardContent>
-                                            <blockquote className="border-l-2 border-accent-foreground pl-4 italic">
-                                                <p>"{randomQuote.text}"</p>
-                                                <cite className="mt-2 block text-right font-semibold not-italic">— {randomQuote.author}</cite>
-                                            </blockquote>
+                                            <p className="text-sm text-foreground">{aiInsight}</p>
                                         </CardContent>
                                     </Card>
                                      <Card>
@@ -220,11 +277,14 @@ export default function HomePage() {
                                                         if (!dueDate) return null;
                                                         return (
                                                             <li key={task.id}>
-                                                                <Link href={`/teams/${task.nhomId}`} className="block hover:bg-muted p-2 rounded-md transition-colors">
+                                                                <Link href={`/board`} className="block hover:bg-muted p-2 rounded-md transition-colors">
                                                                     <p className="font-semibold truncate">{task.tieuDe}</p>
-                                                                    <div className={cn("text-sm flex items-center gap-1", differenceInDays(dueDate, new Date()) <= 3 ? 'text-destructive' : 'text-muted-foreground')}>
-                                                                        <CalendarIcon className="h-4 w-4" />
-                                                                        <span>Hết hạn vào {format(dueDate, 'PPP')}</span>
+                                                                    <div className="flex justify-between items-center">
+                                                                         <div className={cn("text-sm flex items-center gap-1", differenceInDays(dueDate, new Date()) <= 3 ? 'text-destructive' : 'text-muted-foreground')}>
+                                                                            <CalendarIcon className="h-4 w-4" />
+                                                                            <span>Hết hạn vào {format(dueDate, 'PPP')}</span>
+                                                                        </div>
+                                                                        {task.nhom && <Badge variant="outline">{task.nhom.tenNhom}</Badge>}
                                                                     </div>
                                                                 </Link>
                                                             </li>
@@ -250,5 +310,3 @@ export default function HomePage() {
         </div>
     );
 }
-
-    
