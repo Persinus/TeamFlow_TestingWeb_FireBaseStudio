@@ -257,7 +257,13 @@ export const addTask = async (taskData: Partial<Omit<Task, 'id' | 'nhom' | 'nguo
     await connectToDatabase();
     
     const dataToSave = { ...taskData };
+    
+    // Default to personal task if no team is specified
+    if (!dataToSave.nhomId) {
+        dataToSave.nhomId = undefined; 
+    }
 
+    // Validate team-related logic ONLY if a team is assigned
     if (dataToSave.nhomId) {
         const team = await TeamModel.findById(dataToSave.nhomId);
         if (!team) {
@@ -267,31 +273,29 @@ export const addTask = async (taskData: Partial<Omit<Task, 'id' | 'nhom' | 'nguo
         if (!member) {
             throw new Error("Bạn không phải là thành viên của đội này.");
         }
-        
         if (dataToSave.nguoiThucHienId && !team.thanhVien?.some((m: any) => m.thanhVienId.toString() === dataToSave.nguoiThucHienId)) {
             throw new Error("Người được giao không phải là thành viên của đội này.");
         }
-
         if (member.vaiTro === 'Thành viên' && dataToSave.nguoiThucHienId !== creatorId) {
              throw new Error("Bạn chỉ có thể tạo công việc cho chính mình.");
         }
-
-    } else { // Personal task
-        if (dataToSave.nguoiThucHienId !== creatorId) {
+    } else { // This is a personal task
+        if (dataToSave.nguoiThucHienId && dataToSave.nguoiThucHienId !== creatorId) {
             throw new Error("Không thể giao công việc cá nhân cho người khác.");
         }
-        dataToSave.nhomId = undefined;
+        dataToSave.nhomId = undefined; // Explicitly set to undefined for personal tasks
     }
 
     const newTask = new TaskModel({
         ...dataToSave,
         _id: `task-${Date.now()}`,
         nguoiTaoId: creatorId,
-        nhomId: dataToSave.nhomId || null,
+        nhomId: dataToSave.nhomId || null, // Ensure nhomId is null for personal tasks in DB
     });
+    
     await newTask.save();
     
-    // Mascot logic: award experience if a task is created with 'Hoàn thành' status
+    // Mascot logic: award experience if a task is created with 'Hoàn thành' status for a team
     if (newTask.trangThai === 'Hoàn thành' && newTask.nhomId) {
         await awardExperienceToMascot(newTask.nhomId.toString(), 10);
     }
