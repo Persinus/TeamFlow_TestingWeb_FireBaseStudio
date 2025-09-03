@@ -1,18 +1,28 @@
-
 # Yêu cầu Kiểm thử (Test Requirements) - Chức năng Thông tin Cá nhân
 
 Bảng này liệt kê các yêu cầu kiểm thử chi tiết cho chức năng quản lý thông tin cá nhân của người dùng trên trang "Cài đặt".
 
-| ID      | Requirement (English)                                                              | Yêu cầu (Tiếng Việt)                                                                  | Loại (Type)     |
-|---------|------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------|-----------------|
-| TR-007  | The system must allow users to update their profile information (Name, Phone, DoB). | Hệ thống phải cho phép người dùng cập nhật thông tin hồ sơ (Họ tên, SĐT, Ngày sinh).  | Functional      |
-| TR-008  | The system must allow users to change their avatar from a predefined list.          | Hệ thống phải cho phép người dùng thay đổi ảnh đại diện từ một danh sách có sẵn.      | Functional      |
-| TR-009  | The user's email field must be read-only and cannot be edited.                     | Trường email của người dùng phải ở chế độ chỉ đọc và không thể chỉnh sửa.             | Functional      |
-| TR-010  | The interface should provide clear visual feedback (e.g., a spinner) during update. | Giao diện nên cung cấp phản hồi trực quan (ví dụ: spinner) khi đang cập nhật.         | Look and Feel   |
-| TR-011  | All fields, buttons, and labels on the form should be properly aligned.              | Tất cả các trường, nút, và nhãn trên biểu mẫu phải được căn chỉnh thẳng hàng.         | Look and Feel   |
-| TR-012  | The system must handle very long or very short names without breaking the UI.       | Hệ thống phải xử lý tên rất dài hoặc rất ngắn mà không làm vỡ giao diện.             | Boundary        |
-| TR-013  | The system must accept an empty value for optional fields (Phone, DoB).             | Hệ thống phải chấp nhận giá trị trống cho các trường tùy chọn (SĐT, Ngày sinh).      | Boundary        |
-| TR-014  | The system must not save any changes if the user clicks the "Cancel" button.        | Hệ thống không được lưu bất kỳ thay đổi nào nếu người dùng nhấn nút "Hủy".          | Negative        |
-| TR-015  | An appropriate error message should be shown if the update fails due to network issues. | Một thông báo lỗi phù hợp cần được hiển thị nếu việc cập nhật thất bại do lỗi mạng.     | Negative        |
-| TR-016  | The selected avatar in the modal must immediately reflect on the main settings page. | Ảnh đại diện được chọn trong modal phải ngay lập tức phản ánh trên trang cài đặt chính. | Functional      |
-
+| ID | Requirement (English) | Yêu cầu (Tiếng Việt) | Loại (Type) |
+|---|---|---|---|
+| **TR-F-01** | **User Can Successfully Update Profile** | **Người dùng có thể cập nhật hồ sơ thành công** | **Functional** |
+| TR-F-01.1 | After changing Name, Phone, DoB and saving, the new data must be persisted correctly. | Sau khi thay đổi Họ tên, SĐT, Ngày sinh và lưu, dữ liệu mới phải được lưu chính xác. | Functional |
+| TR-F-01.2 | After a successful update, the new information (e.g., name) should be reflected globally. | Sau khi cập nhật, thông tin mới (ví dụ: tên) phải được phản ánh trên toàn ứng dụng. | Functional |
+| TR-F-01.3 | A "Profile updated" success toast message must appear after saving. | Một thông báo "Hồ sơ đã được cập nhật" phải xuất hiện sau khi lưu thành công. | Functional |
+| TR-F-01.4 | The user's email field must be read-only and cannot be edited. | Trường email của người dùng phải ở chế độ chỉ đọc và không thể chỉnh sửa. | Functional |
+| **TR-F-02** | **User Can Change Avatar** | **Người dùng có thể thay đổi ảnh đại diện** | **Functional** |
+| TR-F-02.1 | Clicking "Change Avatar" must open a modal with a list of predefined avatars. | Nhấn "Đổi ảnh" phải mở ra một modal với danh sách các ảnh đại diện có sẵn. | Functional |
+| TR-F-02.2 | Selecting a new avatar in the modal must immediately update the avatar on the page and save. | Chọn một ảnh đại diện mới trong modal phải ngay lập tức cập nhật và lưu thay đổi. | Functional |
+| **TR-L-03** | **UI is Clear and Professional** | **Giao diện rõ ràng và chuyên nghiệp** | **Look and Feel** |
+| TR-L-03.1 | Labels and input fields must be properly aligned. | Các nhãn và trường nhập liệu phải được căn chỉnh thẳng hàng. | Look and Feel |
+| TR-L-03.2 | The avatar must be displayed clearly, as a circle, and with appropriate dimensions. | Ảnh đại diện phải được hiển thị rõ nét, dạng tròn và có kích thước phù hợp. | Look
+and Feel |
+| TR-L-03.3 | The "Update profile" button should show a loading spinner during the update process. | Nút "Cập nhật hồ sơ" phải có spinner tải khi đang xử lý để thông báo cho người dùng. | Look and Feel |
+| **TR-B-04** | **System Correctly Handles Boundary Values**| **Hệ thống xử lý đúng các giá trị biên** | **Boundary** |
+| TR-B-04.1 | Test entering a very long name (e.g., 100 chars) and a very short name (1 char). | Kiểm tra việc nhập một tên rất dài (100 ký tự) hoặc rất ngắn (1 ký tự). | Boundary |
+| TR-B-04.2 | Test entering a phone number with special characters and international formats. | Kiểm tra việc nhập số điện thoại có ký tự đặc biệt và định dạng quốc tế. | Boundary |
+| TR-B-04.3 | Test selecting a date of birth in the future or in the distant past (e.g., year 1900). | Kiểm tra việc chọn một ngày sinh ở tương lai hoặc một ngày trong quá khứ xa. | Boundary |
+| TR-B-04.4 | Clearing optional fields (Phone, DoB) and saving must be accepted by the system. | Xóa thông tin các trường tùy chọn (SĐT, Ngày sinh) và lưu phải được hệ thống chấp nhận. | Boundary |
+| **TR-N-05** | **System Handles Unexpected Scenarios Gracefully** | **Hệ thống xử lý tốt các tình huống không mong muốn** | **Negative** |
+| TR-N-05.1 | Attempting to save with a blank required field (Name) should be prevented. | Thử lưu khi trường bắt buộc (Họ tên) bị bỏ trống phải bị ngăn chặn. | Negative |
+| TR-N-05.2 | Clicking "Update profile" with no network connection should show a clear error message. | Nhấn "Cập nhật hồ sơ" khi không có mạng phải hiển thị một thông báo lỗi rõ ràng. | Negative |
+| TR-N-05.3 | Closing the avatar selection modal without making a choice should not change the avatar. | Đóng modal chọn ảnh mà không chọn gì không được làm thay đổi ảnh đại diện hiện tại. | Negative |
