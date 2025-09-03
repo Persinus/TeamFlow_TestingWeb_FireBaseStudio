@@ -3,7 +3,7 @@
 "use server";
 
 import bcrypt from 'bcryptjs';
-import type { User, Team, Task, TrangThaiCongViec as TaskStatus, VaiTroThanhVien as TeamMemberRole, UserAnalyticsData, TaskTemplate, TeamMascot } from '@/types';
+import type { User, Team, Task, TrangThaiCongViec as TaskStatus, VaiTroThanhVien as TeamMemberRole, UserAnalyticsData, TaskTemplate } from '@/types';
 import connectToDatabase from '@/lib/mongodb';
 import { User as UserModel, Team as TeamModel, Task as TaskModel, TaskTemplate as TaskTemplateModel } from '@/lib/models';
 import { suggestTaskAssignee } from "@/ai/flows/suggest-task-assignee";
@@ -12,7 +12,6 @@ import { generateTaskDescription } from "@/ai/flows/generate-task-description";
 import type { GenerateTaskDescriptionInput } from "@/ai/flows/generate-task-description";
 import { revalidatePath } from 'next/cache';
 import mongoose from 'mongoose';
-import { isAfter, isBefore } from 'date-fns';
 
 // --- Auth Functions ---
 export const verifyUserCredentials = async (credentials: Pick<User, 'email' | 'matKhau'>): Promise<Omit<User, 'matKhau'> | null> => {
@@ -115,12 +114,6 @@ const populateTeam = (team: any): Team => {
         id: teamObj._id.toString(),
         tenNhom: teamObj.tenNhom,
         moTa: teamObj.moTa,
-        linhVat: teamObj.linhVat ? {
-            ten: teamObj.linhVat.ten,
-            level: teamObj.linhVat.level,
-            kinhNghiem: teamObj.linhVat.kinhNghiem,
-            tamTrang: teamObj.linhVat.tamTrang,
-        } : undefined,
         thanhVien: (teamObj.thanhVien || []).map((m: any) => {
             const memberObj = m?._doc || m;
             if (!memberObj || !memberObj.thanhVienId) return null;
@@ -153,7 +146,6 @@ const populateTask = (task: any): Task => {
     ngayBatDau: taskObj.ngayBatDau,
     ngayHetHan: taskObj.ngayHetHan,
     tags: taskObj.tags || [],
-    gitLinks: taskObj.gitLinks || [],
     nhomId: undefined,
     nhom: undefined,
     nguoiThucHienId: undefined,
@@ -256,15 +248,14 @@ export const getTasksByTeam = async (teamId: string): Promise<Task[]> => {
 export const addTask = async (taskData: Partial<Omit<Task, 'id' | 'nhom' | 'nguoiThucHien' | 'ngayTao'>>, creatorId: string): Promise<string> => {
     await connectToDatabase();
     
-    const dataToSave = { ...taskData };
+    const dataToSave: any = { ...taskData };
     
-    // Default to personal task if no team is specified
-    if (!dataToSave.nhomId) {
-        dataToSave.nhomId = undefined; 
-    }
-
-    // Validate team-related logic ONLY if a team is assigned
-    if (dataToSave.nhomId) {
+    if (!dataToSave.nhomId || dataToSave.nhomId === 'personal') {
+        dataToSave.nhomId = null;
+        if (dataToSave.nguoiThucHienId && dataToSave.nguoiThucHienId !== creatorId) {
+            throw new Error("Không thể giao công việc cá nhân cho người khác.");
+        }
+    } else {
         const team = await TeamModel.findById(dataToSave.nhomId);
         if (!team) {
             throw new Error("Đội không tồn tại.");
@@ -279,26 +270,15 @@ export const addTask = async (taskData: Partial<Omit<Task, 'id' | 'nhom' | 'nguo
         if (member.vaiTro === 'Thành viên' && dataToSave.nguoiThucHienId !== creatorId) {
              throw new Error("Bạn chỉ có thể tạo công việc cho chính mình.");
         }
-    } else { // This is a personal task
-        if (dataToSave.nguoiThucHienId && dataToSave.nguoiThucHienId !== creatorId) {
-            throw new Error("Không thể giao công việc cá nhân cho người khác.");
-        }
-        dataToSave.nhomId = undefined; // Explicitly set to undefined for personal tasks
     }
 
     const newTask = new TaskModel({
         ...dataToSave,
         _id: `task-${Date.now()}`,
         nguoiTaoId: creatorId,
-        nhomId: dataToSave.nhomId || null, // Ensure nhomId is null for personal tasks in DB
     });
     
     await newTask.save();
-    
-    // Mascot logic: award experience if a task is created with 'Hoàn thành' status for a team
-    if (newTask.trangThai === 'Hoàn thành' && newTask.nhomId) {
-        await awardExperienceToMascot(newTask.nhomId.toString(), 10);
-    }
     
     revalidatePath('/');
     revalidatePath('/board');
@@ -317,11 +297,6 @@ export const updateTask = async (taskId: string, taskData: Partial<Omit<Task, 'i
     await connectToDatabase();
     const updateData: any = { ...taskData };
 
-    const originalTask = await TaskModel.findById(taskId);
-    if (!originalTask) {
-        throw new Error('Task not found');
-    }
-
     if (updateData.nguoiThucHienId === 'unassigned' || updateData.nguoiThucHienId === null) {
       updateData.nguoiThucHienId = null;
     } 
@@ -332,11 +307,6 @@ export const updateTask = async (taskId: string, taskData: Partial<Omit<Task, 'i
     const updatedTask = await TaskModel.findByIdAndUpdate(taskId, { $set: updateData }, { new: true });
     if (!updatedTask) {
         throw new Error('Task not found');
-    }
-
-    // Mascot logic: check if task status changed to 'Hoàn thành'
-    if (originalTask.trangThai !== 'Hoàn thành' && updatedTask.trangThai === 'Hoàn thành' && updatedTask.nhomId) {
-        await awardExperienceToMascot(updatedTask.nhomId.toString(), 10);
     }
     
     revalidatePath('/');
@@ -402,10 +372,6 @@ export const updateTaskStatus = async (taskId: string, status: TaskStatus): Prom
     
     await TaskModel.findByIdAndUpdate(taskId, { trangThai: status });
 
-     if (originalTask.trangThai !== 'Hoàn thành' && status === 'Hoàn thành' && originalTask.nhomId) {
-        await awardExperienceToMascot(originalTask.nhomId.toString(), 10);
-    }
-
     revalidatePath('/board');
 };
 
@@ -468,31 +434,7 @@ export const getTeam = async (id: string): Promise<Team | undefined> => {
       }).lean();
 
     if (!team) return undefined;
-
-    // Calculate mascot mood dynamically
-    const teamTasks = await TaskModel.find({ nhomId: id }).lean();
-    const overdueTasks = teamTasks.filter(task => 
-        task.trangThai !== 'Hoàn thành' && 
-        task.ngayHetHan && 
-        isBefore(new Date(task.ngayHetHan), new Date())
-    ).length;
-
-    let mood: TeamMascot['tamTrang'] = 'vui vẻ';
-    if (overdueTasks > 5) {
-        mood = 'buồn';
-    } else if (overdueTasks > 0) {
-        mood = 'bình thường';
-    }
     
-    if (team.linhVat) {
-      team.linhVat.tamTrang = mood;
-    } else {
-      // Ensure mascot object exists
-      team.linhVat = { ten: 'Pingubo', level: 1, kinhNghiem: 0, tamTrang: mood };
-    }
-    
-    await TeamModel.findByIdAndUpdate(id, { 'linhVat.tamTrang': mood });
-
     return populateTeam(team);
 };
 
@@ -506,12 +448,6 @@ export const createTeam = async (teamData: Pick<Team, 'tenNhom' | 'moTa'>, leade
         tenNhom: teamData.tenNhom,
         moTa: teamData.moTa,
         thanhVien: [{ thanhVienId: leader._id, vaiTro: 'Trưởng nhóm' }],
-        linhVat: {
-            ten: 'Pingubo',
-            level: 1,
-            kinhNghiem: 0,
-            tamTrang: 'vui vẻ',
-        }
     });
     await newTeam.save();
     revalidatePath('/settings');
@@ -597,34 +533,6 @@ export const deleteTaskTemplate = async (templateId: string, userId: string): Pr
     }
     await TaskTemplateModel.findByIdAndDelete(templateId);
     revalidatePath('/settings');
-};
-
-
-// --- Mascot Functions ---
-const calculateLevel = (exp: number) => {
-    return Math.floor(Math.sqrt(exp / 100)) + 1;
-};
-
-const getExpForNextLevel = (level: number) => {
-    return (level * level) * 100;
-};
-
-export const awardExperienceToMascot = async (teamId: string, experiencePoints: number) => {
-    await connectToDatabase();
-    const team = await TeamModel.findById(teamId);
-    if (!team || !team.linhVat) return;
-
-    const newExp = team.linhVat.kinhNghiem + experiencePoints;
-    const newLevel = calculateLevel(newExp);
-
-    await TeamModel.findByIdAndUpdate(teamId, {
-        $set: {
-            'linhVat.kinhNghiem': newExp,
-            'linhVat.level': newLevel,
-        }
-    });
-
-    revalidatePath(`/teams/${teamId}`);
 };
 
 

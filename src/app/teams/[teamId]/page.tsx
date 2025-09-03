@@ -30,7 +30,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import TaskDetailsSheet from '@/components/task-details-sheet';
 import { motion } from 'framer-motion';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import TeamMascot from '@/components/team-mascot';
 
 const statusColors: Record<TaskStatus, string> = {
   'Tồn đọng': 'hsl(var(--muted-foreground))',
@@ -289,7 +288,6 @@ export default function TeamDetailPage() {
                     <p className="text-muted-foreground">{team.moTa}</p>
                   </div>
                   <div className="flex items-center gap-4">
-                    {team.linhVat && <TeamMascot mascot={team.linhVat} />}
                      <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="outline" size="icon"><MoreHorizontal className="h-4 w-4" /></Button>

@@ -15,14 +15,6 @@ const UserSchema = new Schema({
   ngaySinh: String,
 }, { _id: false, versionKey: false });
 
-// --- Mascot Schema ---
-const MascotSchema = new Schema({
-  ten: { type: String, required: true, default: 'Pingubo' },
-  level: { type: Number, required: true, default: 1 },
-  kinhNghiem: { type: Number, required: true, default: 0 },
-  tamTrang: { type: String, enum: ['vui vẻ', 'bình thường', 'buồn'], required: true, default: 'bình thường' },
-}, { _id: false });
-
 
 // --- Team Schema (Nhom) ---
 const ThanhVienNhomSchema = new Schema({
@@ -35,7 +27,6 @@ const TeamSchema = new Schema({
   tenNhom: { type: String, required: true },
   moTa: String,
   thanhVien: [ThanhVienNhomSchema],
-  linhVat: { type: MascotSchema, default: () => ({}) },
 }, { _id: false, versionKey: false });
 
 // --- Task Schema (CongViec) ---
@@ -53,7 +44,6 @@ const TaskSchema = new Schema({
   ngayBatDau: Date,
   ngayHetHan: Date,
   tags: [String],
-  gitLinks: { type: [String], default: [] },
 }, { _id: false, versionKey: false });
 
 // --- Task Template Schema ---

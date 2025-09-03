@@ -18,11 +18,11 @@ import { Calendar } from './ui/calendar';
 import { cn } from '@/lib/utils';
 import { Textarea } from './ui/textarea';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from './ui/form';
-import { CalendarIcon, Loader2, Pencil, User as UserIcon, Users, Tag, CheckSquare, X, Trash2, Shield, Flag, Package, Wand2, GitCommit, Link as LinkIcon, PlusCircle } from 'lucide-react';
+import { CalendarIcon, Loader2, Pencil, User as UserIcon, Users, Tag, CheckSquare, X, Trash2, Shield, Flag, Package, Wand2 } from 'lucide-react';
 import { Separator } from './ui/separator';
 import { Badge } from './ui/badge';
 import { MultiSelect } from './ui/multi-select';
-import { getAllTags, generateDescriptionFromAI, deleteTask as apiDeleteTask, updateTask } from '@/app/actions';
+import { getAllTags, generateDescriptionFromAI, deleteTask as apiDeleteTask } from '@/app/actions';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from './ui/alert-dialog';
 import { Dialog } from './ui/dialog';
 import { DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from './ui/dialog';
@@ -98,9 +98,6 @@ export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onU
   const [aiPrompt, setAiPrompt] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
 
-  const [newGitLink, setNewGitLink] = useState('');
-  const [pendingGitLinks, setPendingGitLinks] = useState<string[]>([]);
-
   const form = useForm<TaskFormData>({
     resolver: zodResolver(taskSchema),
   });
@@ -144,7 +141,6 @@ export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onU
         doUuTien: task.doUuTien,
       });
       setPendingTags(task.tags || []);
-      setPendingGitLinks(task.gitLinks || []);
     }
   }, [task, isEditing, form]);
   
@@ -176,7 +172,6 @@ export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onU
         id: task.id,
         ...data,
         tags: pendingTags,
-        gitLinks: pendingGitLinks,
         nguoiThucHienId: data.nguoiThucHienId === 'unassigned' ? undefined : data.nguoiThucHienId,
         nhomId: data.nhomId === 'personal' ? undefined : data.nhomId,
         ngayTao: task.ngayTao,
@@ -231,22 +226,6 @@ export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onU
     }
   }
 
-  const handleAddGitLink = () => {
-    if (newGitLink && !pendingGitLinks.includes(newGitLink)) {
-        try {
-            new URL(newGitLink); // Validate URL format
-            setPendingGitLinks(prev => [...prev, newGitLink]);
-            setNewGitLink('');
-        } catch (error) {
-            toast({ variant: 'destructive', title: 'URL không hợp lệ', description: 'Vui lòng nhập một URL hợp lệ.'});
-        }
-    }
-  };
-
-  const handleRemoveGitLink = (linkToRemove: string) => {
-    setPendingGitLinks(prev => prev.filter(link => link !== linkToRemove));
-  };
-
   const formatDate = (date: string | Date | undefined) => {
     const parsedDate = safeParseDate(date);
     return parsedDate ? format(parsedDate, 'PPP') : 'Chưa đặt';
@@ -294,21 +273,6 @@ export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onU
                         <DetailRow icon={CalendarIcon} label="Ngày bắt đầu" value={formatDate(task.ngayBatDau)} />
                         <DetailRow icon={CalendarIcon} label="Ngày hết hạn" value={formatDate(task.ngayHetHan)} />
                     </div>
-                     <Separator />
-                    <DetailRow icon={GitCommit} label="Tích hợp Git">
-                        <div className="space-y-2">
-                            {task.gitLinks && task.gitLinks.length > 0 ? (
-                                task.gitLinks.map((link, index) => (
-                                <a key={index} href={link} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-primary hover:underline">
-                                    <LinkIcon className="h-4 w-4" />
-                                    <span className="truncate">{link}</span>
-                                </a>
-                                ))
-                            ) : (
-                                <p className="text-sm text-muted-foreground">Chưa có liên kết Git nào.</p>
-                            )}
-                        </div>
-                    </DetailRow>
                 </div>
             ) : (
                 <Form {...form}>
@@ -392,30 +356,6 @@ export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onU
                             </FormItem>
                         </div>
                         
-                        <Separator />
-                         <div>
-                            <FormLabel>Tích hợp Git</FormLabel>
-                            <div className="flex gap-2 mt-2">
-                                <Input 
-                                    value={newGitLink} 
-                                    onChange={(e) => setNewGitLink(e.target.value)}
-                                    placeholder="Dán liên kết PR hoặc commit..."
-                                />
-                                <Button type="button" size="icon" onClick={handleAddGitLink}>
-                                    <PlusCircle className="h-4 w-4" />
-                                </Button>
-                            </div>
-                            <div className="mt-2 space-y-1">
-                                {pendingGitLinks.map((link, index) => (
-                                    <div key={index} className="flex items-center justify-between text-sm p-1 rounded-md hover:bg-muted">
-                                        <a href={link} target="_blank" rel="noopener noreferrer" className="text-primary truncate flex-1">{link}</a>
-                                        <Button type="button" variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleRemoveGitLink(link)}>
-                                            <X className="h-4 w-4" />
-                                        </Button>
-                                    </div>
-                                ))}
-                            </div>
-                         </div>
                         <Separator />
                          
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
