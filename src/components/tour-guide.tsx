@@ -77,57 +77,55 @@ export default function TourGuide() {
 
     return (
         <Dialog open={isTourOpen} onOpenChange={setIsTourOpen}>
-            <DialogContent className="max-w-lg w-[90vw] rounded-lg p-0">
-                <div className="p-6">
-                    <DialogHeader>
-                        <DialogTitle>Hướng dẫn sử dụng TeamFlow</DialogTitle>
-                        <DialogDescription>
-                        Một chuyến tham quan nhanh các tính năng chính.
-                        </DialogDescription>
-                    </DialogHeader>
-                </div>
+            <DialogContent className="max-w-lg w-[90vw] rounded-lg p-0 flex flex-col">
+                <DialogHeader className="p-6 pb-2">
+                    <DialogTitle>Hướng dẫn sử dụng TeamFlow</DialogTitle>
+                    <DialogDescription>
+                    Một chuyến tham quan nhanh các tính năng chính.
+                    </DialogDescription>
+                </DialogHeader>
                 
-                <Carousel setApi={setApi} className="w-full">
-                    <CarouselContent>
-                        {tourSteps.map((step, index) => (
-                            <CarouselItem key={index}>
-                                <div className="p-1">
-                                    <Card className="border-0 shadow-none">
-                                        <CardContent className="flex flex-col gap-4 items-center justify-center p-6 text-center min-h-[12rem]">
-                                            <h3 className="text-xl font-semibold">{step.title}</h3>
-                                            <p className="text-sm text-muted-foreground">{step.description}</p>
-                                        </CardContent>
-                                    </Card>
-                                </div>
-                            </CarouselItem>
-                        ))}
-                    </CarouselContent>
-                    <CarouselPrevious className="absolute left-4 top-1/2 -translate-y-1/2" />
-                    <CarouselNext className="absolute right-4 top-1/2 -translate-y-1/2" />
-                </Carousel>
+                <div className="px-12">
+                    <Carousel setApi={setApi} className="w-full">
+                        <CarouselContent>
+                            {tourSteps.map((step, index) => (
+                                <CarouselItem key={index}>
+                                    <div className="p-1">
+                                        <Card className="border-0 shadow-none">
+                                            <CardContent className="flex flex-col gap-4 items-center justify-center p-6 text-center min-h-[12rem]">
+                                                <h3 className="text-xl font-semibold">{step.title}</h3>
+                                                <p className="text-sm text-muted-foreground">{step.description}</p>
+                                            </CardContent>
+                                        </Card>
+                                    </div>
+                                </CarouselItem>
+                            ))}
+                        </CarouselContent>
+                        <CarouselPrevious className="absolute left-0 top-1/2 -translate-y-1/2" />
+                        <CarouselNext className="absolute right-0 top-1/2 -translate-y-1/2" />
+                    </Carousel>
+                </div>
                 
                 <div className="py-2 text-center text-sm text-muted-foreground">
                     Bước {current} trên {count}
                 </div>
 
-                <div className="p-6 pt-0">
-                    <DialogFooter className="flex-row justify-between w-full">
-                        <Button 
-                            variant="outline" 
-                            onClick={scrollPrev} 
-                            disabled={!api?.canScrollPrev()}
-                        >
-                            Trước
+                <DialogFooter className="flex-row justify-between w-full p-6 pt-0 mt-auto border-t">
+                    <Button 
+                        variant="outline" 
+                        onClick={scrollPrev} 
+                        disabled={!api?.canScrollPrev()}
+                    >
+                        Trước
+                    </Button>
+                    {current === count ? (
+                        <Button onClick={handleFinish}>Hoàn tất</Button>
+                    ) : (
+                        <Button onClick={scrollNext} disabled={!api?.canScrollNext()}>
+                            Tiếp theo
                         </Button>
-                        {current === count ? (
-                            <Button onClick={handleFinish}>Hoàn tất</Button>
-                        ) : (
-                            <Button onClick={scrollNext} disabled={!api?.canScrollNext()}>
-                                Tiếp theo
-                            </Button>
-                        )}
-                    </DialogFooter>
-                </div>
+                    )}
+                </DialogFooter>
             </DialogContent>
         </Dialog>
     );
