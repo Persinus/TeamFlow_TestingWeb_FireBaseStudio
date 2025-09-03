@@ -291,6 +291,11 @@ export const addTask = async (taskData: Partial<Omit<Task, 'id' | 'nhom' | 'nguo
     });
     await newTask.save();
     
+    // Mascot logic: award experience if a task is created with 'Hoàn thành' status
+    if (newTask.trangThai === 'Hoàn thành' && newTask.nhomId) {
+        await awardExperienceToMascot(newTask.nhomId.toString(), 10);
+    }
+    
     revalidatePath('/');
     revalidatePath('/board');
     if (dataToSave.nhomId) {
