@@ -104,7 +104,7 @@ export default function AnalyticsPage() {
     }, [analyticsData]);
 
     const handleExport = () => {
-        const headers = ["Thành viên", "Tổng cộng", "Tồn đọng", "Cần làm", "Đang làm", "Hoàn thành", "Tiến độ (%)"];
+        const headers = ["Thành viên", "Tổng cộng", "Tồn đọng", "Cần làm", "Đang tiến hành", "Hoàn thành", "Tiến độ (%)"];
         const rows = sortedAnalyticsData.map(data => [
             data.hoTen,
             data.total,
@@ -188,7 +188,7 @@ export default function AnalyticsPage() {
                                                     <TableHead>Tiến độ</TableHead>
                                                     <TableHead className="text-center">Tồn đọng</TableHead>
                                                     <TableHead className="text-center">Cần làm</TableHead>
-                                                    <TableHead className="text-center">Đang làm</TableHead>
+                                                    <TableHead className="text-center">Đang tiến hành</TableHead>
                                                     <TableHead className="text-center">Hoàn thành</TableHead>
                                                     <TableHead className="text-center">Tổng cộng</TableHead>
                                                 </TableRow>
