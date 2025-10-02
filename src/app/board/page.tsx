@@ -137,9 +137,9 @@ export default function BoardPage() {
         ? true
         : filters.assignee === 'unassigned'
           ? !task.nguoiThucHienId
-          : task.nguoiThucHien?.id === filters.assignee;
+          : task.nguoiThucHienId === filters.assignee;
 
-      const teamMatch = filters.team === 'all' || task.nhom?.id === filters.team;
+      const teamMatch = filters.team === 'all' || task.nhomId === filters.team || (filters.team === 'personal' && !task.nhomId);
 
       const searchMatch = filters.search === '' 
         || task.tieuDe.toLowerCase().includes(filters.search.toLowerCase()) 
@@ -273,6 +273,8 @@ export default function BoardPage() {
                         </SelectTrigger>
                         <SelectContent>
                             <SelectItem value="all">Tất cả các đội</SelectItem>
+                            <SelectItem value="personal">Công việc cá nhân</SelectItem>
+                            <SelectSeparator />
                             {teams.map(team => (
                                 <SelectItem key={team.id} value={team.id}>{team.tenNhom}</SelectItem>
                             ))}
@@ -358,3 +360,5 @@ export default function BoardPage() {
     </div>
   );
 }
+
+    
