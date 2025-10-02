@@ -133,17 +133,18 @@ export default function BoardPage() {
     return tasks.filter(task => {
       if (!task) return false;
       
-      let assigneeMatch = true;
-      if (filters.assignee === 'all') {
-        assigneeMatch = true;
-      } else if (filters.assignee === 'unassigned') {
-        assigneeMatch = !task.nguoiThucHienId;
-      } else {
-        assigneeMatch = task.nguoiThucHien?.id === filters.assignee;
-      }
+      const assigneeMatch = filters.assignee === 'all'
+        ? true
+        : filters.assignee === 'unassigned'
+          ? !task.nguoiThucHienId
+          : task.nguoiThucHien?.id === filters.assignee;
 
       const teamMatch = filters.team === 'all' || task.nhom?.id === filters.team;
-      const searchMatch = filters.search === '' || task.tieuDe.toLowerCase().includes(filters.search.toLowerCase()) || (task.tags && task.tags.some(t => t.toLowerCase().includes(filters.search.toLowerCase())));
+
+      const searchMatch = filters.search === '' 
+        || task.tieuDe.toLowerCase().includes(filters.search.toLowerCase()) 
+        || (task.tags && task.tags.some(t => t.toLowerCase().includes(filters.search.toLowerCase())));
+
       return assigneeMatch && teamMatch && searchMatch;
     });
   }, [tasks, filters]);
