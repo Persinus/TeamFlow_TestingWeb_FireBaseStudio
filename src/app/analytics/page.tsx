@@ -9,7 +9,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Progress } from '@/components/ui/progress';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { getTeamsForUser, getAnalyticsData } from '@/app/actions';
 import type { Team, UserAnalyticsData } from '@/types';
 import { useAuth } from '@/hooks/use-auth';
@@ -17,10 +16,14 @@ import { useRouter } from 'next/navigation';
 import { SidebarInset } from '@/components/ui/sidebar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { motion } from 'framer-motion';
-import { BarChart as BarChartIcon, Users, Download, PieChart as PieChartIcon } from 'lucide-react';
+import { BarChart as BarChartIcon, Users, Download, PieChart as PieChartIcon, Check, ChevronsUpDown } from 'lucide-react';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { PieChart, Pie, Cell } from 'recharts';
 import { Button } from '@/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
+import { cn } from '@/lib/utils';
+
 
 function AnalyticsSkeleton() {
     return (
@@ -44,6 +47,58 @@ function AnalyticsSkeleton() {
              </div>
         </div>
     );
+}
+
+function TeamCombobox({ teams, value, onChange }: { teams: Team[], value: string, onChange: (value: string) => void }) {
+    const [open, setOpen] = useState(false)
+
+    const teamOptions = [{ id: "all", tenNhom: "Tất cả các đội" }, ...teams];
+
+    return (
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            variant="outline"
+            role="combobox"
+            aria-expanded={open}
+            className="w-full sm:w-[200px] justify-between"
+          >
+            {value
+              ? teamOptions.find((team) => team.id === value)?.tenNhom
+              : "Chọn đội..."}
+            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-[200px] p-0">
+          <Command>
+            <CommandInput placeholder="Tìm đội..." />
+            <CommandList>
+                <CommandEmpty>Không tìm thấy đội nào.</CommandEmpty>
+                <CommandGroup>
+                {teamOptions.map((team) => (
+                    <CommandItem
+                    key={team.id}
+                    value={team.id}
+                    onSelect={(currentValue) => {
+                        onChange(currentValue === value ? "" : currentValue)
+                        setOpen(false)
+                    }}
+                    >
+                    <Check
+                        className={cn(
+                        "mr-2 h-4 w-4",
+                        value === team.id ? "opacity-100" : "opacity-0"
+                        )}
+                    />
+                    {team.tenNhom}
+                    </CommandItem>
+                ))}
+                </CommandGroup>
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      </Popover>
+    )
 }
 
 export default function AnalyticsPage() {
@@ -152,17 +207,11 @@ export default function AnalyticsPage() {
                                     <p className="text-muted-foreground">Theo dõi hiệu suất và phân bổ công việc của các thành viên.</p>
                                 </div>
                                 <div className="flex flex-wrap items-center gap-2">
-                                     <Select value={selectedTeam} onValueChange={setSelectedTeam}>
-                                        <SelectTrigger className="w-full sm:w-[200px]">
-                                            <SelectValue placeholder="Chọn đội" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="all">Tất cả các đội</SelectItem>
-                                            {teams.map(team => (
-                                                <SelectItem key={team.id} value={team.id}>{team.tenNhom}</SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
+                                     <TeamCombobox 
+                                        teams={teams}
+                                        value={selectedTeam}
+                                        onChange={setSelectedTeam}
+                                     />
                                     <Button onClick={handleExport} disabled={analyticsData.length === 0}>
                                         <Download className="mr-2 h-4 w-4" />
                                         Xuất ra CSV
