@@ -35,7 +35,7 @@ const columns: { id: TaskStatus; title: string }[] = [
 ];
 
 
-function DroppableColumn({ id, title, children, isDragOver, isCompact }: { id: string; title: string; children: React.ReactNode; isDragOver: boolean, isCompact: boolean }) {
+function DroppableColumn({ id, title, tasks, children, isDragOver, isCompact }: { id: string; title: string; tasks: Task[], children: React.ReactNode; isDragOver: boolean, isCompact: boolean }) {
   const { setNodeRef } = useDroppable({ id });
   return (
     <motion.div
@@ -44,7 +44,7 @@ function DroppableColumn({ id, title, children, isDragOver, isCompact }: { id: s
     >
       <div className="flex items-center justify-between rounded-lg bg-card p-3 shadow-sm border">
         <h2 className="font-semibold text-foreground">{title}</h2>
-        <Badge variant="secondary" className="rounded-full">{React.Children.count(children)}</Badge>
+        <Badge variant="secondary" className="rounded-full">{tasks.length}</Badge>
       </div>
       <motion.div 
         layout
@@ -309,7 +309,14 @@ export default function BoardPage() {
                 >
                   <div className="grid min-w-[1200px] grid-cols-4 gap-6">
                     {columns.map(column => (
-                      <DroppableColumn key={column.id} id={column.id} title={column.title} isDragOver={overId === column.id} isCompact={isCompactView}>
+                      <DroppableColumn 
+                        key={column.id} 
+                        id={column.id} 
+                        title={column.title} 
+                        tasks={tasksByStatus[column.id]}
+                        isDragOver={overId === column.id} 
+                        isCompact={isCompactView}
+                      >
                         {tasksByStatus[column.id].map(task => (
                           <TaskCard 
                             key={task.id} 
