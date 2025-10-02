@@ -237,7 +237,7 @@ export default function AnalyticsPage() {
                                                     <TableHead>Tiến độ</TableHead>
                                                     <TableHead className="text-center">Tồn đọng</TableHead>
                                                     <TableHead className="text-center">Cần làm</TableHead>
-                                                    <TableHead className="text-center">Đang tiến hành</TableHead>
+                                                    <TableHead className="text-center">Đang làm</TableHead>
                                                     <TableHead className="text-center">Hoàn thành</TableHead>
                                                     <TableHead className="text-center">Tổng cộng</TableHead>
                                                 </TableRow>
@@ -286,16 +286,22 @@ export default function AnalyticsPage() {
                                             <CardDescription>Tỷ lệ các loại công việc trong phạm vi đã chọn.</CardDescription>
                                         </CardHeader>
                                         <CardContent>
-                                             <ChartContainer config={{}} className="mx-auto aspect-square h-[250px]">
-                                                <PieChart>
-                                                    <ChartTooltip content={<ChartTooltipContent nameKey="name" />} />
-                                                    <Pie data={totalTaskByType} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label>
-                                                        <Cell key="cell-0" fill="hsl(var(--chart-1))" />
-                                                        <Cell key="cell-1" fill="hsl(var(--chart-2))" />
-                                                        <Cell key="cell-2" fill="hsl(var(--chart-3))" />
-                                                    </Pie>
-                                                </PieChart>
-                                            </ChartContainer>
+                                            {totalTaskByType.length > 0 ? (
+                                                <ChartContainer config={{}} className="mx-auto aspect-square h-[250px]">
+                                                    <PieChart>
+                                                        <ChartTooltip content={<ChartTooltipContent nameKey="name" />} />
+                                                        <Pie data={totalTaskByType} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label>
+                                                            <Cell key="cell-0" fill="hsl(var(--chart-1))" />
+                                                            <Cell key="cell-1" fill="hsl(var(--chart-2))" />
+                                                            <Cell key="cell-2" fill="hsl(var(--chart-3))" />
+                                                        </Pie>
+                                                    </PieChart>
+                                                </ChartContainer>
+                                            ) : (
+                                                <div className="flex items-center justify-center h-[250px] text-muted-foreground text-center">
+                                                    <p>Không có dữ liệu loại công việc để hiển thị.</p>
+                                                </div>
+                                            )}
                                         </CardContent>
                                     </Card>
                                 </div>
