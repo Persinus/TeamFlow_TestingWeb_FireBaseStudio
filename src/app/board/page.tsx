@@ -19,7 +19,7 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { LayoutGrid, CalendarDays, GanttChartSquare, ListTree, XCircle } from 'lucide-react';
+import { LayoutGrid, CalendarDays, GanttChartSquare, ListTree, XCircle, FolderOpen } from 'lucide-react';
 import CalendarView from '@/components/calendar-view';
 import TimelineView from '@/components/timeline-view';
 import { Select, SelectContent, SelectItem, SelectSeparator, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -48,10 +48,15 @@ function DroppableColumn({ id, title, tasks, children, isDragOver, isCompact }: 
       </div>
       <motion.div 
         layout
-        className={cn("flex flex-col", isCompact ? "gap-1.5" : "gap-4")}
+        className={cn("flex flex-col min-h-[150px]", isCompact ? "gap-1.5" : "gap-4")}
       >
         <AnimatePresence>
-            {children}
+            {tasks.length > 0 ? children : (
+                <div className="flex-1 flex flex-col items-center justify-center text-center text-muted-foreground p-4">
+                    <FolderOpen className="h-8 w-8 mb-2" />
+                    <p className="text-sm">Không có công việc</p>
+                </div>
+            )}
         </AnimatePresence>
       </motion.div>
     </motion.div>
@@ -360,6 +365,8 @@ export default function BoardPage() {
     </div>
   );
 }
+
+    
 
     
 
