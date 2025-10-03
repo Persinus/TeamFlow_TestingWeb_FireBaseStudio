@@ -462,15 +462,14 @@ export default function TeamDetailPage() {
                             </CardContent>
                         </Card>
                         </div>
-                        
                         <div>
-                        <h2 className="text-2xl font-bold tracking-tight mb-4">Công việc hiện tại</h2>
-                        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                            {teamTasks.map(task => (
-                            <TaskCard key={task.id} task={task} onSelectTask={setSelectedTask} />
-                            ))}
-                            {teamTasks.length === 0 && <p className="text-muted-foreground col-span-full">Không tìm thấy công việc nào cho đội này.</p>}
-                        </div>
+                            <h2 className="text-2xl font-bold tracking-tight mb-4">Công việc hiện tại</h2>
+                            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                                {teamTasks.map(task => (
+                                <TaskCard key={task.id} task={task} onSelectTask={setSelectedTask} />
+                                ))}
+                                {teamTasks.length === 0 && <p className="text-muted-foreground col-span-full">Không tìm thấy công việc nào cho đội này.</p>}
+                            </div>
                         </div>
                     </TabsContent>
                     <TabsContent value="analytics" className="space-y-8">
@@ -554,3 +553,4 @@ export default function TeamDetailPage() {
     </div>
   );
 }
+
