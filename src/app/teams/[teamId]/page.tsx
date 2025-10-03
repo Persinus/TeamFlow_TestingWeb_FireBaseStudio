@@ -120,7 +120,7 @@ export default function TeamDetailPage() {
   const progress = useMemo(() => {
     if (teamTasks.length === 0) return 0;
     const doneTasks = teamTasks.filter(t => t.trangThai === 'Hoàn thành').length;
-    return (doneTasks / teamTasks.length) * 100;
+    return Math.round((doneTasks / teamTasks.length) * 100);
   }, [teamTasks]);
   
   const taskStatusDistribution = useMemo(() => {
@@ -336,9 +336,9 @@ export default function TeamDetailPage() {
                             <CardContent className="space-y-4">
                             <div className="flex items-center justify-between">
                                 <span className="text-sm text-muted-foreground">Đã hoàn thành</span>
-                                <span className="font-semibold">{Math.round(progress)}%</span>
+                                <span className="font-semibold">{progress}%</span>
                             </div>
-                            <Progress value={progress} aria-label={`${Math.round(progress)}% hoàn thành`} />
+                            <Progress value={progress} aria-label={`${progress}% hoàn thành`} />
                             </CardContent>
                         </Card>
                         <Card>
