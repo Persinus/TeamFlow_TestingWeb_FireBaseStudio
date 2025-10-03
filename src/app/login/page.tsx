@@ -30,6 +30,16 @@ export default function LoginPage() {
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        if (!email || !password) {
+            toast({
+                variant: 'destructive',
+                title: 'Thông tin không hợp lệ',
+                description: "Vui lòng nhập cả email và mật khẩu.",
+            });
+            return;
+        }
+
         setIsLoggingIn(true);
         try {
             await login(email, password);
@@ -71,7 +81,6 @@ export default function LoginPage() {
                                     placeholder="admin@teamflow.com"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
-                                    required
                                     disabled={isLoggingIn}
                                 />
                             </div>
@@ -88,7 +97,6 @@ export default function LoginPage() {
                                         type={showPassword ? "text" : "password"}
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
-                                        required 
                                         className="pr-10"
                                         disabled={isLoggingIn}
                                     />
@@ -122,5 +130,3 @@ export default function LoginPage() {
         </div>
     );
 }
-
-    
