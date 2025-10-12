@@ -12,7 +12,7 @@ import { SidebarInset } from '@/components/ui/sidebar';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { motion } from 'framer-motion';
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis } from "recharts"
-import { differenceInDays, format, subDays, parseISO, isBefore } from 'date-fns';
+import { differenceInDays, format, subDays, parseISO, isBefore, startOfToday } from 'date-fns';
 import { AlertCircle, CalendarIcon, CheckCircle, Lightbulb, ArrowRight, TrendingUp, Check, ListTodo } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
@@ -79,7 +79,7 @@ const getAIInsight = (tasks: Task[]) => {
     if (total === 0) return "Bạn chưa có công việc nào. Hãy tạo một công việc mới để bắt đầu!";
     
     const completed = tasks.filter(t => t.trangThai === 'Hoàn thành').length;
-    const overdue = tasks.filter(t => t.ngayHetHan && isBefore(safeParseDate(t.ngayHetHan)!, new Date())).length;
+    const overdue = tasks.filter(t => t.trangThai !== 'Hoàn thành' && t.ngayHetHan && isBefore(safeParseDate(t.ngayHetHan)!, startOfToday())).length;
     const backlog = tasks.filter(t => t.trangThai === 'Tồn đọng').length;
 
     if (overdue > total / 2) return "Bạn có nhiều công việc quá hạn. Hãy ưu tiên giải quyết chúng trước!";
@@ -140,13 +140,15 @@ export default function HomePage() {
     const hasActivity = useMemo(() => taskCompletionData.some(d => d.total > 0), [taskCompletionData]);
 
     const upcomingTasks = useMemo(() => {
-        const now = new Date();
+        const today = startOfToday();
         return tasks
             .filter(task => {
                 if (task.trangThai === 'Hoàn thành' || !task.ngayHetHan) return false;
                 const dueDate = safeParseDate(task.ngayHetHan);
                 if (!dueDate) return false;
-                const daysDiff = differenceInDays(dueDate, now);
+                
+                // Task is not yet overdue and is due within the next 7 days
+                const daysDiff = differenceInDays(dueDate, today);
                 return daysDiff >= 0 && daysDiff <= 7;
             })
             .sort((a, b) => {
