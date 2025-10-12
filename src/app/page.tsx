@@ -147,7 +147,6 @@ export default function HomePage() {
                 const dueDate = safeParseDate(task.ngayHetHan);
                 if (!dueDate) return false;
                 
-                // Task is not yet overdue and is due within the next 7 days
                 const daysDiff = differenceInDays(dueDate, today);
                 return daysDiff >= 0 && daysDiff <= 7;
             })
@@ -312,3 +311,5 @@ export default function HomePage() {
         </div>
     );
 }
+
+    
