@@ -67,11 +67,10 @@ function DashboardSkeleton() {
 
 const safeParseDate = (date: string | Date | undefined): Date | null => {
     if (!date) return null;
-    if (date instanceof Date && isValid(date)) return date;
+    if (date instanceof Date) return date;
     try {
-        const parsed = parseISO(date as string);
-        if (isValid(parsed)) return parsed;
-        return null;
+        const parsed = parseISO(date);
+        return isValid(parsed) ? parsed : null;
     } catch (e) {
         return null;
     }
