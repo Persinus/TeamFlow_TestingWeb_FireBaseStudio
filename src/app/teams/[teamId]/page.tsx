@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
@@ -18,7 +17,7 @@ import TaskCard from '@/components/task-card';
 import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, UserPlus, Crown, Trash2, Shield, Edit } from 'lucide-react';
+import { MoreHorizontal, UserPlus, Crown, Trash2, Shield, Edit, AlertTriangle } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Dialog, DialogHeader, DialogTitle, DialogDescription, DialogContent, DialogFooter } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -57,6 +56,7 @@ export default function TeamDetailPage() {
   const [allTeams, setAllTeams] = useState<Team[]>([]);
   const [teamTasks, setTeamTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const [isAddMemberOpen, setAddMemberOpen] = useState(false);
   const [isEditTeamOpen, setEditTeamOpen] = useState(false);
@@ -69,6 +69,7 @@ export default function TeamDetailPage() {
     if (!teamId) return;
     try {
         setLoading(true);
+        setError(null);
         const [teamData, usersData, tasksData, allTeamsData] = await Promise.all([
             getTeam(teamId),
             getUsers(),
@@ -86,9 +87,11 @@ export default function TeamDetailPage() {
         setAllUsers(usersData);
         setTeamTasks(tasksData);
         setAllTeams(allTeamsData);
-    } catch (error) {
-        console.error("Lỗi khi tải dữ liệu đội:", error);
-        toast({ variant: 'destructive', title: 'Lỗi', description: 'Không thể tải dữ liệu của đội.' });
+    } catch (err) {
+        console.error("Lỗi khi tải dữ liệu đội:", err);
+        const errorMessage = (err instanceof Error) ? err.message : 'Không thể tải dữ liệu của đội.';
+        setError(errorMessage);
+        toast({ variant: 'destructive', title: 'Lỗi tải dữ liệu', description: errorMessage });
     } finally {
         setLoading(false);
     }
@@ -238,7 +241,7 @@ export default function TeamDetailPage() {
     setAllTeams(teams);
   }
 
-  if (authLoading || loading || !user) {
+  if (authLoading || loading) {
     return (
         <div className="flex min-h-screen w-full flex-col lg:flex-row bg-background">
             <Sidebar teams={[]} onTeamChange={() => {}} />
@@ -264,8 +267,29 @@ export default function TeamDetailPage() {
         </div>
     );
   }
+
+  if (error) {
+    return (
+         <div className="flex min-h-screen w-full flex-col lg:flex-row bg-background">
+            <Sidebar teams={allTeams} onTeamChange={handleTeamCreated} />
+            <div className="flex flex-1 flex-col">
+                <Header onCreateTask={async () => {}} />
+                <SidebarInset>
+                    <main className="flex-1 p-4 sm:p-6 md:p-8">
+                         <div className="flex flex-col items-center justify-center h-full text-center">
+                            <AlertTriangle className="h-12 w-12 text-destructive mb-4" />
+                            <h1 className="text-2xl font-bold text-destructive">Đã xảy ra lỗi</h1>
+                            <p className="text-muted-foreground mt-2">{error}</p>
+                            <Button onClick={fetchData} className="mt-6">Thử lại</Button>
+                        </div>
+                    </main>
+                </SidebarInset>
+            </div>
+        </div>
+    )
+  }
   
-  if (!team) {
+  if (!team || !user) {
     return notFound();
   }
   
@@ -560,3 +584,5 @@ export default function TeamDetailPage() {
   );
 }
 
+
+    
