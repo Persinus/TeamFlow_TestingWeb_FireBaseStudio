@@ -104,6 +104,23 @@ export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onU
 
   const team = useMemo(() => teams.find(t => t.id === task?.nhomId), [task, teams]);
 
+  const canEdit = useMemo(() => {
+    if (!task || !currentUser) return false;
+    
+    // Personal task: only creator can edit
+    if (!task.nhomId) {
+        return task.nguoiTaoId === currentUser.id;
+    }
+    
+    // Team task: only team leader can edit
+    if (team) {
+        const currentUserMembership = team.thanhVien?.find(m => m.thanhVienId === currentUser.id);
+        return currentUserMembership?.vaiTro === 'Trưởng nhóm';
+    }
+    
+    return false;
+  }, [task, currentUser, team]);
+
   const canDelete = useMemo(() => {
     if (!task || !currentUser) return false;
     
@@ -251,7 +268,7 @@ export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onU
            )}
         </SheetHeader>
         
-        {!isEditing && (
+        {!isEditing && canEdit && (
             <Button size="icon" variant="outline" className="absolute top-4 right-16" onClick={() => setIsEditing(true)}>
                 <Pencil className="h-4 w-4" />
                 <span className="sr-only">Chỉnh sửa công việc</span>
