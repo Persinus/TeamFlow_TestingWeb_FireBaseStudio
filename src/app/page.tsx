@@ -12,7 +12,7 @@ import { SidebarInset } from '@/components/ui/sidebar';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { motion } from 'framer-motion';
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis } from "recharts"
-import { differenceInDays, format, subDays, parseISO, isBefore, startOfToday } from 'date-fns';
+import { differenceInDays, format, subDays, parseISO, isBefore, startOfToday, isValid } from 'date-fns';
 import { AlertCircle, CalendarIcon, CheckCircle, Lightbulb, ArrowRight, TrendingUp, Check, ListTodo } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
@@ -65,13 +65,15 @@ function DashboardSkeleton() {
     );
 }
 
-const safeParseDate = (date: string | Date | undefined): Date | undefined => {
-    if (!date) return undefined;
-    if (date instanceof Date) return date;
+const safeParseDate = (date: string | Date | undefined): Date | null => {
+    if (!date) return null;
+    if (date instanceof Date && isValid(date)) return date;
     try {
-        return parseISO(date);
+        const parsed = parseISO(date as string);
+        if (isValid(parsed)) return parsed;
+        return null;
     } catch (e) {
-        return undefined;
+        return null;
     }
 };
 
@@ -80,7 +82,10 @@ const getAIInsight = (tasks: Task[]) => {
     if (total === 0) return "Bạn chưa có công việc nào. Hãy tạo một công việc mới để bắt đầu!";
     
     const completed = tasks.filter(t => t.trangThai === 'Hoàn thành').length;
-    const overdue = tasks.filter(t => t.trangThai !== 'Hoàn thành' && t.ngayHetHan && isBefore(safeParseDate(t.ngayHetHan)!, startOfToday())).length;
+    const overdue = tasks.filter(t => {
+        const dueDate = safeParseDate(t.ngayHetHan);
+        return t.trangThai !== 'Hoàn thành' && dueDate && isBefore(dueDate, startOfToday());
+    }).length;
     const backlog = tasks.filter(t => t.trangThai === 'Tồn đọng').length;
 
     if (overdue > total / 2) return "Bạn có nhiều công việc quá hạn. Hãy ưu tiên giải quyết chúng trước!";
@@ -137,7 +142,7 @@ export default function HomePage() {
         const last30Days = Array.from({ length: 30 }, (_, i) => subDays(today, i)).reverse();
         
         const completedTasksByDate = tasks
-            .filter(t => t.trangThai === 'Hoàn thành' && t.ngayHetHan)
+            .filter(t => t.trangThai === 'Hoàn thành')
             .reduce((acc, task) => {
                 const completedDate = safeParseDate(task.ngayHetHan);
                 if (completedDate) {
@@ -159,7 +164,7 @@ export default function HomePage() {
         const today = startOfToday();
         return tasks
             .filter(task => {
-                if (task.trangThai === 'Hoàn thành' || !task.ngayHetHan) return false;
+                if (task.trangThai === 'Hoàn thành') return false;
                 const dueDate = safeParseDate(task.ngayHetHan);
                 if (!dueDate) return false;
                 
@@ -345,5 +350,3 @@ export default function HomePage() {
         </div>
     );
 }
-
-    
