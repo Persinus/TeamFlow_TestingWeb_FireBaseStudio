@@ -334,11 +334,17 @@ export default function TeamDetailPage() {
                             <CardDescription>Mức độ hoàn thành tổng thể của các công việc.</CardDescription>
                             </CardHeader>
                             <CardContent className="space-y-4">
-                            <div className="flex items-center justify-between">
-                                <span className="text-sm text-muted-foreground">Đã hoàn thành</span>
-                                <span className="font-semibold">{progress}%</span>
-                            </div>
-                            <Progress value={progress} aria-label={`${progress}% hoàn thành`} />
+                            {teamTasks.length > 0 ? (
+                                <>
+                                <div className="flex items-center justify-between">
+                                    <span className="text-sm text-muted-foreground">Đã hoàn thành</span>
+                                    <span className="font-semibold">{progress}%</span>
+                                </div>
+                                <Progress value={progress} aria-label={`${progress}% hoàn thành`} />
+                                </>
+                            ) : (
+                                <p className="text-sm text-muted-foreground text-center py-4">Chưa có công việc</p>
+                            )}
                             </CardContent>
                         </Card>
                         <Card>
