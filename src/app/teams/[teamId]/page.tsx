@@ -115,10 +115,10 @@ export default function TeamDetailPage() {
   }, [team, allUsers]);
   
   const usersNotInTeam = useMemo(() => {
-      if (!team) return [];
-      const memberIds = new Set(teamMembers.map(m => m.id));
-      return allUsers.filter(u => !memberIds.has(u.id));
-  }, [team, allUsers, teamMembers]);
+    if (!team) return [];
+    const memberIds = new Set(teamMembers.map(m => m.id));
+    return allUsers.filter(u => !memberIds.has(u.id));
+  }, [allUsers, teamMembers, team]);
 
   const progress = useMemo(() => {
     if (teamTasks.length === 0) return 0;
@@ -427,9 +427,9 @@ export default function TeamDetailPage() {
                                                 <SelectValue placeholder="Chọn một người dùng" />
                                             </SelectTrigger>
                                             <SelectContent>
-                                                {usersNotInTeam.map(u => (
+                                                {usersNotInTeam.length > 0 ? usersNotInTeam.map(u => (
                                                     <SelectItem key={u.id} value={u.id}>{u.hoTen}</SelectItem>
-                                                ))}
+                                                )) : <p className="p-4 text-sm text-muted-foreground">Tất cả người dùng đã ở trong đội.</p>}
                                             </SelectContent>
                                         </Select>
                                         <AlertDialogFooter>
@@ -583,6 +583,5 @@ export default function TeamDetailPage() {
     </div>
   );
 }
-
 
     
