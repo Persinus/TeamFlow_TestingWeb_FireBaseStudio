@@ -230,7 +230,7 @@ export default function BoardPage() {
   }
 
   return (
-    <div className="flex min-h-screen w-full flex-col lg:flex-row bg-background">
+    <div className="flex min-h-screen w-full bg-background">
       <Sidebar teams={teams} onTeamChange={fetchData} />
       <div className="flex flex-1 flex-col">
         <Header 
@@ -241,7 +241,7 @@ export default function BoardPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
-              className="flex-1 p-4 sm:p-6 md:p-8 overflow-x-auto"
+              className="flex-1 p-4 sm:p-6 md:p-8 overflow-y-auto"
             >
               <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
                 <div>
@@ -306,6 +306,7 @@ export default function BoardPage() {
                     </div>
                 </div>
               </div>
+              <div className="overflow-x-auto pb-4">
               {loading ? (
                 <BoardSkeleton />
               ) : viewMode === 'board' ? (
@@ -349,6 +350,7 @@ export default function BoardPage() {
               ) : (
                  <TimelineView tasks={filteredTasks} onSelectTask={setSelectedTask} />
               )}
+              </div>
             </motion.main>
         </SidebarInset>
       </div>

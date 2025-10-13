@@ -23,6 +23,7 @@ import Link from 'next/link';
 import { useToast } from '../hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { getTeamsForUser } from '@/app/actions';
+import { SidebarTrigger } from '@/components/ui/sidebar';
 
 interface HeaderProps {
   onCreateTask: () => Promise<void>;
@@ -45,6 +46,7 @@ export default function Header({ onCreateTask }: HeaderProps) {
 
   useEffect(() => {
     fetchUserTeams();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   const handleLogout = async () => {
@@ -78,6 +80,8 @@ export default function Header({ onCreateTask }: HeaderProps) {
             </SheetContent>
         </Sheet>
         
+        <SidebarTrigger className="hidden lg:flex" />
+
         <div className="flex-1" />
 
         <div className="flex items-center gap-2 ml-auto">
