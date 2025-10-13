@@ -232,7 +232,7 @@ export default function BoardPage() {
   return (
     <div className="flex min-h-screen w-full bg-background">
       <Sidebar teams={teams} onTeamChange={fetchData} />
-      <div className="flex flex-1 flex-col">
+      <div className="flex flex-1 flex-col overflow-hidden">
         <Header 
           onCreateTask={fetchData}
         />
@@ -241,7 +241,7 @@ export default function BoardPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
-              className="flex-1 p-4 sm:p-6 md:p-8 overflow-y-auto"
+              className="flex flex-1 flex-col p-4 sm:p-6 md:p-8 overflow-hidden"
             >
               <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
                 <div>
@@ -306,9 +306,9 @@ export default function BoardPage() {
                     </div>
                 </div>
               </div>
-              <div className="overflow-x-auto pb-4">
+              <div className="flex-1 overflow-auto pb-4">
               {loading ? (
-                <BoardSkeleton />
+                <div className="overflow-x-auto"><BoardSkeleton /></div>
               ) : viewMode === 'board' ? (
                 <DndContext 
                   sensors={sensors}
@@ -367,3 +367,5 @@ export default function BoardPage() {
     </div>
   );
 }
+
+    

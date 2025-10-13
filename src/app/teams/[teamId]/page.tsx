@@ -76,14 +76,10 @@ export default function TeamDetailPage() {
             getTasksByTeam(teamId),
             getTeams()
         ]);
-
-        if (!teamData) {
-            notFound();
-            return;
+        setTeam(teamData ?? null); // Set to null if not found
+        if (teamData) {
+            setTeamToEdit({name: teamData.tenNhom, description: teamData.moTa || ''});
         }
-
-        setTeam(teamData);
-        setTeamToEdit({name: teamData.tenNhom, description: teamData.moTa || ''});
         setAllUsers(usersData);
         setTeamTasks(tasksData);
         setAllTeams(allTeamsData);
@@ -267,6 +263,10 @@ export default function TeamDetailPage() {
         </div>
     );
   }
+  
+  if (!loading && !team) {
+    notFound();
+  }
 
   if (error) {
     return (
@@ -290,7 +290,8 @@ export default function TeamDetailPage() {
   }
   
   if (!team || !user) {
-    return notFound();
+    // This should be caught by the `notFound()` call above, but as a fallback:
+    return null;
   }
   
   return (
