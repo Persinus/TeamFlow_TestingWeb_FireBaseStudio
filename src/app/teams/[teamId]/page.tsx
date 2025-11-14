@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
@@ -225,6 +226,8 @@ export default function TeamDetailPage() {
     const updatedTask = await updateTask(updatedTaskData.id, updatedTaskData);
     await fetchData(); // Refetch all data to ensure consistency
     setSelectedTask(updatedTask); // Optimistically update
+    
+    // Deliberately removed toast to introduce the bug
   };
 
   const handleCreateTask = async (newTaskData: Omit<Task, 'id' | 'nhom' | 'nguoiThucHien' | 'ngayTao'>) => {
@@ -584,5 +587,7 @@ export default function TeamDetailPage() {
     </div>
   );
 }
+
+    
 
     
