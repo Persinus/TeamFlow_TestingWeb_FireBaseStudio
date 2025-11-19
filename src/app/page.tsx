@@ -20,6 +20,7 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
+import { Badge } from '@/components/ui/badge';
 
 const quotes = [
     { text: "Làm việc nhóm khiến giấc mơ thành hiện thực.", author: "Bang Gae" },
@@ -349,3 +350,5 @@ export default function HomePage() {
         </div>
     );
 }
+
+    
