@@ -324,7 +324,7 @@ export default function BoardPage() {
                         title={column.title} 
                         tasks={tasksByStatus[column.id]}
                         isDragOver={overId === column.id} 
-                        isCompact={isCompactView}
+                        isCompact={isCompactView && viewMode === 'board'}
                       >
                         {tasksByStatus[column.id].map(task => (
                           <TaskCard 
@@ -332,7 +332,7 @@ export default function BoardPage() {
                             task={task} 
                             onSelectTask={setSelectedTask} 
                             isDragging={activeId === task.id}
-                            isCompact={isCompactView}
+                            isCompact={isCompactView && viewMode === 'board'}
                           />
                         ))}
                       </DroppableColumn>
@@ -367,5 +367,3 @@ export default function BoardPage() {
     </div>
   );
 }
-
-    
