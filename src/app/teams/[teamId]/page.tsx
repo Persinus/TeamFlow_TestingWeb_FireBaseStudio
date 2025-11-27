@@ -223,14 +223,22 @@ export default function TeamDetailPage() {
   }
   
   const handleUpdateTask = async (updatedTaskData: Omit<Task, 'nhom' | 'nguoiThucHien'>) => {
-    const updatedTask = await updateTask(updatedTaskData.id, updatedTaskData);
-    toast({
-        variant: 'destructive',
-        title: 'Cập nhật thất bại',
-        description: 'Không thể lưu các thay đổi vào cơ sở dữ liệu.',
-    });
-    await fetchData();
-    setSelectedTask(updatedTask);
+    try {
+      const updatedTask = await updateTask(updatedTaskData.id, updatedTaskData);
+      toast({
+          variant: 'destructive',
+          title: 'Cập nhật thất bại',
+          description: 'Không thể lưu các thay đổi vào cơ sở dữ liệu.',
+      });
+      await fetchData();
+      setSelectedTask(updatedTask);
+    } catch (error) {
+       toast({
+          variant: 'destructive',
+          title: 'Cập nhật thất bại',
+          description: 'Không thể lưu các thay đổi vào cơ sở dữ liệu.',
+      });
+    }
   };
 
   const handleCreateTask = async (newTaskData: Omit<Task, 'id' | 'nhom' | 'nguoiThucHien' | 'ngayTao'>) => {
