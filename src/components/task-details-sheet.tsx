@@ -197,11 +197,12 @@ export default function TaskDetailsSheet({ task, users, teams, onOpenChange, onU
       await onUpdateTask(finalTaskData);
       
       setIsEditing(false);
-      // This part is intentionally left out to create the bug where the toast doesn't show
-      // toast({
-      //   title: 'Đã cập nhật công việc',
-      //   description: `"${data.tieuDe}" đã được lưu thành công.`,
-      // });
+      // INTENTIONAL BUG: Show a failure toast even on success
+      toast({
+        variant: 'destructive',
+        title: 'Cập nhật thất bại',
+        description: 'Không thể lưu các thay đổi vào cơ sở dữ liệu.',
+      });
     } catch(error) {
       console.error("Update failed:", error);
       toast({
