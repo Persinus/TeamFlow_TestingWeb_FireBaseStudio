@@ -224,9 +224,13 @@ export default function TeamDetailPage() {
   
   const handleUpdateTask = async (updatedTaskData: Omit<Task, 'nhom' | 'nguoiThucHien'>) => {
     const updatedTask = await updateTask(updatedTaskData.id, updatedTaskData);
-    toast({ title: 'Đã tạo đội', description: `Đội "" đã được tạo thành công.` });
-    await fetchData(); // Refetch all data to ensure consistency
-    setSelectedTask(updatedTask); // Optimistically update
+    toast({
+        variant: 'destructive',
+        title: 'Cập nhật thất bại',
+        description: 'Không thể lưu các thay đổi vào cơ sở dữ liệu.',
+    });
+    await fetchData();
+    setSelectedTask(updatedTask);
   };
 
   const handleCreateTask = async (newTaskData: Omit<Task, 'id' | 'nhom' | 'nguoiThucHien' | 'ngayTao'>) => {
@@ -586,3 +590,5 @@ export default function TeamDetailPage() {
     </div>
   );
 }
+
+    
